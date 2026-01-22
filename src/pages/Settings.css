@@ -1,0 +1,464 @@
+/* src/pages/Settings.css */
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.st {
+  background: #f4efe6;
+  min-height: calc(100vh - 64px);
+  padding: 14px 0 34px;
+}
+
+.st-shell {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 0 18px;
+}
+
+/* Header */
+.st-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.st-title {
+  margin: 0;
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  color: rgba(36, 75, 43, 0.92);
+  font-size: 28px;
+}
+
+.st-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 14px;
+  padding: 12px 12px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+}
+
+.st-avatarWrap {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(0,0,0,0.10);
+}
+
+.st-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.st-profileMeta {
+  min-width: 0;
+}
+
+.st-screenName {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  color: rgba(60, 55, 52, 0.85);
+  font-size: 14px;
+}
+
+.st-handle {
+  margin-top: 2px;
+  font-family: "Libre Baskerville", serif;
+  color: rgba(0,0,0,0.45);
+  font-size: 12px;
+}
+
+/* Grid */
+.st-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+/* Left */
+.st-navCard {
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+}
+
+.st-navItem {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.04);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.78);
+}
+
+.st-navItem + .st-navItem {
+  margin-top: 8px;
+}
+
+.st-navItem:hover {
+  filter: brightness(0.99);
+}
+
+.st-navItem--active {
+  background: rgba(36, 75, 43, 0.12);
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.st-navDivider {
+  margin: 12px 0;
+  height: 1px;
+  background: rgba(0,0,0,0.10);
+}
+
+.st-navLink {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.10);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.72);
+}
+
+.st-navLink + .st-navLink {
+  margin-top: 8px;
+}
+
+.st-navLink:hover {
+  filter: brightness(0.99);
+}
+
+/* Danger */
+.st-dangerCard {
+  margin-top: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+  display: grid;
+  gap: 10px;
+}
+
+.st-dangerBtn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: left;
+  background: rgba(122, 13, 18, 0.14);
+  color: rgba(122, 13, 18, 0.95);
+}
+
+.st-dangerBtn--ghost {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(122, 13, 18, 0.22);
+}
+
+/* Main */
+.st-main {
+  min-width: 0;
+}
+
+.st-card {
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+}
+
+.st-card + .st-card {
+  margin-top: 14px;
+}
+
+.st-cardHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.st-cardTitle {
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  color: rgba(36, 75, 43, 0.92);
+  font-size: 18px;
+}
+
+.st-cardSub {
+  margin-top: 6px;
+  font-family: "Libre Baskerville", serif;
+  color: rgba(0,0,0,0.50);
+  font-size: 12px;
+}
+
+.st-pill {
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(36, 75, 43, 0.10);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.st-cardBody {
+  margin-top: 12px;
+}
+
+/* Skins */
+.st-skinGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.st-skinCard {
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(0,0,0,0.04);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+  font-family: "Libre Baskerville", serif;
+}
+
+.st-skinCard:hover {
+  filter: brightness(0.99);
+}
+
+.st-skinCard--active {
+  background: rgba(36, 75, 43, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(36, 75, 43, 0.20);
+}
+
+.st-skinName {
+  font-weight: 700;
+  color: rgba(60, 55, 52, 0.85);
+}
+
+.st-skinDesc {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(0,0,0,0.50);
+  line-height: 1.4;
+}
+
+/* Radios */
+.st-radioGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.st-radioRow {
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(0,0,0,0.04);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+  display: flex;
+  gap: 10px;
+  cursor: pointer;
+  font-family: "Libre Baskerville", serif;
+}
+
+.st-radioRow--active {
+  background: rgba(36, 75, 43, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(36, 75, 43, 0.20);
+}
+
+.st-radioInput {
+  margin-top: 3px;
+}
+
+.st-radioText {
+  min-width: 0;
+}
+
+.st-radioLabel {
+  font-weight: 700;
+  color: rgba(60, 55, 52, 0.85);
+}
+
+.st-radioDesc {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(0,0,0,0.50);
+  line-height: 1.4;
+}
+
+/* Toggles */
+.st-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.st-toggleRow {
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(0,0,0,0.04);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  font-family: "Libre Baskerville", serif;
+}
+
+.st-toggleLabel {
+  font-weight: 700;
+  color: rgba(60, 55, 52, 0.85);
+}
+
+.st-toggleDesc {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(0,0,0,0.50);
+  line-height: 1.4;
+}
+
+.st-toggleControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.st-toggleInput {
+  display: none;
+}
+
+.st-togglePill {
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.18);
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+}
+
+.st-togglePill--on {
+  background: rgba(36, 75, 43, 0.35);
+}
+
+.st-toggleKnob {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: white;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 160ms ease;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+}
+
+.st-togglePill--on .st-toggleKnob {
+  transform: translateX(20px);
+}
+
+/* Forms */
+.st-form {
+  display: grid;
+  gap: 12px;
+}
+
+.st-field {
+  display: grid;
+  gap: 6px;
+  font-family: "Libre Baskerville", serif;
+}
+
+.st-field--compact {
+  width: 220px;
+}
+
+.st-label {
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(60, 55, 52, 0.70);
+}
+
+.st-input,
+.st-select {
+  border: 0;
+  outline: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.86);
+}
+
+.st-help {
+  font-size: 12px;
+  color: rgba(0,0,0,0.50);
+}
+
+.st-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.st-row--space {
+  justify-content: space-between;
+}
+
+.st-btn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.05);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.78);
+}
+
+.st-btn:hover {
+  filter: brightness(0.99);
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .st-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .st-skinGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .st-field--compact {
+    width: 100%;
+  }
+}

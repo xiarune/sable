@@ -17,9 +17,16 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   const location = useLocation();
 
   const path = location.pathname;
-  const showBrowseBar =
-    path === "/browse" || path.startsWith("/library/genre") || path.startsWith("/library/fandom");
 
+  // Show browse bar on browse + library index/detail pages
+  const showBrowseBar =
+    path === "/browse" ||
+    path === "/genres" ||
+    path.startsWith("/genres/") ||
+    path === "/fandoms" ||
+    path.startsWith("/fandoms/");
+
+  // Browse/search query (used by the green browse bar + top-right search icon)
   const [query, setQuery] = React.useState("");
 
   // Browse dropdown
@@ -39,11 +46,20 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef(null);
 
+  function goToSearch(optionalQuery) {
+    const q = String(optionalQuery ?? query).trim();
+    if (!q) {
+      navigate("/search");
+      return;
+    }
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+  }
+
   function handleBrowseSubmit(e) {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
-    navigate(`/search?q=${encodeURIComponent(q)}`);
+    goToSearch(q);
     setIsBrowseMenuOpen(false);
   }
 
@@ -118,13 +134,13 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   function handleBrowseCategoryClick(category) {
     if (category === "Genre") {
       closeBrowseMenu();
-      navigate("/library/genre");
+      navigate("/genres");
       return;
     }
 
     if (category === "Fandom") {
       closeBrowseMenu();
-      navigate("/library/fandom");
+      navigate("/fandoms");
       return;
     }
 
@@ -171,29 +187,53 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     closeBrowseMenu();
   }, [location.pathname]);
 
+  // Allow any page (like Communities) to open the auth modal:
+  React.useEffect(() => {
+    function onOpenAuth() {
+      openLogin();
+    }
+    window.addEventListener("sable:open-auth", onOpenAuth);
+    return () => window.removeEventListener("sable:open-auth", onOpenAuth);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <header className="sable-header">
       <div className="topbar">
         <div className="topbar-left">
-          <button type="button" className="brand" aria-label="Go to Home" onClick={() => navigate("/")}>
+          <button
+            type="button"
+            className="brand"
+            aria-label="Go to Home"
+            onClick={() => navigate("/")}
+          >
             <img className="brand-logo" src={sableLogo} alt="" aria-hidden="true" />
             <span className="brand-text">SABLE</span>
           </button>
 
           <nav className="topnav" aria-label="Primary navigation">
-            <NavLink to="/browse" className={({ isActive }) => (isActive ? "navlink active" : "navlink")}>
+            <NavLink
+              to="/browse"
+              className={({ isActive }) => (isActive ? "navlink active" : "navlink")}
+            >
               Browse
             </NavLink>
 
             <span className="divider" aria-hidden="true" />
 
-            <NavLink to="/communities" className={({ isActive }) => (isActive ? "navlink active" : "navlink")}>
+            <NavLink
+              to="/communities"
+              className={({ isActive }) => (isActive ? "navlink active" : "navlink")}
+            >
               Communities
             </NavLink>
 
             <span className="divider" aria-hidden="true" />
 
-            <NavLink to="/about" className={({ isActive }) => (isActive ? "navlink active" : "navlink")}>
+            <NavLink
+              to="/about"
+              className={({ isActive }) => (isActive ? "navlink active" : "navlink")}
+            >
               About Us
             </NavLink>
           </nav>
@@ -211,21 +251,43 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
                   aria-expanded={isUserMenuOpen ? "true" : "false"}
                 >
                   <span className="greetingText">Hi, {username}!</span>
-                  <span className="chev" aria-hidden="true">▾</span>
+                  <span className="chev" aria-hidden="true">
+                    ▾
+                  </span>
                 </button>
 
                 {isUserMenuOpen ? (
                   <div className="dropdown" role="menu" aria-label="User menu">
-                    <button type="button" className="dropItem" role="menuitem" onClick={() => navigate("/communities/me")}>
+                    <button
+                      type="button"
+                      className="dropItem"
+                      role="menuitem"
+                      onClick={() => navigate("/communities/me")}
+                    >
                       Your Community Page
                     </button>
-                    <button type="button" className="dropItem" role="menuitem" onClick={() => navigate("/profile")}>
+                    <button
+                      type="button"
+                      className="dropItem"
+                      role="menuitem"
+                      onClick={() => navigate("/profile")}
+                    >
                       Profile
                     </button>
-                    <button type="button" className="dropItem" role="menuitem" onClick={() => navigate("/settings")}>
+                    <button
+                      type="button"
+                      className="dropItem"
+                      role="menuitem"
+                      onClick={() => navigate("/settings")}
+                    >
                       Settings
                     </button>
-                    <button type="button" className="dropItem" role="menuitem" onClick={() => navigate("/bookmarks")}>
+                    <button
+                      type="button"
+                      className="dropItem"
+                      role="menuitem"
+                      onClick={() => navigate("/bookmarks")}
+                    >
                       Bookmarks
                     </button>
 
@@ -248,19 +310,43 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
               </div>
 
               <div className="iconbar" aria-label="Quick actions">
-                <button type="button" className="iconbtn iconbtn--svg" aria-label="Search" onClick={() => navigate("/search")} title="Search">
+                <button
+                  type="button"
+                  className="iconbtn iconbtn--svg"
+                  aria-label="Search"
+                  onClick={() => goToSearch()}
+                  title="Search"
+                >
                   <img className="navIcon" src={searchNavIcon} alt="" aria-hidden="true" />
                 </button>
 
-                <button type="button" className="iconbtn iconbtn--svg" aria-label="New draft" onClick={() => navigate("/new-draft")} title="New Draft">
+                <button
+                  type="button"
+                  className="iconbtn iconbtn--svg"
+                  aria-label="New draft"
+                  onClick={() => navigate("/new-draft")}
+                  title="New Draft"
+                >
                   <img className="navIcon" src={draftNavIcon} alt="" aria-hidden="true" />
                 </button>
 
-                <button type="button" className="iconbtn iconbtn--svg" aria-label="Inbox" onClick={() => navigate("/inbox")} title="Inbox">
+                <button
+                  type="button"
+                  className="iconbtn iconbtn--svg"
+                  aria-label="Inbox"
+                  onClick={() => navigate("/inbox")}
+                  title="Inbox"
+                >
                   <img className="navIcon" src={inboxNavIcon} alt="" aria-hidden="true" />
                 </button>
 
-                <button type="button" className="iconbtn iconbtn--svg" aria-label="Notifications" onClick={() => navigate("/notifications")} title="Notifications">
+                <button
+                  type="button"
+                  className="iconbtn iconbtn--svg"
+                  aria-label="Notifications"
+                  onClick={() => navigate("/notifications")}
+                  title="Notifications"
+                >
                   <img className="navIcon" src={notificationsNavIcon} alt="" aria-hidden="true" />
                 </button>
               </div>
@@ -268,7 +354,13 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
           ) : (
             <>
               <div className="iconbar" aria-label="Quick actions">
-                <button type="button" className="iconbtn iconbtn--svg" aria-label="Search" onClick={() => navigate("/search")} title="Search">
+                <button
+                  type="button"
+                  className="iconbtn iconbtn--svg"
+                  aria-label="Search"
+                  onClick={() => goToSearch()}
+                  title="Search"
+                >
                   <img className="navIcon" src={searchNavIcon} alt="" aria-hidden="true" />
                 </button>
               </div>
@@ -286,7 +378,9 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
         <div className="subbar">
           <div className="browseWrap" ref={browseMenuRef}>
             <form className="browseForm" onSubmit={handleBrowseSubmit} role="search">
-              <span className="searchIcon" aria-hidden="true">🔎</span>
+              <span className="searchIcon" aria-hidden="true">
+                🔎
+              </span>
 
               <input
                 className="browseInput"
@@ -333,7 +427,13 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
           }}
         >
           <div className="loginCard">
-            <button type="button" className="loginClose" onClick={closeAuthModal} aria-label="Close" title="Close">
+            <button
+              type="button"
+              className="loginClose"
+              onClick={closeAuthModal}
+              aria-label="Close"
+              title="Close"
+            >
               ✕
             </button>
 
@@ -346,7 +446,9 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
             <p className="loginSub">Discover stories and create your own to share with others</p>
 
             <button type="button" className="googleBtn" onClick={handleGoogleContinue}>
-              <span className="googleDot" aria-hidden="true">G</span>
+              <span className="googleDot" aria-hidden="true">
+                G
+              </span>
               <span className="googleText">Continue with Google</span>
             </button>
 
@@ -354,14 +456,22 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
               {authMode === "login" ? (
                 <>
                   <span>Dont have an account ? </span>
-                  <button type="button" className="authLink" onClick={() => resetAuthFieldsForMode("signup")}>
+                  <button
+                    type="button"
+                    className="authLink"
+                    onClick={() => resetAuthFieldsForMode("signup")}
+                  >
                     Sign Up
                   </button>
                 </>
               ) : (
                 <>
                   <span>Already have an account ? </span>
-                  <button type="button" className="authLink" onClick={() => resetAuthFieldsForMode("login")}>
+                  <button
+                    type="button"
+                    className="authLink"
+                    onClick={() => resetAuthFieldsForMode("login")}
+                  >
                     Log In
                   </button>
                 </>
@@ -371,18 +481,36 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
             <form className="loginForm" onSubmit={handleAuthSubmit}>
               <label className="loginField">
                 <span className="loginLabel">Username</span>
-                <input className="loginInput" value={formUsername} onChange={(e) => setFormUsername(e.target.value)} placeholder="john.doe" autoFocus />
+                <input
+                  className="loginInput"
+                  value={formUsername}
+                  onChange={(e) => setFormUsername(e.target.value)}
+                  placeholder="john.doe"
+                  autoFocus
+                />
               </label>
 
               <label className="loginField">
                 <span className="loginLabel">Password</span>
-                <input className="loginInput" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="••••••••" type="password" />
+                <input
+                  className="loginInput"
+                  value={formPassword}
+                  onChange={(e) => setFormPassword(e.target.value)}
+                  placeholder="••••••••"
+                  type="password"
+                />
               </label>
 
               {authMode === "signup" ? (
                 <label className="loginField">
                   <span className="loginLabel">Confirm Password</span>
-                  <input className="loginInput" value={formConfirmPassword} onChange={(e) => setFormConfirmPassword(e.target.value)} placeholder="••••••••" type="password" />
+                  <input
+                    className="loginInput"
+                    value={formConfirmPassword}
+                    onChange={(e) => setFormConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    type="password"
+                  />
                 </label>
               ) : null}
 
@@ -400,6 +528,10 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     </header>
   );
 }
+
+
+
+
 
 
 

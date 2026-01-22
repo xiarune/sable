@@ -1,0 +1,170 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.nd-page {
+  background: transparent;
+  padding: 10px 0 28px;
+}
+
+.nd-title {
+  margin: 0 0 14px;
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 42px;
+  letter-spacing: 1px;
+  color: #244b2b;
+  text-align: left;
+  max-width: 1040px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 18px;
+}
+
+.nd-card {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 18px;
+  border-radius: 6px;
+  background: rgba(140, 135, 120, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.nd-pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 6px 14px;
+}
+
+.nd-pill {
+  height: 44px;
+  padding: 0 14px 0 12px;
+  border-radius: 6px;
+  border: 0;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+}
+
+.nd-pill:hover {
+  filter: brightness(0.99);
+}
+
+.nd-pillIcon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+
+  font-size: 16px;
+  line-height: 1;
+}
+
+.nd-pillLabel {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #244b2b;
+  letter-spacing: 0.2px;
+}
+
+.nd-bodyLabel {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #244b2b;
+  padding: 10px 6px 8px;
+}
+
+.nd-textarea {
+  width: 100%;
+  min-height: 260px;
+  border-radius: 6px;
+  border: 0;
+  outline: none;
+
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+
+  padding: 14px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #1b1b1b;
+
+  resize: vertical;
+}
+
+.nd-textarea:focus {
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.18),
+    0 0 0 3px rgba(214, 168, 64, 0.25);
+}
+
+.nd-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 16px 6px 0;
+}
+
+.nd-ornateBtn {
+  height: 44px;
+  min-width: 140px;
+  padding: 0 18px;
+
+  border-radius: 10px;
+  border: 2px solid rgba(214, 168, 64, 0.85);
+
+  background:
+    linear-gradient(180deg, rgba(250, 243, 220, 0.98), rgba(238, 226, 190, 0.98));
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.12),
+    inset 0 0 0 1px rgba(122, 13, 18, 0.08);
+
+  cursor: pointer;
+
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #244b2b;
+}
+
+.nd-ornateBtn:hover {
+  filter: brightness(0.995);
+}
+
+.nd-ornateBtn:active {
+  transform: translateY(1px);
+}
+
+/* Responsive */
+@media (max-width: 680px) {
+  .nd-title {
+    font-size: 34px;
+  }
+
+  .nd-pill {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .nd-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nd-ornateBtn {
+    width: 100%;
+  }
+}

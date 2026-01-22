@@ -1,0 +1,748 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.co-page {
+  background: transparent;
+  padding: 10px 0 28px;
+  overflow-x: hidden;
+}
+
+.co-shell {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 0 18px;
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 18px;
+  align-items: start;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Cards */
+.co-leftCard,
+.co-rightCard {
+  background: rgba(255, 255, 255, 0.84);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  padding: 14px;
+}
+
+.co-rightCard + .co-rightCard {
+  margin-top: 14px;
+}
+
+.co-leftTitle,
+.co-rightTitle {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 22px;
+  color: #244b2b;
+  margin: 0 0 10px;
+  letter-spacing: 0.5px;
+}
+
+/* Left rail tabs */
+.co-leftTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.co-leftTab {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.05);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(60, 55, 52, 0.80);
+}
+
+.co-leftTab--active {
+  background: rgba(36, 75, 43, 0.12);
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.co-leftSection {
+  margin-top: 14px;
+}
+
+.co-leftSectionTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(36, 75, 43, 0.75);
+  margin-bottom: 10px;
+}
+
+.co-topicList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.co-topic {
+  border: 0;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: "Libre Baskerville", serif;
+}
+
+.co-topic:hover {
+  filter: brightness(0.99);
+}
+
+.co-topicName {
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.82);
+  overflow-wrap: anywhere;
+}
+
+.co-topicCount {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+
+.co-leftAction {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(36, 75, 43, 0.08);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(36, 75, 43, 0.85);
+  text-align: left;
+}
+
+.co-leftAction + .co-leftAction {
+  margin-top: 8px;
+}
+
+/* Main header */
+.co-mainHeader {
+  background: rgba(255, 255, 255, 0.84);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  padding: 14px;
+}
+
+.co-mainHeaderTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+}
+
+.co-title {
+  margin: 0;
+  font-family: "Cinzel Decorative", serif;
+  font-size: 20px;
+  letter-spacing: 1px;
+  color: #244b2b;
+}
+
+.co-searchWrap {
+  flex: 1;
+  max-width: 520px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  padding: 10px 14px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  min-width: 0;
+}
+
+.co-searchIcon {
+  opacity: 0.65;
+}
+
+.co-searchInput {
+  border: 0;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.86);
+  min-width: 0;
+}
+
+.co-filters {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.co-filter {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: rgba(0, 0, 0, 0.05);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(60, 55, 52, 0.80);
+}
+
+.co-filter--active {
+  background: rgba(36, 75, 43, 0.12);
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.co-filter--ghost {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+}
+
+.co-filterSep {
+  width: 1px;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Composer */
+.co-compose {
+  margin-top: 14px;
+  background: rgba(255, 255, 255, 0.84);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  padding: 14px;
+}
+
+.co-composeLeft {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  align-items: start;
+  min-width: 0;
+}
+
+.co-composeAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.co-composeBox {
+  min-width: 0;
+}
+
+.co-composeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.co-composeTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(60, 55, 52, 0.82);
+}
+
+.co-composeType {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.co-typeBtn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(0, 0, 0, 0.05);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(60, 55, 52, 0.78);
+}
+
+.co-typeBtn--active {
+  background: rgba(36, 75, 43, 0.12);
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.co-composeInput {
+  margin-top: 10px;
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.86);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+
+.co-composeFooter {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.co-composeHint {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.co-postBtn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: rgba(36, 75, 43, 0.14);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.co-postBtn:hover {
+  filter: brightness(0.99);
+}
+
+/* Logged-out composer button */
+.co-composeLoggedOut {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 14px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  text-align: left;
+  font-family: "Libre Baskerville", serif;
+}
+
+.co-composeLoggedOut:hover {
+  filter: brightness(0.99);
+}
+
+.co-composeLoggedOutTitle {
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(60, 55, 52, 0.82);
+}
+
+.co-composeLoggedOutSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  line-height: 1.4;
+}
+
+/* Feed */
+.co-feed {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.co-empty {
+  background: rgba(255, 255, 255, 0.84);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  padding: 18px;
+  font-family: "Libre Baskerville", serif;
+  color: rgba(60, 55, 52, 0.75);
+}
+
+/* Post card */
+.co-post {
+  background: rgba(255, 255, 255, 0.84);
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  overflow: hidden;
+}
+
+.co-postTop {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.co-postUser {
+  min-width: 0;
+}
+
+.co-userLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.co-userLink:hover .co-userName {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.co-userMeta {
+  min-width: 0;
+}
+
+.co-userName {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(60, 55, 52, 0.82);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.co-userHandle {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.40);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.co-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  flex: 0 0 auto;
+}
+
+.co-avatar--sm {
+  width: 38px;
+  height: 38px;
+}
+
+.co-avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.co-avatarFallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  color: rgba(60, 55, 52, 0.72);
+  background: rgba(0, 0, 0, 0.10);
+}
+
+.co-postRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.co-time {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.38);
+  white-space: nowrap;
+}
+
+.co-more {
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.co-postBody {
+  padding: 14px;
+}
+
+.co-postTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: rgba(36, 75, 43, 0.92);
+  overflow-wrap: anywhere;
+}
+
+.co-postCaption {
+  margin-top: 6px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.78);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.co-postMeta {
+  margin-top: 12px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.co-metaLabel {
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.co-tags {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.co-tag {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(0, 0, 0, 0.05);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 11px;
+  color: rgba(60, 55, 52, 0.75);
+}
+
+.co-postActions {
+  padding: 10px 14px 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.co-action {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.05);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(60, 55, 52, 0.78);
+}
+
+.co-action--ghost {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+}
+
+/* Type pill */
+.co-pill {
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.2px;
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(60, 55, 52, 0.75);
+  white-space: nowrap;
+}
+
+.co-pill--work {
+  background: rgba(36, 75, 43, 0.12);
+  color: rgba(36, 75, 43, 0.90);
+}
+
+.co-pill--discussion {
+  background: rgba(214, 168, 64, 0.16);
+  color: rgba(120, 85, 20, 0.90);
+}
+
+.co-pill--skin {
+  background: rgba(30, 76, 160, 0.12);
+  color: rgba(30, 76, 160, 0.92);
+}
+
+.co-pill--audio {
+  background: rgba(122, 13, 18, 0.12);
+  color: rgba(122, 13, 18, 0.92);
+}
+
+/* Right rail: suggested */
+.co-suggestList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.co-suggest {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.co-suggestUser {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.co-suggestUser:hover .co-suggestName {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.co-suggestMeta {
+  min-width: 0;
+}
+
+.co-suggestName {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.82);
+  overflow-wrap: anywhere;
+}
+
+.co-suggestTagline {
+  margin-top: 2px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.42);
+  overflow-wrap: anywhere;
+}
+
+.co-suggestFollowers {
+  margin-top: 2px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.38);
+}
+
+.co-followBtn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(36, 75, 43, 0.12);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(36, 75, 43, 0.92);
+  flex: 0 0 auto;
+}
+
+/* Right rail: live */
+.co-liveList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.co-liveItem {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.co-liveTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.82);
+  overflow-wrap: anywhere;
+}
+
+.co-liveSub {
+  margin-top: 2px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.42);
+}
+
+/* Small accessibility polish */
+.co-post:focus-within {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(36, 75, 43, 0.22);
+}
+
+/* Responsive */
+@media (max-width: 1120px) {
+  .co-shell {
+    grid-template-columns: 280px 1fr;
+  }
+  .co-right {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .co-shell {
+    grid-template-columns: 1fr;
+  }
+  .co-mainHeaderTop {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .co-searchWrap {
+    max-width: none;
+  }
+}
+
+
+
+
+

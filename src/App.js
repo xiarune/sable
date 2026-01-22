@@ -8,17 +8,24 @@ import HomeLoggedOut from "./pages/HomeLoggedOut";
 import Browse from "./pages/Browse";
 import Communities from "./pages/Communities";
 import About from "./pages/About";
+import Search from "./pages/Search";
+
 import Inbox from "./pages/Inbox";
 import Notifications from "./pages/Notifications";
-import Search from "./pages/Search";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Bookmarks from "./pages/Bookmarks";
+import NewDraft from "./pages/NewDraft";
 
-// NEW
 import YourCommunityPage from "./pages/YourCommunityPage";
+import PublicCommunityPage from "./pages/PublicCommunityPage";
+
+import GenreIndex from "./pages/GenreIndex";
+import GenreDetail from "./pages/GenreDetail";
+import FandomIndex from "./pages/FandomIndex";
+import FandomDetail from "./pages/FandomDetail";
 
 export default function App() {
-  // Default to logged OUT on start
   const [isAuthed, setIsAuthed] = React.useState(false);
   const [username, setUsername] = React.useState("");
 
@@ -32,7 +39,7 @@ export default function App() {
     setIsAuthed(false);
   }
 
-  const effectiveUsername = username || "john.doe";
+  const effectiveUsername = (username || "john.doe").trim();
 
   return (
     <>
@@ -45,28 +52,25 @@ export default function App() {
 
       <main>
         <Routes>
-          <Route
-            path="/"
-            element={isAuthed ? <HomeLoggedIn /> : <HomeLoggedOut />}
-          />
+          {/* Home */}
+          <Route path="/" element={isAuthed ? <HomeLoggedIn /> : <HomeLoggedOut />} />
 
+          {/* Main nav */}
           <Route path="/browse" element={<Browse />} />
-          <Route path="/communities" element={<Communities />} />
+          <Route
+            path="/communities"
+            element={<Communities isAuthed={isAuthed} username={effectiveUsername} />}
+          />
           <Route path="/about" element={<About />} />
-
           <Route path="/search" element={<Search />} />
 
-          {/* Auth-only pages (front-end gated for now) */}
-          <Route
-            path="/inbox"
-            element={isAuthed ? <Inbox /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="/notifications"
-            element={isAuthed ? <Notifications /> : <Navigate to="/" replace />}
-          />
+          {/* Browse Library routes */}
+          <Route path="/genres" element={<GenreIndex />} />
+          <Route path="/genres/:genreSlug" element={<GenreDetail />} />
+          <Route path="/fandoms" element={<FandomIndex />} />
+          <Route path="/fandoms/:fandomSlug" element={<FandomDetail />} />
 
-          {/* Your Community Page (from dropdown) */}
+          {/* Communities profiles */}
           <Route
             path="/communities/me"
             element={
@@ -77,22 +81,39 @@ export default function App() {
               )
             }
           />
+          <Route
+            path="/communities/:handle"
+            element={<PublicCommunityPage isAuthed={isAuthed} username={effectiveUsername} />}
+          />
 
+          {/* Auth-only pages (front-end gated for now) */}
+          <Route path="/inbox" element={isAuthed ? <Inbox /> : <Navigate to="/" replace />} />
+          <Route
+            path="/notifications"
+            element={isAuthed ? <Notifications /> : <Navigate to="/" replace />}
+          />
           <Route
             path="/profile"
-            element={isAuthed ? <Profile /> : <Navigate to="/" replace />}
+            element={isAuthed ? <Profile username={effectiveUsername} /> : <Navigate to="/" replace />}
           />
-          <Route
-            path="/settings"
-            element={isAuthed ? <Settings /> : <Navigate to="/" replace />}
-          />
+          <Route path="/settings" element={isAuthed ? <Settings /> : <Navigate to="/" replace />} />
+          <Route path="/bookmarks" element={isAuthed ? <Bookmarks /> : <Navigate to="/" replace />} />
+          <Route path="/new-draft" element={isAuthed ? <NewDraft /> : <Navigate to="/" replace />} />
 
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </>
   );
 }
+
+
+
+
+
+
+
 
 
 

@@ -34,7 +34,7 @@ export default function GenreIndex() {
               key={g}
               type="button"
               className="topicCard"
-              onClick={() => navigate(`/library/genre/${slugify(g)}`)}
+              onClick={() => navigate(`/genres/${slugify(g)}`)}
             >
               <div className="topicCardText">{g}</div>
             </button>
@@ -44,3 +44,4 @@ export default function GenreIndex() {
     </div>
   );
 }
+

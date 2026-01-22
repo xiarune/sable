@@ -1,0 +1,453 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.in-page {
+  background: transparent;
+}
+
+/* Overall layout (smaller + more standard proportions) */
+.in-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 220px 320px 1fr;
+  gap: 16px;
+  align-items: stretch;
+  padding: 10px 0 24px;
+}
+
+.in-col {
+  border-radius: 6px;
+  background: rgba(190, 182, 165, 0.55);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.20);
+  overflow: hidden;
+  min-height: 560px;
+}
+
+/* LEFT */
+.in-leftHeader {
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.10);
+}
+
+.in-me {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.in-meImg {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.in-meMeta {
+  min-width: 0;
+}
+
+.in-meName {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(70, 60, 55, 0.85);
+  line-height: 1.1;
+}
+
+.in-meSub {
+  margin-top: 2px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(70, 60, 55, 0.65);
+}
+
+.in-composeBtn {
+  width: 100%;
+  height: 34px;
+  border-radius: 10px;
+  border: 0;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.90);
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(70, 60, 55, 0.78);
+}
+
+.in-composeBtn:hover {
+  filter: brightness(0.99);
+}
+
+.in-leftNav {
+  padding: 12px 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.in-leftNavItem {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+
+  padding: 10px 10px;
+  border-radius: 10px;
+
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(80, 70, 65, 0.65);
+}
+
+.in-leftNavItem:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: rgba(80, 70, 65, 0.75);
+}
+
+.in-leftNavItem--active {
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  color: rgba(80, 70, 65, 0.85);
+}
+
+.in-leftFooter {
+  margin-top: auto;
+  padding: 10px 12px 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.10);
+  display: flex;
+  gap: 10px;
+}
+
+.in-leftLink {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 8px 8px;
+  border-radius: 10px;
+
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(80, 70, 65, 0.70);
+}
+
+.in-leftLink:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* MIDDLE */
+.in-midTop {
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.10);
+}
+
+.in-search {
+  width: 100%;
+  height: 34px;
+  border-radius: 999px;
+  border: 0;
+  outline: none;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.90);
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(70, 60, 55, 0.85);
+}
+
+.in-threadList {
+  padding: 10px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  max-height: 520px;
+}
+
+.in-thread {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  padding: 10px;
+  border-radius: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.in-thread:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.in-thread--active {
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.in-threadText {
+  min-width: 0;
+  text-align: left;
+}
+
+.in-threadNameRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.in-threadName {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(95, 85, 80, 0.82);
+}
+
+.in-threadMeta {
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(95, 85, 80, 0.55);
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.in-threadLast {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(95, 85, 80, 0.65);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* AVATAR */
+.in-avatarWrap {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  display: grid;
+  place-items: center;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.in-avatarWrap--sm {
+  width: 42px;
+  height: 42px;
+}
+
+.in-avatarWrap--md {
+  width: 50px;
+  height: 50px;
+}
+
+.in-avatarImg {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
+}
+
+.in-avatarWrap--md .in-avatarImg {
+  width: 40px;
+  height: 40px;
+}
+
+.in-avatarFallback {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(70, 60, 55, 0.75);
+}
+
+.in-avatarWrap--md .in-avatarFallback {
+  width: 40px;
+  height: 40px;
+}
+
+.in-statusWrap {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+}
+
+.in-statusDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  display: block;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.90);
+}
+
+.in-statusDot--online {
+  background: #2f7a3f;
+}
+
+.in-statusDot--away {
+  background: #d99621;
+}
+
+.in-statusDot--offline {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* RIGHT (CHAT) */
+.in-chatHeader {
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.in-chatHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.in-chatTitleWrap {
+  min-width: 0;
+}
+
+.in-chatTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(95, 85, 80, 0.85);
+  line-height: 1.1;
+}
+
+.in-chatSub {
+  margin-top: 2px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(95, 85, 80, 0.55);
+}
+
+.in-chatHeaderActions {
+  display: flex;
+  gap: 8px;
+}
+
+.in-chatIconBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.14);
+  cursor: pointer;
+}
+
+.in-chatIconBtn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.in-chatBody {
+  padding: 14px 14px 10px;
+  height: 420px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.in-bubbleRow {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.in-bubbleRow--me {
+  justify-content: flex-end;
+}
+
+.in-bubble {
+  max-width: 68%;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.85);
+}
+
+.in-bubble--me {
+  background: rgba(30, 76, 160, 0.75);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Composer */
+.in-chatComposer {
+  padding: 10px 12px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.10);
+}
+
+.in-composeInput {
+  flex: 1;
+  height: 38px;
+  border-radius: 999px;
+  border: 0;
+  outline: none;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.92);
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+}
+
+.in-sendBtn {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  background: rgba(30, 76, 160, 0.78);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.in-sendBtn:hover {
+  filter: brightness(1.03);
+}
+
+/* Responsive */
+@media (max-width: 1080px) {
+  .in-shell {
+    grid-template-columns: 220px 1fr;
+  }
+  .in-col--right {
+    grid-column: 1 / -1;
+  }
+  .in-chatBody {
+    height: 360px;
+  }
+}
+
+@media (max-width: 720px) {
+  .in-shell {
+    grid-template-columns: 1fr;
+  }
+  .in-col {
+    min-height: auto;
+  }
+  .in-chatBody {
+    height: 320px;
+  }
+}
+

@@ -1,0 +1,552 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.pf {
+  background: #f4efe6;
+  min-height: calc(100vh - 64px);
+  padding: 12px 0 30px;
+}
+
+.pf-shell {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 0 18px;
+}
+
+/* HERO */
+.pf-hero {
+  background: rgba(255, 255, 255, 0.84);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  padding: 18px;
+}
+
+.pf-heroTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pf-id {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+}
+
+.pf-avatarWrap {
+  width: 74px;
+  height: 74px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.10), inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  overflow: hidden;
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+
+.pf-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pf-avatarFallback {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 26px;
+  color: rgba(60, 55, 52, 0.70);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.pf-idText {
+  min-width: 0;
+}
+
+.pf-name {
+  margin: 0;
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 26px;
+  color: rgba(36, 75, 43, 0.92);
+  letter-spacing: 0.4px;
+}
+
+.pf-subRow {
+  margin-top: 6px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.pf-handle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.48);
+  overflow-wrap: anywhere;
+}
+
+.pf-dot {
+  opacity: 0.4;
+}
+
+.pf-meta {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.45);
+  overflow-wrap: anywhere;
+}
+
+.pf-metaRow {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.pf-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(36, 75, 43, 0.10);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.pf-cta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pf-btn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.05);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.78);
+}
+
+.pf-btn:hover {
+  filter: brightness(0.99);
+}
+
+.pf-btn--primary {
+  background: rgba(36, 75, 43, 0.14);
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.pf-stats {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pf-stat {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+  padding: 12px 12px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.pf-statValue {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: rgba(36, 75, 43, 0.92);
+}
+
+.pf-statLabel {
+  margin-top: 4px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* GRID */
+.pf-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+/* LEFT NAV */
+.pf-navCard {
+  background: rgba(255, 255, 255, 0.84);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  padding: 14px;
+}
+
+.pf-navTitle {
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: rgba(36, 75, 43, 0.92);
+  margin-bottom: 10px;
+}
+
+.pf-navList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pf-navItem {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.04);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.78);
+}
+
+.pf-navItem:hover {
+  filter: brightness(0.99);
+}
+
+.pf-navItem--active {
+  background: rgba(36, 75, 43, 0.12);
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.pf-navDivider {
+  margin: 12px 0;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.10);
+}
+
+.pf-navLink {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.72);
+}
+
+.pf-navLink + .pf-navLink {
+  margin-top: 8px;
+}
+
+.pf-navLink:hover {
+  filter: brightness(0.99);
+}
+
+/* MAIN CONTENT */
+.pf-main {
+  min-width: 0;
+}
+
+/* Cards */
+.pf-card {
+  background: rgba(255, 255, 255, 0.84);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  padding: 14px;
+}
+
+.pf-card + .pf-card {
+  margin-top: 14px;
+}
+
+.pf-cardHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pf-cardTitle {
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: rgba(36, 75, 43, 0.92);
+  letter-spacing: 0.4px;
+}
+
+.pf-cardRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pf-linkBtn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.05);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(60, 55, 52, 0.78);
+}
+
+.pf-linkBtn:hover {
+  filter: brightness(0.99);
+}
+
+.pf-softMeta {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.pf-cardBody {
+  margin-top: 12px;
+}
+
+/* Quick actions grid */
+.pf-actionsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pf-actionCard {
+  border: 0;
+  cursor: pointer;
+  border-radius: 14px;
+  padding: 12px 12px;
+  background: rgba(0, 0, 0, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.pf-actionCard:hover {
+  filter: brightness(0.99);
+}
+
+.pf-actionIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(36, 75, 43, 0.10);
+  font-size: 18px;
+  flex: 0 0 auto;
+}
+
+.pf-actionText {
+  min-width: 0;
+}
+
+.pf-actionTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(60, 55, 52, 0.82);
+}
+
+.pf-actionDesc {
+  margin-top: 4px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  line-height: 1.35;
+}
+
+.pf-actionChev {
+  margin-left: auto;
+  opacity: 0.55;
+  font-weight: 700;
+}
+
+/* Mini rows */
+.pf-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pf-mini {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.pf-miniTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.82);
+}
+
+.pf-miniMeta {
+  margin-top: 6px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* Library */
+.pf-library {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pf-libraryItem {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.pf-libraryLabel {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.48);
+}
+
+.pf-libraryValue {
+  margin-top: 8px;
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: rgba(36, 75, 43, 0.92);
+}
+
+/* Covers */
+.pf-covers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pf-coverCard {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.pf-coverCard:hover {
+  filter: brightness(0.99);
+}
+
+.pf-cover {
+  width: 100%;
+  height: 220px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.10);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pf-coverTitle {
+  margin-top: 10px;
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(60, 55, 52, 0.82);
+}
+
+.pf-coverMeta {
+  margin-top: 4px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* Lists */
+.pf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pf-listRow {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pf-listTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.82);
+}
+
+.pf-listMeta {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .pf-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pf-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pf-actionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pf-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pf-library {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pf-covers {
+    grid-template-columns: 1fr;
+  }
+}
+

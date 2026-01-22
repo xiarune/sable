@@ -1,0 +1,207 @@
+/* src/pages/Search.css */
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.searchPage {
+  background: transparent;
+  padding: 10px 0 28px;
+}
+
+.searchWrap {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 0 18px;
+}
+
+.searchHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 6px 0 18px;
+}
+
+.searchTitleBlock {
+  min-width: 0;
+}
+
+.searchTitle {
+  margin: 0;
+  font-family: "Cinzel Decorative", serif;
+  font-size: 34px;
+  letter-spacing: 0.6px;
+  color: #244b2b;
+}
+
+.searchQuery {
+  margin-top: 6px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(80, 70, 65, 0.72);
+  max-width: 720px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchBar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.searchInput {
+  width: 420px;
+  height: 40px;
+  border-radius: 999px;
+  border: 0;
+  outline: none;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.90);
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(60, 55, 52, 0.86);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+}
+
+.searchBtn {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  background: rgba(36, 75, 43, 0.14);
+  color: rgba(36, 75, 43, 0.95);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.searchBtn:hover {
+  filter: brightness(0.99);
+}
+
+.searchMain {
+  padding-top: 6px;
+}
+
+.searchResultsList {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 6px 0;
+}
+
+.searchResultCard {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 18px;
+  text-align: left;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.searchResultCard:hover {
+  filter: brightness(0.995);
+}
+
+.searchResultLeft {
+  min-width: 0;
+}
+
+.searchResultTitle {
+  font-family: "Libre Baskerville", serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: rgba(60, 55, 52, 0.86);
+}
+
+.searchResultAuthor {
+  margin-top: 6px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 16px;
+  color: rgba(80, 70, 65, 0.70);
+}
+
+.searchResultRight {
+  align-self: center;
+  justify-self: stretch;
+  display: grid;
+  gap: 8px;
+}
+
+.searchMetaRow {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.searchMetaLabel {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(80, 70, 65, 0.70);
+}
+
+.searchMetaValue {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(60, 55, 52, 0.82);
+}
+
+.searchEmptyState {
+  margin-top: 18px;
+  padding: 22px 18px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.searchEmptyTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: rgba(60, 55, 52, 0.82);
+}
+
+.searchEmptySub {
+  margin-top: 8px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(80, 70, 65, 0.72);
+}
+
+.searchEm {
+  font-weight: 700;
+  color: rgba(36, 75, 43, 0.92);
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .searchHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchBar {
+    width: 100%;
+  }
+
+  .searchInput {
+    width: 100%;
+  }
+
+  .searchResultCard {
+    grid-template-columns: 1fr;
+  }
+
+  .searchResultRight {
+    margin-top: 10px;
+  }
+}
