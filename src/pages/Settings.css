@@ -1,0 +1,666 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.st {
+  background: #f4efe6;
+  min-height: calc(100vh - 64px);
+  padding: 22px 22px 60px;
+  font-family: "Libre Baskerville", serif;
+}
+
+.st-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.st-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr 380px;
+  gap: 26px;
+  align-items: start;
+}
+
+/* LEFT */
+.st-side {
+  background: #b89b57;
+  border-radius: 10px;
+  padding: 18px 16px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  min-height: 560px;
+}
+
+.st-sideBtn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 14px 10px;
+  text-align: left;
+
+  font-family: "Cinzel Decorative", serif;
+  font-size: 30px;
+  line-height: 1.05;
+  color: #1f4a29;
+  letter-spacing: 0.4px;
+
+  opacity: 0.92;
+  transition: opacity 160ms ease, transform 160ms ease;
+  white-space: pre-line;
+}
+
+.st-sideBtn:hover {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+.st-sideBtn.is-active {
+  opacity: 1;
+  text-shadow: 0 0 0 rgba(0, 0, 0, 0.02);
+}
+
+/* CENTER */
+.st-main {
+  padding-top: 14px;
+}
+
+.st-title {
+  margin: 0 0 18px;
+  font-family: "Cinzel Decorative", serif;
+  font-size: 44px;
+  color: #1f4a29;
+  letter-spacing: 0.6px;
+}
+
+.st-title--noMargin {
+  margin: 0;
+}
+
+.st-titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.st-subtitle {
+  margin: -8px 0 18px;
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 620px;
+}
+
+.st-pillStack {
+  display: grid;
+  gap: 14px;
+  max-width: 520px;
+}
+
+.st-pillBtn {
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+}
+
+.st-pillBtn:hover {
+  filter: brightness(0.99);
+}
+
+.st-selectRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 14px;
+
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.st-selectLabel {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.78);
+}
+
+.st-select {
+  font-family: "Libre Baskerville", serif;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  padding: 8px 12px;
+  background: #fff;
+}
+
+/* Light “modernized” section cards */
+.st-sectionCard {
+  background: rgba(255, 255, 255, 0.60);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  margin: 18px 0;
+  max-width: 720px;
+}
+
+.st-sectionCard--tight {
+  padding: 16px 18px;
+}
+
+.st-cardTitleRow {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.st-cardTitle {
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.st-cardMeta {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.st-actionGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.st-ctaRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Forms */
+.st-formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.st-field {
+  display: grid;
+  gap: 8px;
+}
+
+.st-field--modal {
+  margin-bottom: 12px;
+}
+
+.st-fieldLabel {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.72);
+}
+
+.st-input {
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 10px 12px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+}
+
+.st-textarea {
+  min-height: 240px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.st-formFooter {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.st-mutedNote {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.st-saveBtn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 11px 18px;
+  background: #1f4a29;
+  color: #fff;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.10);
+}
+
+.st-saveBtn:hover {
+  filter: brightness(1.03);
+}
+
+/* RIGHT */
+.st-right {
+  display: grid;
+  gap: 18px;
+  padding-top: 18px;
+}
+
+.st-profileCard {
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.st-profileTop {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 14px;
+  align-items: center;
+}
+
+.st-avatarWrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+}
+
+.st-avatar {
+  width: 108px;
+  height: 108px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.st-avatarEdit {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.st-avatarEdit img {
+  width: 18px;
+  height: 18px;
+}
+
+.st-profileNames {
+  text-align: left;
+}
+
+.st-screenName {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 28px;
+  color: #1f4a29;
+  letter-spacing: 0.5px;
+}
+
+.st-username {
+  margin-top: 4px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 18px;
+  color: rgba(0, 0, 0, 0.68);
+}
+
+.st-profileHint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.50);
+}
+
+.st-rightCard {
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 14px;
+  padding: 18px 18px 14px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.st-rightTitle {
+  margin: 0 0 10px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 18px;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.st-radioGroup {
+  display: grid;
+  gap: 14px;
+}
+
+.st-radioRow {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  align-items: start;
+  cursor: pointer;
+}
+
+.st-radioRow input {
+  margin-top: 3px;
+}
+
+.st-radioLabel {
+  font-size: 15px;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.st-radioDesc {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: rgba(0, 0, 0, 0.55);
+  max-width: 280px;
+}
+
+/* Buttons */
+.st-actionBtn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+}
+
+.st-actionBtn:hover {
+  filter: brightness(0.99);
+}
+
+.st-actionBtn--danger {
+  box-shadow: inset 0 0 0 1px rgba(120, 0, 0, 0.25);
+}
+
+/* Skins */
+.st-newSkinBtn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.st-newSkinBtn:hover {
+  filter: brightness(0.99);
+}
+
+.st-newSkinIcon {
+  font-size: 18px;
+  line-height: 1;
+  color: #1f4a29;
+}
+
+.st-skinsBlock {
+  margin-top: 18px;
+}
+
+.st-skinsHeader {
+  font-size: 22px;
+  font-family: "Libre Baskerville", serif;
+  color: #1f4a29;
+  margin: 0 0 10px;
+}
+
+.st-skinTray {
+  background: rgba(0, 0, 0, 0.10);
+  border-radius: 12px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 760px;
+}
+
+.st-skinTile {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.st-skinTile--empty {
+  height: 140px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.st-skinPreview {
+  height: 120px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.st-skinName {
+  margin-top: 8px;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.70);
+}
+
+/* Modal */
+.st-modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+  padding: 18px;
+}
+
+.st-modal {
+  width: min(760px, 96vw);
+  background: #ffffff;
+  border-radius: 14px;
+  border: 3px solid rgba(230, 160, 60, 0.85);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+  position: relative;
+  padding: 18px;
+}
+
+.st-modalClose {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.st-modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.st-actionBtn--primary {
+  background: #1f4a29;
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+.st-actionBtn--primary:hover {
+  filter: brightness(1.03);
+}
+
+/* Skin modal head */
+.st-skinModalHead {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.st-skinModalTitle {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 26px;
+  color: #1f4a29;
+}
+
+.st-skinModalSub {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.st-skinForm {
+  display: grid;
+  gap: 12px;
+}
+
+/* Small edit modal */
+.st-miniModalHead {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.st-miniTitle {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 22px;
+  color: #1f4a29;
+}
+
+.st-miniSub {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.st-miniBody {
+  display: grid;
+  gap: 10px;
+}
+
+/* Goodbye modal content */
+.st-goodbye {
+  padding: 10px 10px 6px;
+  text-align: center;
+}
+
+.st-goodbyeTitle {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 34px;
+  color: #1f4a29;
+  letter-spacing: 0.6px;
+  margin: 4px 0 12px;
+}
+
+.st-goodbyeMsg {
+  font-size: 18px;
+  color: rgba(0, 0, 0, 0.70);
+  margin-bottom: 16px;
+}
+
+.st-goodbyeActions {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.st-goodbyeBtn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 14px;
+  padding: 10px 34px;
+  background: #1f4a29;
+  color: #fff;
+  font-family: "Cinzel Decorative", serif;
+  font-size: 26px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
+}
+
+.st-goodbyeBtn:hover {
+  filter: brightness(1.03);
+}
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+  .st-grid {
+    grid-template-columns: 240px 1fr;
+  }
+
+  .st-right {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  .st-formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .st-skinTray {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .st {
+    padding: 18px 16px 48px;
+  }
+
+  .st-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .st-side {
+    min-height: unset;
+  }
+
+  .st-right {
+    grid-template-columns: 1fr;
+  }
+
+  .st-title {
+    font-size: 38px;
+  }
+
+  .st-sideBtn {
+    font-size: 26px;
+  }
+
+  .st-skinTray {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+
+

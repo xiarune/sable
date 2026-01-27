@@ -1,0 +1,196 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.shelfPage {
+  background: #f4efe6;
+  min-height: calc(100vh - 64px);
+}
+
+.shelfBanner {
+  background: #244b2b;
+  border-top: 3px solid rgba(214, 168, 64, 0.95);
+  border-bottom: 3px solid rgba(214, 168, 64, 0.95);
+  padding: 18px 18px;
+  text-align: center;
+}
+
+.shelfTitle {
+  margin: 0;
+  color: #d7b24c;
+  font-family: "Cinzel Decorative", serif;
+  font-size: 46px;
+  letter-spacing: 1px;
+}
+
+.shelfBody {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 18px 48px;
+}
+
+.shelfBody--withSidebar {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+/* Left sidebar filters (visual only for now) */
+.leftFilters {
+  background: rgba(0, 0, 0, 0.06);
+  border: 2px solid rgba(214, 168, 64, 0.95);
+  padding: 12px;
+  min-height: 520px;
+}
+
+.filterSearchWrap {
+  margin-bottom: 12px;
+}
+
+.filterSearch {
+  width: 100%;
+  height: 30px;
+  border-radius: 999px;
+  border: 0;
+  outline: none;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.95);
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.75);
+  padding: 7px 0;
+}
+
+.filterRow input {
+  transform: translateY(1px);
+}
+
+/* Index pages (Genre / Fandom) */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 980px) {
+  .cardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .shelfBody--withSidebar {
+    grid-template-columns: 220px 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+  .shelfBody--withSidebar {
+    grid-template-columns: 1fr;
+  }
+  .leftFilters {
+    min-height: auto;
+  }
+}
+
+.topicCard {
+  border: 0;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  padding: 18px 14px;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.10);
+  text-align: center;
+}
+
+.topicCard:hover {
+  filter: brightness(0.985);
+}
+
+.topicCardText {
+  font-family: "Libre Baskerville", serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #244b2b;
+}
+
+/* Detail pages (A/B/C grouping + pills) */
+.shelfMain {
+  padding-top: 6px;
+}
+
+.letterBlock {
+  margin-bottom: 18px;
+}
+
+.letterHeading {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 28px;
+  color: #244b2b;
+  margin: 10px 0 10px;
+}
+
+.workPills {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 980px) {
+  .workPills {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .workPills {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .workPills {
+    grid-template-columns: 1fr;
+  }
+}
+
+.workPill {
+  border: 0;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 6px;
+  padding: 10px 10px;
+  text-align: center;
+  cursor: pointer;
+
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: #244b2b;
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.workPill:hover {
+  filter: brightness(0.985);
+}
+
+.emptyNote {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.70);
+  padding: 16px 0;
+}
+
+/* ===== Added for checkbox styling consistency (pink checks like your screenshot) ===== */
+.filterRow input[type="checkbox"] {
+  accent-color: #e05a93;
+}
+
+
+

@@ -1,0 +1,462 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.ycp {
+  background: #f4efe6;
+  min-height: calc(100vh - 64px);
+}
+
+/* Banner */
+.ycp-banner {
+  height: 170px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+/* Pencil edit icon in banner (top-right) */
+.ycp-bannerEditBtn {
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.ycp-bannerEditBtn:hover {
+  filter: brightness(0.98);
+}
+
+.ycp-bannerEditIcon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Main card area */
+.ycp-card {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 18px 40px;
+  position: relative;
+}
+
+/* Avatar + edit overlay */
+.ycp-avatarWrap {
+  position: absolute;
+  left: 26px;
+  top: -62px;
+  width: 118px;
+  height: 118px;
+  border-radius: 999px;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
+}
+
+.ycp-avatar {
+  width: 104px;
+  height: 104px;
+  border-radius: 999px;
+  object-fit: cover;
+  display: block;
+}
+
+.ycp-avatarEditBtn {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.30);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.ycp-avatarEditBtn:hover {
+  background: rgba(0, 0, 0, 0.36);
+}
+
+.ycp-avatarEditIcon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  display: block;
+}
+
+/* VIEW MODE GRID */
+.ycp-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 26px;
+  padding-top: 64px;
+}
+
+.ycp-left {
+  min-width: 0;
+}
+
+.ycp-nameRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ycp-name {
+  margin: 0;
+  color: #1f3a2a;
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-size: 28px;
+}
+
+.ycp-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.ycp-actionBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+.ycp-actionBtn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.ycp-handle {
+  margin-top: 4px;
+  color: rgba(0, 0, 0, 0.45);
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+}
+
+.ycp-bio {
+  margin-top: 18px;
+  margin-bottom: 14px;
+  max-width: 560px;
+  color: #1f3a2a;
+  font-family: "Libre Baskerville", serif;
+  line-height: 1.35;
+  font-size: 16px;
+}
+
+.ycp-linkRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(0, 0, 0, 0.45);
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+
+.ycp-linkIcon {
+  opacity: 0.85;
+}
+
+/* Tabs */
+.ycp-tabs {
+  display: flex;
+  gap: 28px;
+  margin-top: 18px;
+  margin-bottom: 14px;
+  font-family: "Libre Baskerville", serif;
+}
+
+.ycp-tab {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 8px 0;
+  color: #1f3a2a;
+  opacity: 0.9;
+}
+
+.ycp-tab:hover {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 8px;
+}
+
+.ycp-tab--active {
+  color: #7a0d12;
+  opacity: 1;
+}
+
+/* Works row (placeholders) */
+.ycp-worksRow {
+  display: flex;
+  gap: 22px;
+  padding-top: 10px;
+}
+
+.ycp-workCard {
+  width: 190px;
+  height: 150px;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.ycp-workCover {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+}
+
+.ycp-workCover--placeholder {
+  background: rgba(0, 0, 0, 0.10);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Right panels (shared) */
+.ycp-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ycp-panels {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px 26px;
+  align-content: start;
+}
+
+.ycp-panelTitle {
+  font-family: "Libre Baskerville", serif;
+  color: #1f3a2a;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.ycp-panelBox {
+  width: 100%;
+  height: 86px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* =========================
+   EDIT MODE
+   ========================= */
+.ycp-editGrid {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 34px;
+  padding-top: 64px;
+}
+
+.ycp-editLeft {
+  padding-top: 6px;
+}
+
+.ycp-editRow {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.ycp-editLabel {
+  font-family: "Libre Baskerville", serif;
+  color: #1f3a2a;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.ycp-editInput {
+  height: 42px;
+  border-radius: 8px;
+  border: 0;
+  outline: none;
+  background: #ffffff;
+  padding: 0 12px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 16px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.ycp-editRow--bio {
+  align-items: start;
+}
+
+.ycp-editTextarea {
+  min-height: 78px;
+  border-radius: 8px;
+  border: 0;
+  outline: none;
+  background: #ffffff;
+  padding: 10px 12px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 16px;
+  resize: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.ycp-editRow--visibility {
+  align-items: start;
+  margin-top: 10px;
+}
+
+.ycp-visibilityGroup {
+  display: grid;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.ycp-radio {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: start;
+  font-family: "Libre Baskerville", serif;
+  color: #1f3a2a;
+}
+
+.ycp-radio input {
+  transform: translateY(4px);
+}
+
+.ycp-radioTitle {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.ycp-radioSub {
+  font-size: 14px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.ycp-editActions {
+  margin-top: 18px;
+}
+
+.ycp-doneBtn {
+  width: 118px;
+  height: 40px;
+  border-radius: 8px;
+  border: 0;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  color: #1f3a2a;
+}
+
+.ycp-doneBtn:hover {
+  filter: brightness(0.98);
+}
+
+/* Widgets column */
+.ycp-editRight {
+  padding-top: 6px;
+}
+
+.ycp-widgetsTitle {
+  font-family: "Libre Baskerville", serif;
+  color: #1f3a2a;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+
+.ycp-panels--edit .ycp-panelTitle {
+  font-variant: small-caps;
+  letter-spacing: 0.4px;
+}
+
+.ycp-panelBox--edit {
+  position: relative;
+}
+
+.ycp-subtractBtn {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.ycp-subtractBtn img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .ycp-grid,
+  .ycp-editGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .ycp-right {
+    justify-content: flex-start;
+  }
+
+  .ycp-panels {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .ycp-avatarWrap {
+    left: 18px;
+  }
+
+  .ycp-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .ycp-worksRow {
+    flex-direction: column;
+  }
+
+  .ycp-workCard {
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .ycp-editRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+

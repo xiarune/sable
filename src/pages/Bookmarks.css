@@ -1,0 +1,107 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.bookmarksPage {
+  background: #f4efe6;
+  min-height: calc(100vh - 64px);
+  padding: 28px 28px 60px;
+}
+
+.bookmarksTitle {
+  margin: 0 0 18px;
+  font-family: "Cinzel Decorative", serif;
+  font-size: 34px;
+  color: #244b2b;
+  letter-spacing: 0.5px;
+}
+
+.bookmarksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
+}
+
+.bookmarkCard {
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  overflow: hidden;
+  display: grid;
+}
+
+.bookmarkOpen {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  display: grid;
+}
+
+.bookmarkOpen:hover {
+  filter: brightness(0.99);
+}
+
+.coverWrap {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: rgba(0, 0, 0, 0.04);
+  display: grid;
+  place-items: center;
+}
+
+.coverImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.coverPlaceholder {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.38);
+}
+
+.meta {
+  padding: 12px 12px 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.meta--footer {
+  padding-top: 0;
+  padding-bottom: 14px;
+}
+
+.workTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(60, 55, 52, 0.88);
+  line-height: 1.25;
+}
+
+.workAuthor {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(36, 75, 43, 0.92);
+}
+
+.workAuthorLink {
+  text-decoration: none;
+}
+
+.workAuthorLink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 520px) {
+  .bookmarksPage {
+    padding: 18px 16px 48px;
+  }
+
+  .bookmarksTitle {
+    font-size: 28px;
+  }
+}
+

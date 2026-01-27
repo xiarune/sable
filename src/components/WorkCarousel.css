@@ -1,0 +1,217 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.wc {
+  padding: 18px 0 26px;
+}
+
+.wc-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 0 14px;
+}
+
+.wc-titleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.wc-title {
+  margin: 0;
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: 0.5px;
+  color: rgba(36, 75, 43, 0.92);
+
+  /* IMPORTANT: stop the green section heading from becoming POPULAR/FEATURED */
+  text-transform: none !important;
+}
+
+.wc-titleIcon {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
+}
+
+.wc-ornament {
+  width: 54px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(214, 168, 64, 0.55);
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.wc-ornament::before,
+.wc-ornament::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 2px;
+  background: rgba(214, 168, 64, 0.65);
+  transform: translateY(-50%);
+}
+
+.wc-ornament::before {
+  left: -16px;
+}
+
+.wc-ornament::after {
+  right: -16px;
+}
+
+.wc-subtitle {
+  margin-left: auto;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(60, 55, 52, 0.55);
+}
+
+.wc-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  gap: 12px;
+  align-items: center;
+}
+
+.wc-arrow {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  background: rgba(190, 182, 165, 0.55);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.16);
+  font-size: 28px;
+  line-height: 1;
+  color: rgba(60, 55, 52, 0.85);
+  display: grid;
+  place-items: center;
+}
+
+.wc-arrow:hover {
+  filter: brightness(1.01);
+}
+
+.wc-track {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 8px 14px;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+.wc-track:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(36, 75, 43, 0.18);
+  border-radius: 12px;
+}
+
+.wc-card {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.wc-cover {
+  width: 190px;
+  height: 270px;
+  border-radius: 16px;
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.10),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.18);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.wc-coverInner {
+  width: 84%;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 12px;
+  padding: 12px 10px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.wc-coverTitle {
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.6px;
+  color: rgba(255, 255, 255, 0.92);
+  text-transform: uppercase;
+}
+
+.wc-coverAuthor {
+  margin-top: 8px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.wc-card:hover .wc-cover {
+  transform: translateY(-2px);
+  transition: transform 120ms ease;
+}
+
+/* Six tasteful placeholder palettes */
+.wc-cover--a0 { background: linear-gradient(135deg, rgba(20,20,20,0.98), rgba(60,60,60,0.85)); }
+.wc-cover--a1 { background: linear-gradient(135deg, rgba(170,116,0,0.95), rgba(80,40,0,0.85)); }
+.wc-cover--a2 { background: linear-gradient(135deg, rgba(78,18,12,0.92), rgba(140,92,26,0.82)); }
+.wc-cover--a3 { background: linear-gradient(135deg, rgba(8,48,24,0.95), rgba(18,90,60,0.84)); }
+.wc-cover--a4 { background: linear-gradient(135deg, rgba(12,24,60,0.95), rgba(52,92,160,0.82)); }
+.wc-cover--a5 { background: linear-gradient(135deg, rgba(26,18,44,0.95), rgba(90,40,120,0.82)); }
+
+@media (max-width: 920px) {
+  .wc-row {
+    grid-template-columns: 40px 1fr 40px;
+  }
+
+  .wc-arrow {
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+  }
+
+  .wc-cover {
+    width: 168px;
+    height: 244px;
+  }
+
+  .wc-titleIcon {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+@media (max-width: 640px) {
+  .wc-title {
+    font-size: 26px;
+  }
+
+  .wc-subtitle {
+    display: none;
+  }
+
+  .wc-titleIcon {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+
+
+
