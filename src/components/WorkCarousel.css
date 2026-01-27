@@ -11,6 +11,12 @@
   padding: 6px 0 14px;
 }
 
+.wc-titleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .wc-title {
   margin: 0;
   font-family: "Cinzel Decorative", serif;
@@ -18,6 +24,16 @@
   font-size: 30px;
   letter-spacing: 0.5px;
   color: rgba(36, 75, 43, 0.92);
+
+  /* IMPORTANT: stop the green section heading from becoming POPULAR/FEATURED */
+  text-transform: none !important;
+}
+
+.wc-titleIcon {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
 }
 
 .wc-ornament {
@@ -163,14 +179,21 @@
   .wc-row {
     grid-template-columns: 40px 1fr 40px;
   }
+
   .wc-arrow {
     width: 40px;
     height: 40px;
     font-size: 24px;
   }
+
   .wc-cover {
     width: 168px;
     height: 244px;
+  }
+
+  .wc-titleIcon {
+    width: 38px;
+    height: 38px;
   }
 }
 
@@ -178,7 +201,17 @@
   .wc-title {
     font-size: 26px;
   }
+
   .wc-subtitle {
     display: none;
   }
+
+  .wc-titleIcon {
+    width: 34px;
+    height: 34px;
+  }
 }
+
+
+
+

@@ -1,5 +1,7 @@
+// HomeLoggedOut.js
 import React from "react";
 import WorkCarousel from "../components/WorkCarousel";
+import homeIcon from "../assets/images/home_icon.png";
 
 const POPULAR_WORKS = [
   { id: "p1", title: "Space", author: "Olivia Wilson" },
@@ -28,6 +30,8 @@ export default function HomeLoggedOut() {
         subtitle="Trending across Sable this week"
         items={POPULAR_WORKS}
         ariaLabel="Popular works"
+        titleIcon={homeIcon}
+        autoScroll
       />
 
       <WorkCarousel
@@ -35,7 +39,11 @@ export default function HomeLoggedOut() {
         subtitle="Curated picks from the front page"
         items={FEATURED_WORKS}
         ariaLabel="Featured works"
+        titleIcon={homeIcon}
+        autoScroll
       />
     </div>
   );
 }
+
+

@@ -1,0 +1,125 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.yw-page {
+  background: #f4efe6;
+  min-height: calc(100vh - 64px);
+  padding: 26px 0 40px;
+}
+
+.yw-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 18px;
+}
+
+.yw-title {
+  margin: 0 0 18px;
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 40px;
+  color: rgba(36, 75, 43, 0.92);
+}
+
+.yw-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 26px;
+  align-items: start;
+}
+
+@media (max-width: 980px) {
+  .yw-layout {
+    grid-template-columns: 1fr;
+  }
+  .yw-side {
+    justify-self: start;
+  }
+}
+
+.yw-gridWrap {
+  min-width: 0;
+}
+
+.yw-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px 34px;
+}
+
+@media (max-width: 900px) {
+  .yw-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .yw-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.yw-work {
+  text-align: left;
+}
+
+.yw-cover {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  background: rgba(0, 0, 0, 0.10);
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+}
+
+.yw-workTitle {
+  margin-top: 10px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 22px;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.yw-editLink {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  margin-top: 4px;
+  padding: 0;
+  font-family: "Libre Baskerville", serif;
+  font-size: 18px;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.yw-editLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.yw-side {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  justify-self: end;
+  padding-top: 70px;
+}
+
+.yw-ornateBtn {
+  border: 2px solid rgba(214, 168, 64, 0.7);
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 14px;
+  cursor: pointer;
+  padding: 18px 18px;
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: rgba(36, 75, 43, 0.92);
+  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.10), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.yw-ornateBtn--primary {
+  background: rgba(36, 75, 43, 0.85);
+  color: rgba(255, 255, 255, 0.92);
+  border-color: rgba(214, 168, 64, 0.85);
+}
+
+.yw-ornateBtn:hover {
+  filter: brightness(0.99);
+}

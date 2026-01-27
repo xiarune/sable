@@ -73,6 +73,10 @@ export default function Profile({ username = "john.doe" }) {
   const membership = "Reader + Creator";
   const joined = "Joined Jan 2026";
 
+  function goToDrafts() {
+    navigate("/drafts");
+  }
+
   return (
     <div className="pf">
       <div className="pf-shell">
@@ -169,7 +173,7 @@ export default function Profile({ username = "john.doe" }) {
                     icon="✍︎"
                     title="Continue writing"
                     desc="Jump back into your latest draft."
-                    onClick={() => navigate("/new-draft")}
+                    onClick={goToDrafts}
                   />
                   <QuickAction
                     icon="🗣"
@@ -260,14 +264,21 @@ export default function Profile({ username = "john.doe" }) {
                   </div>
                 </RowCard>
 
-                <RowCard title="Drafts" right={<button className="pf-linkBtn" type="button">Open editor</button>}>
+                <RowCard
+                  title="Drafts"
+                  right={
+                    <button className="pf-linkBtn" type="button" onClick={goToDrafts}>
+                      Open editor
+                    </button>
+                  }
+                >
                   <div className="pf-list">
                     {[
                       { t: "Draft: Rain on Glass", m: "edited • today" },
                       { t: "Draft: Chapter 3", m: "edited • 2d ago" },
                       { t: "Draft: Outline", m: "edited • 1w ago" },
                     ].map((x) => (
-                      <div key={x.t} className="pf-listRow">
+                      <div key={x.t} className="pf-listRow" role="button" tabIndex={0} onClick={goToDrafts}>
                         <div className="pf-listTitle">{x.t}</div>
                         <div className="pf-listMeta">{x.m}</div>
                       </div>
@@ -282,5 +293,7 @@ export default function Profile({ username = "john.doe" }) {
     </div>
   );
 }
+
+
 
 

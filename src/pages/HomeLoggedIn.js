@@ -1,5 +1,6 @@
 import React from "react";
 import WorkCarousel from "../components/WorkCarousel";
+import homeIcon from "../assets/images/home_icon.png";
 
 const FOR_YOU = [
   { id: "fy1", title: "For You", author: "Based on your likes" },
@@ -35,6 +36,7 @@ export default function HomeLoggedIn() {
         subtitle="Recommendations based on your reading & bookmarks"
         items={FOR_YOU}
         ariaLabel="For you works"
+        titleIcon={homeIcon}
       />
 
       <WorkCarousel
@@ -42,6 +44,7 @@ export default function HomeLoggedIn() {
         subtitle="Trending across Sable this week"
         items={POPULAR_WORKS}
         ariaLabel="Popular works"
+        titleIcon={homeIcon}
       />
 
       <WorkCarousel
@@ -49,7 +52,11 @@ export default function HomeLoggedIn() {
         subtitle="Curated picks from the front page"
         items={FEATURED_WORKS}
         ariaLabel="Featured works"
+        titleIcon={homeIcon}
       />
     </div>
   );
 }
+
+
+

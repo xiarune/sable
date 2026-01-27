@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "react-router-dom";
 import "./YourCommunityPage.css";
 
 import bannerImg from "../assets/images/community_banner.png";
@@ -9,6 +10,8 @@ import editProfileIcon from "../assets/images/edit_profile_picture.png";
 import subtractWidgetIcon from "../assets/images/subtract_widget.png";
 
 export default function YourCommunityPage({ username }) {
+  const location = useLocation();
+
   const initialDisplayName = (username || "john.doe").toUpperCase();
 
   const [isEditing, setIsEditing] = React.useState(false);
@@ -44,14 +47,27 @@ export default function YourCommunityPage({ username }) {
     setIsEditing(false);
   }
 
+  // Auto-open edit mode if we arrive from Settings:
+  // - /communities/me?edit=1
+  // - navigate("/communities/me", { state: { edit: true } })
+  React.useEffect(() => {
+    const search = new URLSearchParams(location.search || "");
+    const editParam = search.get("edit");
+
+    const wantsEditFromQuery = editParam === "1" || editParam === "true";
+    const wantsEditFromState = Boolean(location.state && location.state.edit);
+
+    if (wantsEditFromQuery || wantsEditFromState) {
+      openEdit();
+    }
+    // Only run on navigation changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]); // location.key changes on navigation
+
   return (
     <div className="ycp">
       {/* Banner */}
-      <section
-        className="ycp-banner"
-        style={{ backgroundImage: `url(${bannerImg})` }}
-        aria-label="Community banner"
-      >
+      <section className="ycp-banner" style={{ backgroundImage: `url(${bannerImg})` }} aria-label="Community banner">
         <button
           type="button"
           className="ycp-bannerEditBtn"
@@ -76,7 +92,6 @@ export default function YourCommunityPage({ username }) {
               title="Edit profile picture"
               onClick={() => {
                 // front-end only for now
-                // later: open upload dialog / cropper etc.
               }}
             >
               <img className="ycp-avatarEditIcon" src={editProfileIcon} alt="" aria-hidden="true" />
@@ -92,13 +107,14 @@ export default function YourCommunityPage({ username }) {
                 <h1 className="ycp-name">{displayName}</h1>
 
                 <div className="ycp-actions" aria-label="Profile actions">
-                  <button type="button" className="ycp-actionBtn" aria-label="Edit">
+                  {/* Make the pencil actually edit */}
+                  <button type="button" className="ycp-actionBtn" aria-label="Edit" onClick={openEdit} title="Edit">
                     ✎
                   </button>
-                  <button type="button" className="ycp-actionBtn" aria-label="Search">
+                  <button type="button" className="ycp-actionBtn" aria-label="Search" title="Search">
                     🔍
                   </button>
-                  <button type="button" className="ycp-actionBtn" aria-label="Share">
+                  <button type="button" className="ycp-actionBtn" aria-label="Share" title="Share">
                     ⤴︎
                   </button>
                 </div>
@@ -176,32 +192,17 @@ export default function YourCommunityPage({ username }) {
             <div className="ycp-editLeft">
               <div className="ycp-editRow">
                 <div className="ycp-editLabel">Name</div>
-                <input
-                  className="ycp-editInput"
-                  value={draftName}
-                  onChange={(e) => setDraftName(e.target.value)}
-                  aria-label="Name"
-                />
+                <input className="ycp-editInput" value={draftName} onChange={(e) => setDraftName(e.target.value)} aria-label="Name" />
               </div>
 
               <div className="ycp-editRow ycp-editRow--bio">
                 <div className="ycp-editLabel">Bio</div>
-                <textarea
-                  className="ycp-editTextarea"
-                  value={draftBio}
-                  onChange={(e) => setDraftBio(e.target.value)}
-                  aria-label="Bio"
-                />
+                <textarea className="ycp-editTextarea" value={draftBio} onChange={(e) => setDraftBio(e.target.value)} aria-label="Bio" />
               </div>
 
               <div className="ycp-editRow">
                 <div className="ycp-editLabel">Links</div>
-                <input
-                  className="ycp-editInput"
-                  value={draftLink}
-                  onChange={(e) => setDraftLink(e.target.value)}
-                  aria-label="Links"
-                />
+                <input className="ycp-editInput" value={draftLink} onChange={(e) => setDraftLink(e.target.value)} aria-label="Links" />
               </div>
 
               <div className="ycp-editRow ycp-editRow--visibility">
@@ -267,15 +268,7 @@ export default function YourCommunityPage({ username }) {
                 <div className="ycp-panel ycp-panel--edit">
                   <div className="ycp-panelTitle">Announcements</div>
                   <div className="ycp-panelBox ycp-panelBox--edit">
-                    <button
-                      type="button"
-                      className="ycp-subtractBtn"
-                      aria-label="Remove Announcements widget"
-                      title="Remove"
-                      onClick={() => {
-                        // front-end only for now
-                      }}
-                    >
+                    <button type="button" className="ycp-subtractBtn" aria-label="Remove Announcements widget" title="Remove" onClick={() => {}}>
                       <img src={subtractWidgetIcon} alt="" aria-hidden="true" />
                     </button>
                   </div>
@@ -284,13 +277,7 @@ export default function YourCommunityPage({ username }) {
                 <div className="ycp-panel ycp-panel--edit">
                   <div className="ycp-panelTitle">Donations</div>
                   <div className="ycp-panelBox ycp-panelBox--edit">
-                    <button
-                      type="button"
-                      className="ycp-subtractBtn"
-                      aria-label="Remove Donations widget"
-                      title="Remove"
-                      onClick={() => {}}
-                    >
+                    <button type="button" className="ycp-subtractBtn" aria-label="Remove Donations widget" title="Remove" onClick={() => {}}>
                       <img src={subtractWidgetIcon} alt="" aria-hidden="true" />
                     </button>
                   </div>
@@ -299,13 +286,7 @@ export default function YourCommunityPage({ username }) {
                 <div className="ycp-panel ycp-panel--edit">
                   <div className="ycp-panelTitle">Recent Works</div>
                   <div className="ycp-panelBox ycp-panelBox--edit">
-                    <button
-                      type="button"
-                      className="ycp-subtractBtn"
-                      aria-label="Remove Recent Works widget"
-                      title="Remove"
-                      onClick={() => {}}
-                    >
+                    <button type="button" className="ycp-subtractBtn" aria-label="Remove Recent Works widget" title="Remove" onClick={() => {}}>
                       <img src={subtractWidgetIcon} alt="" aria-hidden="true" />
                     </button>
                   </div>
@@ -314,13 +295,7 @@ export default function YourCommunityPage({ username }) {
                 <div className="ycp-panel ycp-panel--edit">
                   <div className="ycp-panelTitle">Chatroom</div>
                   <div className="ycp-panelBox ycp-panelBox--edit">
-                    <button
-                      type="button"
-                      className="ycp-subtractBtn"
-                      aria-label="Remove Chatroom widget"
-                      title="Remove"
-                      onClick={() => {}}
-                    >
+                    <button type="button" className="ycp-subtractBtn" aria-label="Remove Chatroom widget" title="Remove" onClick={() => {}}>
                       <img src={subtractWidgetIcon} alt="" aria-hidden="true" />
                     </button>
                   </div>
@@ -333,5 +308,6 @@ export default function YourCommunityPage({ username }) {
     </div>
   );
 }
+
 
 

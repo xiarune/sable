@@ -25,6 +25,11 @@ import GenreDetail from "./pages/GenreDetail";
 import FandomIndex from "./pages/FandomIndex";
 import FandomDetail from "./pages/FandomDetail";
 
+import TagsIndex from "./pages/TagsIndex";
+
+import ExistingDrafts from "./pages/ExistingDrafts";
+import YourWorks from "./pages/YourWorks";
+
 export default function App() {
   const [isAuthed, setIsAuthed] = React.useState(false);
   const [username, setUsername] = React.useState("");
@@ -69,22 +74,22 @@ export default function App() {
           <Route path="/genres/:genreSlug" element={<GenreDetail />} />
           <Route path="/fandoms" element={<FandomIndex />} />
           <Route path="/fandoms/:fandomSlug" element={<FandomDetail />} />
+          <Route path="/tags" element={<TagsIndex />} />
 
           {/* Communities profiles */}
           <Route
             path="/communities/me"
-            element={
-              isAuthed ? (
-                <YourCommunityPage username={effectiveUsername} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
+            element={isAuthed ? <YourCommunityPage username={effectiveUsername} /> : <Navigate to="/" replace />}
           />
           <Route
             path="/communities/:handle"
             element={<PublicCommunityPage isAuthed={isAuthed} username={effectiveUsername} />}
           />
+
+          {/* Works + Drafts */}
+          <Route path="/works" element={isAuthed ? <YourWorks /> : <Navigate to="/" replace />} />
+          <Route path="/drafts" element={isAuthed ? <ExistingDrafts /> : <Navigate to="/" replace />} />
+          <Route path="/new-draft" element={isAuthed ? <NewDraft /> : <Navigate to="/" replace />} />
 
           {/* Auth-only pages (front-end gated for now) */}
           <Route path="/inbox" element={isAuthed ? <Inbox /> : <Navigate to="/" replace />} />
@@ -96,9 +101,11 @@ export default function App() {
             path="/profile"
             element={isAuthed ? <Profile username={effectiveUsername} /> : <Navigate to="/" replace />}
           />
-          <Route path="/settings" element={isAuthed ? <Settings /> : <Navigate to="/" replace />} />
+          <Route
+            path="/settings"
+            element={isAuthed ? <Settings username={effectiveUsername} onLogout={handleLogout} /> : <Navigate to="/" replace />}
+          />
           <Route path="/bookmarks" element={isAuthed ? <Bookmarks /> : <Navigate to="/" replace />} />
-          <Route path="/new-draft" element={isAuthed ? <NewDraft /> : <Navigate to="/" replace />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -107,6 +114,15 @@ export default function App() {
     </>
   );
 }
+
+
+
+
+
+
+
+
+
 
 
 

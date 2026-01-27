@@ -24,16 +24,14 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     path === "/genres" ||
     path.startsWith("/genres/") ||
     path === "/fandoms" ||
-    path.startsWith("/fandoms/");
+    path.startsWith("/fandoms/") ||
+    path === "/tags";
 
-  // Browse/search query (used by the green browse bar + top-right search icon)
   const [query, setQuery] = React.useState("");
 
-  // Browse dropdown
   const [isBrowseMenuOpen, setIsBrowseMenuOpen] = React.useState(false);
   const browseMenuRef = React.useRef(null);
 
-  // Auth modal
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   const [authMode, setAuthMode] = React.useState("login"); // "login" | "signup"
 
@@ -42,7 +40,6 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   const [formConfirmPassword, setFormConfirmPassword] = React.useState("");
   const [authError, setAuthError] = React.useState("");
 
-  // User dropdown
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef(null);
 
@@ -145,12 +142,14 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     }
 
     if (category === "Tags") {
-      setQuery("tag: ");
+      closeBrowseMenu();
+      navigate("/tags");
       return;
     }
 
     if (category === "Bookmarks") {
-      setQuery("bookmarks: ");
+      closeBrowseMenu();
+      navigate("/bookmarks");
       return;
     }
   }
@@ -187,7 +186,6 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     closeBrowseMenu();
   }, [location.pathname]);
 
-  // Allow any page (like Communities) to open the auth modal:
   React.useEffect(() => {
     function onOpenAuth() {
       openLogin();
@@ -373,7 +371,6 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
         </div>
       </div>
 
-      {/* Green browse bar */}
       {showBrowseBar ? (
         <div className="subbar">
           <div className="browseWrap" ref={browseMenuRef}>
@@ -415,7 +412,6 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
         </div>
       ) : null}
 
-      {/* Auth modal */}
       {isAuthModalOpen ? (
         <div
           className="loginOverlay"
@@ -528,6 +524,11 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     </header>
   );
 }
+
+
+
+
+
 
 
 
