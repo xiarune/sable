@@ -65,7 +65,6 @@ export default function Profile({ username = "john.doe" }) {
   const displayUsername = String(username || "john.doe").trim();
   const prettyName = prettyNameFromUsername(displayUsername);
 
-  // Reduced nav: only keep what you want
   const [active, setActive] = React.useState("Overview"); // Overview | Works
 
   // Front-end placeholders
@@ -75,6 +74,10 @@ export default function Profile({ username = "john.doe" }) {
 
   function goToDrafts() {
     navigate("/drafts");
+  }
+
+  function goToWorksPage() {
+    navigate("/works");
   }
 
   return (
@@ -156,6 +159,11 @@ export default function Profile({ username = "john.doe" }) {
 
               <button type="button" className="pf-navLink" onClick={() => navigate("/communities/me")}>
                 Your Community Page →
+              </button>
+
+              {/* NEW: direct path to the actual Works page */}
+              <button type="button" className="pf-navLink" onClick={goToWorksPage}>
+                Your Works →
               </button>
 
               <button type="button" className="pf-navLink" onClick={() => navigate("/communities")}>
@@ -245,9 +253,14 @@ export default function Profile({ username = "john.doe" }) {
                 <RowCard
                   title="Published Works"
                   right={
-                    <button className="pf-linkBtn" type="button" onClick={() => navigate("/new-draft")}>
-                      New
-                    </button>
+                    <div>
+                      <button className="pf-linkBtn" type="button" onClick={goToWorksPage}>
+                        View all
+                      </button>
+                      <button className="pf-linkBtn" type="button" onClick={() => navigate("/new-draft")}>
+                        New
+                      </button>
+                    </div>
                   }
                 >
                   <div className="pf-covers">
@@ -293,6 +306,7 @@ export default function Profile({ username = "john.doe" }) {
     </div>
   );
 }
+
 
 
 

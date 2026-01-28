@@ -149,6 +149,14 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
 
     if (category === "Bookmarks") {
       closeBrowseMenu();
+
+      // Logged-out users should not see Bookmarks in the browse dropdown.
+      // But if something somehow triggers it anyway, prompt auth.
+      if (!isAuthed) {
+        openLogin();
+        return;
+      }
+
       navigate("/bookmarks");
       return;
     }
@@ -194,6 +202,8 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     return () => window.removeEventListener("sable:open-auth", onOpenAuth);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const browseItems = isAuthed ? ["Genre", "Fandom", "Tags", "Bookmarks"] : ["Genre", "Fandom", "Tags"];
 
   return (
     <header className="sable-header">
@@ -395,7 +405,7 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
 
             {isBrowseMenuOpen ? (
               <div className="browseDropdown" role="listbox" aria-label="Browse categories">
-                {["Genre", "Fandom", "Tags", "Bookmarks"].map((item) => (
+                {browseItems.map((item) => (
                   <button
                     key={item}
                     type="button"
@@ -524,6 +534,7 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     </header>
   );
 }
+
 
 
 
