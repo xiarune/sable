@@ -4,6 +4,23 @@ import "./Profile.css";
 
 import profileImg from "../assets/images/profile_picture.png";
 
+const WORKS_KEY = "sable_published_v1";
+const DRAFTS_KEY = "sable_drafts_v1";
+
+function safeParse(json) {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function loadArray(key) {
+  const raw = localStorage.getItem(key);
+  const parsed = safeParse(raw);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
 function initialsFromUsername(u) {
   const s = String(u || "john.doe").trim();
   const parts = s.split(".").filter(Boolean);
@@ -65,20 +82,39 @@ export default function Profile({ username = "john.doe" }) {
   const displayUsername = String(username || "john.doe").trim();
   const prettyName = prettyNameFromUsername(displayUsername);
 
-  const [active, setActive] = React.useState("Overview"); // Overview | Works
+  const [active, setActive] = React.useState("Overview"); // Overview | Works | Drafts
+  const [works, setWorks] = React.useState([]);
+  const [drafts, setDrafts] = React.useState([]);
 
   // Front-end placeholders
   const email = `${displayUsername}@sable.app`;
   const membership = "Reader + Creator";
   const joined = "Joined Jan 2026";
 
-  function goToDrafts() {
+  React.useEffect(() => {
+    setWorks(loadArray(WORKS_KEY));
+    setDrafts(loadArray(DRAFTS_KEY));
+  }, []);
+
+  function goToDraftsPage() {
     navigate("/drafts");
   }
 
   function goToWorksPage() {
     navigate("/works");
   }
+
+  function openWorkEditor(workId) {
+    navigate(`/works/edit/${encodeURIComponent(workId)}`);
+  }
+
+  function openDraftEditor(draftId) {
+    // Your NewDraft.js now redirects correctly, but going direct is cleaner.
+    navigate(`/drafts/edit/${encodeURIComponent(draftId)}`);
+  }
+
+  const worksPreview = works.slice(0, 2);
+  const draftsPreview = drafts.slice(0, 2);
 
   return (
     <div className="pf">
@@ -112,6 +148,7 @@ export default function Profile({ username = "john.doe" }) {
               </div>
             </div>
 
+            {/* ✅ IMPORTANT: pf-cta stays a sibling of pf-id (CSS expects this) */}
             <div className="pf-cta">
               <button
                 type="button"
@@ -127,8 +164,8 @@ export default function Profile({ username = "john.doe" }) {
           </div>
 
           <div className="pf-stats" aria-label="Account stats">
-            <Stat label="Published Works" value="2" />
-            <Stat label="Drafts" value="5" />
+            <Stat label="Published Works" value={String(works.length)} />
+            <Stat label="Drafts" value={String(drafts.length)} />
             <Stat label="Bookmarks" value="18" />
             <Stat label="Followers" value="8.7k" />
           </div>
@@ -141,7 +178,7 @@ export default function Profile({ username = "john.doe" }) {
               <div className="pf-navTitle">Your Dashboard</div>
 
               <div className="pf-navList" role="tablist" aria-label="Profile sections">
-                {["Overview", "Works"].map((t) => (
+                {["Overview", "Works", "Drafts"].map((t) => (
                   <button
                     key={t}
                     type="button"
@@ -161,10 +198,12 @@ export default function Profile({ username = "john.doe" }) {
                 Your Community Page →
               </button>
 
-              {/* NEW: direct path to the actual Works page */}
-              <button type="button" className="pf-navLink" onClick={goToWorksPage}>
-                Your Works →
+              {/* ✅ Added: skins access (routes to settings where skins live) */}
+              <button type="button" className="pf-navLink" onClick={() => navigate("/settings")}>
+                Your Skins →
               </button>
+
+              {/* ✅ Removed: duplicate "Your Works" and "Your Drafts" links (per your request) */}
 
               <button type="button" className="pf-navLink" onClick={() => navigate("/communities")}>
                 Communities →
@@ -181,7 +220,7 @@ export default function Profile({ username = "john.doe" }) {
                     icon="✍︎"
                     title="Continue writing"
                     desc="Jump back into your latest draft."
-                    onClick={goToDrafts}
+                    onClick={goToDraftsPage}
                   />
                   <QuickAction
                     icon="🗣"
@@ -224,81 +263,87 @@ export default function Profile({ username = "john.doe" }) {
                     ))}
                   </div>
                 </RowCard>
-
-                <RowCard title="Your Library" right={<span className="pf-softMeta">Front-end placeholder</span>}>
-                  <div className="pf-library">
-                    <div className="pf-libraryItem">
-                      <div className="pf-libraryLabel">Published Works</div>
-                      <div className="pf-libraryValue">2</div>
-                    </div>
-                    <div className="pf-libraryItem">
-                      <div className="pf-libraryLabel">Drafts</div>
-                      <div className="pf-libraryValue">5</div>
-                    </div>
-                    <div className="pf-libraryItem">
-                      <div className="pf-libraryLabel">Inbox</div>
-                      <div className="pf-libraryValue">3</div>
-                    </div>
-                    <div className="pf-libraryItem">
-                      <div className="pf-libraryLabel">Notifications</div>
-                      <div className="pf-libraryValue">9</div>
-                    </div>
-                  </div>
-                </RowCard>
               </>
             ) : null}
 
             {active === "Works" ? (
-              <>
-                <RowCard
-                  title="Published Works"
-                  right={
-                    <div>
-                      <button className="pf-linkBtn" type="button" onClick={goToWorksPage}>
-                        View all
-                      </button>
-                      <button className="pf-linkBtn" type="button" onClick={() => navigate("/new-draft")}>
-                        New
-                      </button>
-                    </div>
-                  }
-                >
-                  <div className="pf-covers">
-                    <div className="pf-coverCard" role="button" tabIndex={0} aria-label="Work cover 1">
-                      <div className="pf-cover" />
-                      <div className="pf-coverTitle">Abandoned Kingdom</div>
-                      <div className="pf-coverMeta">published • 20,000 words</div>
-                    </div>
-                    <div className="pf-coverCard" role="button" tabIndex={0} aria-label="Work cover 2">
-                      <div className="pf-cover" />
-                      <div className="pf-coverTitle">Untitled Noir</div>
-                      <div className="pf-coverMeta">published • 11,400 words</div>
-                    </div>
-                  </div>
-                </RowCard>
-
-                <RowCard
-                  title="Drafts"
-                  right={
-                    <button className="pf-linkBtn" type="button" onClick={goToDrafts}>
-                      Open editor
+              <RowCard
+                title="Published Works"
+                right={
+                  <div>
+                    <button className="pf-linkBtn" type="button" onClick={goToWorksPage}>
+                      View all
                     </button>
-                  }
-                >
-                  <div className="pf-list">
-                    {[
-                      { t: "Draft: Rain on Glass", m: "edited • today" },
-                      { t: "Draft: Chapter 3", m: "edited • 2d ago" },
-                      { t: "Draft: Outline", m: "edited • 1w ago" },
-                    ].map((x) => (
-                      <div key={x.t} className="pf-listRow" role="button" tabIndex={0} onClick={goToDrafts}>
-                        <div className="pf-listTitle">{x.t}</div>
-                        <div className="pf-listMeta">{x.m}</div>
-                      </div>
-                    ))}
+                    <button className="pf-linkBtn" type="button" onClick={() => navigate("/new-draft")}>
+                      New
+                    </button>
                   </div>
-                </RowCard>
-              </>
+                }
+              >
+                <div className="pf-covers">
+                  {worksPreview.length === 0 ? (
+                    <div className="pf-coverCard">
+                      <div className="pf-cover" />
+                      <div className="pf-coverTitle">No published works yet</div>
+                      <div className="pf-coverMeta">Post a draft to publish</div>
+                      <button type="button" className="pf-linkBtn" onClick={() => navigate("/new-draft")}>
+                        Start a draft
+                      </button>
+                    </div>
+                  ) : (
+                    worksPreview.map((w) => (
+                      <div key={String(w.id)} className="pf-coverCard">
+                        <div className="pf-cover" />
+                        <div className="pf-coverTitle">{w.title || "Untitled"}</div>
+                        <div className="pf-coverMeta">published</div>
+                        <button type="button" className="pf-linkBtn" onClick={() => openWorkEditor(w.id)}>
+                          Edit
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </RowCard>
+            ) : null}
+
+            {active === "Drafts" ? (
+              <RowCard
+                title="Drafts"
+                right={
+                  <div>
+                    <button className="pf-linkBtn" type="button" onClick={goToDraftsPage}>
+                      View all
+                    </button>
+                    <button className="pf-linkBtn" type="button" onClick={() => navigate("/new-draft")}>
+                      New
+                    </button>
+                  </div>
+                }
+              >
+                <div className="pf-covers">
+                  {draftsPreview.length === 0 ? (
+                    <div className="pf-coverCard">
+                      <div className="pf-cover" />
+                      <div className="pf-coverTitle">No drafts yet</div>
+                      <div className="pf-coverMeta">Start writing</div>
+                      <button type="button" className="pf-linkBtn" onClick={() => navigate("/new-draft")}>
+                        New Draft
+                      </button>
+                    </div>
+                  ) : (
+                    draftsPreview.map((d) => (
+                      <div key={String(d.id)} className="pf-coverCard">
+                        <div className="pf-cover" />
+                        <div className="pf-coverTitle">{d.title || "Untitled"}</div>
+                        <div className="pf-coverMeta">unpublished</div>
+                        <button type="button" className="pf-linkBtn" onClick={() => openDraftEditor(d.id)}>
+                          Edit
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </RowCard>
             ) : null}
           </main>
         </div>
@@ -306,6 +351,12 @@ export default function Profile({ username = "john.doe" }) {
     </div>
   );
 }
+
+
+
+
+
+
 
 
 

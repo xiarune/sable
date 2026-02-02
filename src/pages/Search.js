@@ -48,13 +48,11 @@ export default function Search() {
     e.preventDefault();
     const q = input.trim();
 
-    // If empty, clear URL param and show the "type something" state (no results)
     if (!q) {
       setParams({});
       return;
     }
 
-    // Put it in the URL so refresh/back works
     setParams({ q });
   }
 
@@ -101,7 +99,6 @@ export default function Search() {
         </header>
 
         <main className="searchMain" aria-label="Search results">
-          {/* KEY FIX: do NOT show all works by default */}
           {!hasQuery ? (
             <div className="searchEmptyState" role="status" aria-live="polite">
               <div className="searchEmptyTitle">Search your library.</div>
@@ -120,7 +117,11 @@ export default function Search() {
           ) : (
             <div className="searchResultsList" aria-label="Results list">
               {filtered.map((w) => (
-                <div key={w.id} className="searchResultCard" aria-label={`Result: ${w.title || "Title"}`}>
+                <div
+                  key={w.id}
+                  className="searchResultCard"
+                  aria-label={`Result: ${w.title || "Title"}`}
+                >
                   <div className="searchResultLeft">
                     <div className="searchResultTitle">{w.title || "Title"}</div>
                     <div className="searchResultAuthor">{w.author || "Author"}</div>
@@ -149,6 +150,8 @@ export default function Search() {
     </div>
   );
 }
+
+
 
 
 

@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./YourWorks.css";
 
-const WORKS_KEY = "sable_published_v1";
+const DRAFTS_KEY = "sable_drafts_v1";
 
 function safeParse(json) {
   try {
@@ -26,32 +26,32 @@ function saveArray(key, arr) {
   }
 }
 
-function seedPublishedIfEmpty() {
-  const existing = loadArray(WORKS_KEY);
+function seedDraftsIfEmpty() {
+  const existing = loadArray(DRAFTS_KEY);
   if (existing.length >= 5) return existing;
 
   const seeded = Array.from({ length: 5 }).map((_, i) => ({
-    id: `w-seed-${i + 1}`,
-    title: `Work ${i + 1}`,
+    id: `d-seed-${i + 1}`,
+    title: `Draft ${i + 1}`,
     body: "",
     updatedAt: new Date().toISOString(),
   }));
 
-  saveArray(WORKS_KEY, seeded);
+  saveArray(DRAFTS_KEY, seeded);
   return seeded;
 }
 
-export default function YourWorks() {
+export default function Drafts() {
   const navigate = useNavigate();
-  const [works, setWorks] = React.useState([]);
+  const [drafts, setDrafts] = React.useState([]);
 
   React.useEffect(() => {
-    const seeded = seedPublishedIfEmpty();
-    setWorks(seeded);
+    const seeded = seedDraftsIfEmpty();
+    setDrafts(seeded);
   }, []);
 
-  function handleEdit(workId) {
-    navigate(`/works/edit/${encodeURIComponent(workId)}`);
+  function handleEdit(draftId) {
+    navigate(`/drafts/edit/${encodeURIComponent(draftId)}`);
   }
 
   return (
@@ -59,8 +59,8 @@ export default function YourWorks() {
       <div className="yw-shell">
         <header className="yw-head">
           <div className="yw-headLeft">
-            <h1 className="yw-title">Your Works</h1>
-            <p className="yw-subtitle">Published works you can edit individually.</p>
+            <h1 className="yw-title">Your Drafts</h1>
+            <p className="yw-subtitle">Unpublished drafts. Edit them any time.</p>
           </div>
 
           <div className="yw-headRight">
@@ -70,15 +70,15 @@ export default function YourWorks() {
           </div>
         </header>
 
-        <section className="yw-gridWrap" aria-label="Published works list">
+        <section className="yw-gridWrap" aria-label="Draft list">
           <div className="yw-grid">
-            {works.slice(0, 5).map((w) => (
-              <article key={String(w.id)} className="yw-card">
+            {drafts.slice(0, 5).map((d) => (
+              <article key={String(d.id)} className="yw-card">
                 <div className="yw-poster" aria-hidden="true" />
-                <h2 className="yw-cardTitle">{w.title || "Untitled"}</h2>
-                <div className="yw-cardMeta">published</div>
+                <h2 className="yw-cardTitle">{d.title || "Untitled"}</h2>
+                <div className="yw-cardMeta">unpublished</div>
 
-                <button type="button" className="yw-cardBtn" onClick={() => handleEdit(w.id)}>
+                <button type="button" className="yw-cardBtn" onClick={() => handleEdit(d.id)}>
                   Edit
                 </button>
               </article>
@@ -89,8 +89,6 @@ export default function YourWorks() {
     </div>
   );
 }
-
-
 
 
 

@@ -2,15 +2,16 @@ import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./DraftEditor.css";
 
-const STORAGE_KEY = "sable_drafts_v1";
+const DRAFTS_KEY = "sable_drafts_v1";
+const WORKS_KEY = "sable_published_v1";
 
 function nowIso() {
   return new Date().toISOString();
 }
 
-function loadAll() {
+function loadAll(key) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     const arr = raw ? JSON.parse(raw) : [];
     return Array.isArray(arr) ? arr : [];
   } catch {
@@ -18,9 +19,9 @@ function loadAll() {
   }
 }
 
-function saveAll(arr) {
+function saveAll(key, arr) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    localStorage.setItem(key, JSON.stringify(arr));
   } catch {
     // front-end only
   }
@@ -39,7 +40,7 @@ export default function DraftEditor() {
   React.useEffect(() => {
     if (isNew) return;
 
-    const all = loadAll();
+    const all = loadAll(DRAFTS_KEY);
     const found = all.find((d) => String(d.id) === String(draftId));
     if (found) {
       setId(found.id);
@@ -48,12 +49,12 @@ export default function DraftEditor() {
       return;
     }
 
-    // If draft doesn't exist, bounce back to drafts list
-    navigate("/drafts", { replace: true });
+    // If draft doesn't exist, bounce back to Works page
+    navigate("/works", { replace: true });
   }, [draftId, isNew, navigate]);
 
   function upsertDraft(next = {}) {
-    const all = loadAll();
+    const all = loadAll(DRAFTS_KEY);
     const updated = {
       id,
       title: String(next.title ?? title ?? "Untitled"),
@@ -67,7 +68,31 @@ export default function DraftEditor() {
     } else {
       all.unshift(updated);
     }
-    saveAll(all);
+    saveAll(DRAFTS_KEY, all);
+    return updated;
+  }
+
+  function upsertPublishedFromDraft(draft) {
+    const works = loadAll(WORKS_KEY);
+    const now = nowIso();
+    const workId = `w_${draft.id}`;
+
+    const payload = {
+      id: workId,
+      title: draft.title || "Untitled",
+      body: draft.body || "",
+      sourceDraftId: draft.id,
+      updatedAt: now,
+    };
+
+    const idx = works.findIndex((w) => String(w.id) === String(workId));
+    if (idx >= 0) {
+      works[idx] = { ...works[idx], ...payload };
+    } else {
+      works.unshift({ ...payload, createdAt: now });
+    }
+    saveAll(WORKS_KEY, works);
+    return workId;
   }
 
   function handleSave() {
@@ -75,9 +100,9 @@ export default function DraftEditor() {
   }
 
   function handlePost() {
-    // Placeholder: in real app, this would publish
-    upsertDraft();
-    navigate("/drafts");
+    const saved = upsertDraft();
+    const workId = upsertPublishedFromDraft(saved);
+    navigate(`/works/edit/${encodeURIComponent(workId)}`);
   }
 
   return (
@@ -86,7 +111,7 @@ export default function DraftEditor() {
         <div className="de-top">
           <h1 className="de-title">{isNew ? "New Draft" : "Edit Draft"}</h1>
 
-          <button type="button" className="de-back" onClick={() => navigate("/drafts")} aria-label="Back to drafts">
+          <button type="button" className="de-back" onClick={() => navigate("/works")} aria-label="Back to works">
             Back
           </button>
         </div>
@@ -124,3 +149,4 @@ export default function DraftEditor() {
     </div>
   );
 }
+

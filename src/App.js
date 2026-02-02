@@ -27,8 +27,11 @@ import FandomDetail from "./pages/FandomDetail";
 
 import TagsIndex from "./pages/TagsIndex";
 
-import ExistingDrafts from "./pages/ExistingDrafts";
 import YourWorks from "./pages/YourWorks";
+import WorkEditor from "./pages/WorkEditor";
+
+import Drafts from "./pages/Drafts";
+import DraftEditor from "./pages/DraftEditor";
 
 export default function App() {
   const [isAuthed, setIsAuthed] = React.useState(false);
@@ -67,6 +70,8 @@ export default function App() {
             element={<Communities isAuthed={isAuthed} username={effectiveUsername} />}
           />
           <Route path="/about" element={<About />} />
+
+          {/* ✅ Search must render Search page */}
           <Route path="/search" element={<Search />} />
 
           {/* Browse Library routes */}
@@ -79,19 +84,33 @@ export default function App() {
           {/* Communities profiles */}
           <Route
             path="/communities/me"
-            element={isAuthed ? <YourCommunityPage username={effectiveUsername} /> : <Navigate to="/" replace />}
+            element={
+              isAuthed ? <YourCommunityPage username={effectiveUsername} /> : <Navigate to="/" replace />
+            }
           />
           <Route
             path="/communities/:handle"
             element={<PublicCommunityPage isAuthed={isAuthed} username={effectiveUsername} />}
           />
 
-          {/* Works + Drafts */}
+          {/* Published works */}
           <Route path="/works" element={isAuthed ? <YourWorks /> : <Navigate to="/" replace />} />
-          <Route path="/drafts" element={isAuthed ? <ExistingDrafts /> : <Navigate to="/" replace />} />
+          <Route
+            path="/works/edit/:workId"
+            element={isAuthed ? <WorkEditor /> : <Navigate to="/" replace />}
+          />
+
+          {/* Drafts */}
+          <Route path="/drafts" element={isAuthed ? <Drafts /> : <Navigate to="/" replace />} />
+          <Route
+            path="/drafts/edit/:draftId"
+            element={isAuthed ? <DraftEditor /> : <Navigate to="/" replace />}
+          />
+
+          {/* Create draft */}
           <Route path="/new-draft" element={isAuthed ? <NewDraft /> : <Navigate to="/" replace />} />
 
-          {/* Auth-only pages (front-end gated for now) */}
+          {/* Auth-only pages */}
           <Route path="/inbox" element={isAuthed ? <Inbox /> : <Navigate to="/" replace />} />
           <Route
             path="/notifications"
@@ -103,7 +122,13 @@ export default function App() {
           />
           <Route
             path="/settings"
-            element={isAuthed ? <Settings username={effectiveUsername} onLogout={handleLogout} /> : <Navigate to="/" replace />}
+            element={
+              isAuthed ? (
+                <Settings username={effectiveUsername} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
           />
           <Route path="/bookmarks" element={isAuthed ? <Bookmarks /> : <Navigate to="/" replace />} />
 
@@ -114,6 +139,10 @@ export default function App() {
     </>
   );
 }
+
+
+
+
 
 
 

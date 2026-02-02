@@ -284,7 +284,7 @@ export default function Settings({ username, onLogout }) {
                 className="st-input"
                 value={modalValue}
                 onChange={(e) => setModalValue(e.target.value)}
-                placeholder="e.g., caroline@example.com"
+                placeholder="e.g., john.smith@gmail.com"
                 aria-label="New email address"
               />
             </div>
