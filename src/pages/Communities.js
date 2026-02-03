@@ -6,6 +6,8 @@ import "./Communities.css";
 import profileImg from "../assets/images/profile_picture.png";
 import otherProfileImg from "../assets/images/other_profile.png";
 
+import { works as libraryWorks } from "../data/libraryWorks";
+
 const MOCK_TOPICS = [
   { id: "t1", label: "Writing Prompts", count: "12.4k" },
   { id: "t2", label: "Slow-burn Romance", count: "9.8k" },
@@ -43,6 +45,7 @@ const BASE_POSTS = [
   {
     id: "p1",
     type: "work",
+    workId: "w1",
     user: { handle: "jane.doe", display: "jane.doe", avatar: otherProfileImg },
     time: "2h",
     title: "Night in The Woods",
@@ -83,12 +86,13 @@ const BASE_POSTS = [
   {
     id: "p5",
     type: "work",
+    workId: "w6",
     user: { handle: "amira.salem", display: "amira.salem", avatar: "" },
     time: "1d",
-    title: "Title (Placeholder)",
-    caption: "Lorem ipsum dolor sit…",
-    meta: { language: "—", words: "—", views: "—" },
-    tags: ["tag", "tag"],
+    title: "Cold Water",
+    caption: "A quick teaser post — what would you do if the lake went silent?",
+    meta: { language: "English", words: "17,800", views: "388" },
+    tags: ["thriller", "survival"],
   },
 ];
 
@@ -191,6 +195,14 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
     if (tab === "Discussions") return base.filter((p) => p.type === "discussion");
     return base;
   }, [posts, query, tab]);
+
+  // (Optional) if a post is a work but lacks workId, try to resolve from library mock data by title
+  function resolveWorkIdFromTitle(title) {
+    const t = String(title || "").trim().toLowerCase();
+    if (!t) return null;
+    const found = (libraryWorks || []).find((w) => String(w.title || "").trim().toLowerCase() === t);
+    return found?.id || null;
+  }
 
   return (
     <div className="co-page" aria-label="Communities explore page">
@@ -384,112 +396,128 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
             {filteredPosts.length === 0 ? (
               <div className="co-empty">Nothing matched that. Try a different search or pick a trending topic.</div>
             ) : (
-              filteredPosts.map((p) => (
-                <article key={p.id} className="co-post" aria-label={`${p.type} post`}>
-                  <div className="co-postTop">
-                    <div className="co-postUser">
-                      <Link
-                        to={communityHrefFor(p.user.handle)}
-                        className="co-userLink"
-                        aria-label={`Open ${p.user.display} community page`}
-                      >
-                        <div className="co-avatar">
-                          <Avatar avatar={p.user.avatar} name={p.user.display} />
-                        </div>
-                        <div className="co-userMeta">
-                          <div className="co-userName">{p.user.display}</div>
-                          <div className="co-userHandle">@{p.user.handle}</div>
-                        </div>
-                      </Link>
+              filteredPosts.map((p) => {
+                const workId = p.type === "work" ? p.workId || resolveWorkIdFromTitle(p.title) : null;
+
+                return (
+                  <article key={p.id} className="co-post" aria-label={`${p.type} post`}>
+                    <div className="co-postTop">
+                      <div className="co-postUser">
+                        <Link
+                          to={communityHrefFor(p.user.handle)}
+                          className="co-userLink"
+                          aria-label={`Open ${p.user.display} community page`}
+                        >
+                          <div className="co-avatar">
+                            <Avatar avatar={p.user.avatar} name={p.user.display} />
+                          </div>
+                          <div className="co-userMeta">
+                            <div className="co-userName">{p.user.display}</div>
+                            <div className="co-userHandle">@{p.user.handle}</div>
+                          </div>
+                        </Link>
+                      </div>
+
+                      <div className="co-postRight">
+                        <TypePill type={p.type} />
+                        <div className="co-time">{p.time}</div>
+                        <button type="button" className="co-more" aria-label="More actions" title="More">
+                          ⋯
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="co-postRight">
-                      <TypePill type={p.type} />
-                      <div className="co-time">{p.time}</div>
-                      <button type="button" className="co-more" aria-label="More actions" title="More">
-                        ⋯
+                    <div className="co-postBody">
+                      {p.type === "work" && workId ? (
+                        <Link
+                          to={`/works/${encodeURIComponent(workId)}`}
+                          className="co-postTitle"
+                          style={{ color: "inherit", textDecoration: "none" }}
+                          aria-label={`Open work: ${p.title}`}
+                        >
+                          {p.title}
+                        </Link>
+                      ) : (
+                        <div className="co-postTitle">{p.title}</div>
+                      )}
+
+                      <div className="co-postCaption">{p.caption}</div>
+
+                      <div className="co-postMeta" aria-label="Post metadata">
+                        {p.type === "work" ? (
+                          <>
+                            <div className="co-metaItem">
+                              <span className="co-metaLabel">Language:</span> {p.meta.language}
+                            </div>
+                            <div className="co-metaItem">
+                              <span className="co-metaLabel">Word Count:</span> {p.meta.words}
+                            </div>
+                            <div className="co-metaItem">
+                              <span className="co-metaLabel">Views:</span> {p.meta.views}
+                            </div>
+                          </>
+                        ) : p.type === "discussion" ? (
+                          <>
+                            <div className="co-metaItem">
+                              <span className="co-metaLabel">Replies:</span> {p.meta.replies}
+                            </div>
+                            <div className="co-metaItem">
+                              <span className="co-metaLabel">Likes:</span> {p.meta.likes}
+                            </div>
+                          </>
+                        ) : p.type === "skin" ? (
+                          <>
+                            <div className="co-metaItem">
+                              <span className="co-metaLabel">Downloads:</span> {p.meta.downloads}
+                            </div>
+                            <div className="co-metaItem">
+                              <span className="co-metaLabel">Likes:</span> {p.meta.likes}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="co-metaItem">
+                              <span className="co-metaLabel">Length:</span> {p.meta.length}
+                            </div>
+                            <div className="co-metaItem">
+                              <span className="co-metaLabel">Plays:</span> {p.meta.plays}
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="co-tags" aria-label="Tags">
+                        {(p.tags || []).map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            className="co-tag"
+                            onClick={() => setQuery(t)}
+                            aria-label={`Search tag ${t}`}
+                          >
+                            #{t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="co-postActions" aria-label="Post actions">
+                      <button type="button" className="co-action" onClick={() => requireAuth(() => {})}>
+                        ♡ Like
+                      </button>
+                      <button type="button" className="co-action" onClick={() => requireAuth(() => {})}>
+                        💬 Reply
+                      </button>
+                      <button type="button" className="co-action" onClick={() => {}}>
+                        ⤴ Share
+                      </button>
+                      <button type="button" className="co-action co-action--ghost" onClick={() => requireAuth(() => {})}>
+                        Bookmark
                       </button>
                     </div>
-                  </div>
-
-                  <div className="co-postBody">
-                    <div className="co-postTitle">{p.title}</div>
-                    <div className="co-postCaption">{p.caption}</div>
-
-                    <div className="co-postMeta" aria-label="Post metadata">
-                      {p.type === "work" ? (
-                        <>
-                          <div className="co-metaItem">
-                            <span className="co-metaLabel">Language:</span> {p.meta.language}
-                          </div>
-                          <div className="co-metaItem">
-                            <span className="co-metaLabel">Word Count:</span> {p.meta.words}
-                          </div>
-                          <div className="co-metaItem">
-                            <span className="co-metaLabel">Views:</span> {p.meta.views}
-                          </div>
-                        </>
-                      ) : p.type === "discussion" ? (
-                        <>
-                          <div className="co-metaItem">
-                            <span className="co-metaLabel">Replies:</span> {p.meta.replies}
-                          </div>
-                          <div className="co-metaItem">
-                            <span className="co-metaLabel">Likes:</span> {p.meta.likes}
-                          </div>
-                        </>
-                      ) : p.type === "skin" ? (
-                        <>
-                          <div className="co-metaItem">
-                            <span className="co-metaLabel">Downloads:</span> {p.meta.downloads}
-                          </div>
-                          <div className="co-metaItem">
-                            <span className="co-metaLabel">Likes:</span> {p.meta.likes}
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="co-metaItem">
-                            <span className="co-metaLabel">Length:</span> {p.meta.length}
-                          </div>
-                          <div className="co-metaItem">
-                            <span className="co-metaLabel">Plays:</span> {p.meta.plays}
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="co-tags" aria-label="Tags">
-                      {(p.tags || []).map((t) => (
-                        <button
-                          key={t}
-                          type="button"
-                          className="co-tag"
-                          onClick={() => setQuery(t)}
-                          aria-label={`Search tag ${t}`}
-                        >
-                          #{t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="co-postActions" aria-label="Post actions">
-                    <button type="button" className="co-action" onClick={() => requireAuth(() => {})}>
-                      ♡ Like
-                    </button>
-                    <button type="button" className="co-action" onClick={() => requireAuth(() => {})}>
-                      💬 Reply
-                    </button>
-                    <button type="button" className="co-action" onClick={() => {}}>
-                      ⤴ Share
-                    </button>
-                    <button type="button" className="co-action co-action--ghost" onClick={() => requireAuth(() => {})}>
-                      Bookmark
-                    </button>
-                  </div>
-                </article>
-              ))
+                  </article>
+                );
+              })
             )}
           </section>
         </main>
@@ -550,6 +578,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
     </div>
   );
 }
+
 
 
 

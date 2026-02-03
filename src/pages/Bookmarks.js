@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Bookmarks.css";
 
 import { works as libraryWorks } from "../data/libraryWorks";
@@ -7,7 +7,6 @@ import { works as libraryWorks } from "../data/libraryWorks";
 function normalizeUsernameFromAuthor(author) {
   const raw = String(author || "author").trim().toLowerCase();
 
-  // Try to make something that looks like your existing usernames (john.doe, mira.ko, etc.)
   const base = raw
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, ".")
@@ -46,6 +45,7 @@ function getBookmarkedWorks() {
 }
 
 export default function Bookmarks() {
+  const navigate = useNavigate();
   const bookmarkedWorks = React.useMemo(() => getBookmarkedWorks(), []);
 
   return (
@@ -60,9 +60,7 @@ export default function Bookmarks() {
               className="bookmarkOpen"
               aria-label={`Open bookmarked work: ${work.title}`}
               onClick={() => {
-                // Front-end placeholder (later: navigate to work detail page)
-                // Example: navigate(`/works/${work.id}`)
-                console.log("Open bookmark:", work);
+                navigate(`/works/${encodeURIComponent(work.id)}`);
               }}
             >
               <div className="coverWrap">
@@ -91,5 +89,6 @@ export default function Bookmarks() {
     </div>
   );
 }
+
 
 

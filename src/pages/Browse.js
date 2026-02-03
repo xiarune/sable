@@ -1,14 +1,22 @@
 // Browse.js
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import WorkCarousel from "../components/WorkCarousel";
 import homeIcon from "../assets/images/home_icon.png";
 import { works } from "../data/libraryWorks";
 
 export default function Browse() {
+  const navigate = useNavigate();
+
   // Front-end placeholder “site” sections (swap for API later)
   const TRENDING = works.slice(0, 7);
   const FEATURED = works.slice(2, 8);
   const NEW_AND_NOTEWORTHY = works.slice(4, 10);
+
+  function openWork(item) {
+    if (!item?.id) return;
+    navigate(`/works/${encodeURIComponent(item.id)}`);
+  }
 
   return (
     <div>
@@ -19,6 +27,7 @@ export default function Browse() {
         ariaLabel="Trending works"
         titleIcon={homeIcon}
         autoScroll
+        onItemClick={openWork}
       />
 
       <WorkCarousel
@@ -28,6 +37,7 @@ export default function Browse() {
         ariaLabel="Featured works"
         titleIcon={homeIcon}
         autoScroll
+        onItemClick={openWork}
       />
 
       <WorkCarousel
@@ -37,7 +47,9 @@ export default function Browse() {
         ariaLabel="New and noteworthy works"
         titleIcon={homeIcon}
         autoScroll
+        onItemClick={openWork}
       />
     </div>
   );
 }
+

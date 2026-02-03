@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./YourWorks.css";
 
 const WORKS_KEY = "sable_published_v1";
@@ -75,7 +75,17 @@ export default function YourWorks() {
             {works.slice(0, 5).map((w) => (
               <article key={String(w.id)} className="yw-card">
                 <div className="yw-poster" aria-hidden="true" />
-                <h2 className="yw-cardTitle">{w.title || "Untitled"}</h2>
+
+                <h2 className="yw-cardTitle">
+                  <Link
+                    to={`/works/${encodeURIComponent(w.id)}`}
+                    style={{ color: "inherit", textDecoration: "none" }}
+                    aria-label={`Open work: ${w.title || "Untitled"}`}
+                  >
+                    {w.title || "Untitled"}
+                  </Link>
+                </h2>
+
                 <div className="yw-cardMeta">published</div>
 
                 <button type="button" className="yw-cardBtn" onClick={() => handleEdit(w.id)}>
@@ -89,6 +99,7 @@ export default function YourWorks() {
     </div>
   );
 }
+
 
 
 

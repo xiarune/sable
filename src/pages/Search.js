@@ -1,6 +1,6 @@
 // src/pages/Search.js
 import React from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { works } from "../data/libraryWorks";
 import "./Search.css";
 
@@ -34,7 +34,6 @@ export default function Search() {
         w.language,
         w.wordCount,
         w.views,
-        w.keywords,
         Array.isArray(w.tags) ? w.tags.join(" ") : "",
       ]
         .filter(Boolean)
@@ -123,8 +122,23 @@ export default function Search() {
                   aria-label={`Result: ${w.title || "Title"}`}
                 >
                   <div className="searchResultLeft">
-                    <div className="searchResultTitle">{w.title || "Title"}</div>
-                    <div className="searchResultAuthor">{w.author || "Author"}</div>
+                    <Link
+                      to={`/works/${encodeURIComponent(w.id)}`}
+                      className="searchResultTitle"
+                      style={{ color: "inherit", textDecoration: "none" }}
+                      aria-label={`Open work: ${w.title || "Title"}`}
+                    >
+                      {w.title || "Title"}
+                    </Link>
+
+                    <Link
+                      to={`/communities/${encodeURIComponent(w.author || "author")}`}
+                      className="searchResultAuthor"
+                      style={{ color: "inherit", textDecoration: "none" }}
+                      aria-label={`Open author community page: ${w.author || "author"}`}
+                    >
+                      {w.author || "Author"}
+                    </Link>
                   </div>
 
                   <div className="searchResultRight" aria-label="Work metadata">
@@ -150,6 +164,7 @@ export default function Search() {
     </div>
   );
 }
+
 
 
 

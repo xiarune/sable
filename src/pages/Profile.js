@@ -21,33 +21,64 @@ function loadArray(key) {
   return Array.isArray(parsed) ? parsed : [];
 }
 
-function initialsFromUsername(u) {
-  const s = String(u || "john.doe").trim();
-  const parts = s.split(".").filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return (s[0] || "J").toUpperCase();
+function getItemId(item, fallbackPrefix, index) {
+  if (!item) return `${fallbackPrefix}-${index}`;
+  if (typeof item === "string") return item;
+
+  // Common shapes across mock data / future backend
+  return (
+    item.id ||
+    item.workId ||
+    item.draftId ||
+    item._id ||
+    item.slug ||
+    item.title ||
+    `${fallbackPrefix}-${index}`
+  );
 }
 
-function prettyNameFromUsername(u) {
-  const s = String(u || "john.doe").trim();
-  const parts = s.split(".").filter(Boolean);
-  if (parts.length >= 2) {
-    const cap = (x) => x.charAt(0).toUpperCase() + x.slice(1);
-    return `${cap(parts[0])} ${cap(parts[1])}`;
-  }
-  return s.toUpperCase();
+function getItemTitle(item, fallback) {
+  if (!item) return fallback;
+  if (typeof item === "string") return item;
+
+  return item.title || item.name || item.label || fallback;
+}
+
+function getItemMeta(item, fallback) {
+  if (!item || typeof item === "string") return fallback;
+
+  // Optional nice-to-haves if your stored objects include them
+  const bits = [];
+  if (item.genre) bits.push(item.genre);
+  if (item.fandom) bits.push(item.fandom);
+  if (item.updatedAt) bits.push(`Updated ${item.updatedAt}`);
+  if (item.createdAt && !item.updatedAt) bits.push(`Created ${item.createdAt}`);
+
+  return bits.length ? bits.join(" • ") : fallback;
 }
 
 function Stat({ label, value }) {
   return (
-    <div className="pf-stat" role="group" aria-label={`${label}: ${value}`}>
+    <div className="pf-stat">
       <div className="pf-statValue">{value}</div>
       <div className="pf-statLabel">{label}</div>
     </div>
   );
 }
 
-function QuickAction({ icon, title, desc, onClick }) {
+function NavItem({ active, children, onClick }) {
+  return (
+    <button
+      type="button"
+      className={`pf-navItem${active ? " pf-navItem--active" : ""}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ActionCard({ icon, title, desc, onClick }) {
   return (
     <button type="button" className="pf-actionCard" onClick={onClick}>
       <div className="pf-actionIcon" aria-hidden="true">
@@ -64,44 +95,31 @@ function QuickAction({ icon, title, desc, onClick }) {
   );
 }
 
-function RowCard({ title, children, right }) {
-  return (
-    <section className="pf-card" aria-label={title}>
-      <div className="pf-cardHead">
-        <div className="pf-cardTitle">{title}</div>
-        {right ? <div className="pf-cardRight">{right}</div> : null}
-      </div>
-      <div className="pf-cardBody">{children}</div>
-    </section>
-  );
-}
-
 export default function Profile({ username = "john.doe" }) {
   const navigate = useNavigate();
-
-  const displayUsername = String(username || "john.doe").trim();
-  const prettyName = prettyNameFromUsername(displayUsername);
 
   const [active, setActive] = React.useState("Overview"); // Overview | Works | Drafts
   const [works, setWorks] = React.useState([]);
   const [drafts, setDrafts] = React.useState([]);
-
-  // Front-end placeholders
-  const email = `${displayUsername}@sable.app`;
-  const membership = "Reader + Creator";
-  const joined = "Joined Jan 2026";
 
   React.useEffect(() => {
     setWorks(loadArray(WORKS_KEY));
     setDrafts(loadArray(DRAFTS_KEY));
   }, []);
 
+  const effectiveUsername = (username || "john.doe").trim();
+  const handle = `@${effectiveUsername.replace(/\s+/g, ".").toLowerCase()}`;
+
+  function goToWorksPage() {
+    navigate("/works");
+  }
+
   function goToDraftsPage() {
     navigate("/drafts");
   }
 
-  function goToWorksPage() {
-    navigate("/works");
+  function openWorkView(workId) {
+    navigate(`/works/${encodeURIComponent(workId)}`);
   }
 
   function openWorkEditor(workId) {
@@ -109,52 +127,46 @@ export default function Profile({ username = "john.doe" }) {
   }
 
   function openDraftEditor(draftId) {
-    // Your NewDraft.js now redirects correctly, but going direct is cleaner.
     navigate(`/drafts/edit/${encodeURIComponent(draftId)}`);
   }
 
-  const worksPreview = works.slice(0, 2);
-  const draftsPreview = drafts.slice(0, 2);
+  // Counts (works/drafts could be strings or objects)
+  const worksCount = Array.isArray(works) ? works.length : 0;
+  const draftsCount = Array.isArray(drafts) ? drafts.length : 0;
 
   return (
     <div className="pf">
       <div className="pf-shell">
-        {/* HEADER */}
-        <header className="pf-hero" aria-label="Profile overview header">
+        {/* HERO */}
+        <section className="pf-hero" aria-label="Profile header">
           <div className="pf-heroTop">
             <div className="pf-id">
-              <div className="pf-avatarWrap" aria-hidden="true">
-                <img className="pf-avatar" src={profileImg} alt="" aria-hidden="true" />
+              <div className="pf-avatarWrap" aria-label="Profile picture">
+                <img className="pf-avatar" src={profileImg} alt={`${effectiveUsername} profile`} />
                 <div className="pf-avatarFallback" aria-hidden="true">
-                  {initialsFromUsername(displayUsername)}
+                  {effectiveUsername.slice(0, 1).toUpperCase()}
                 </div>
               </div>
 
               <div className="pf-idText">
-                <h1 className="pf-name">{prettyName}</h1>
-
+                <h1 className="pf-name">{effectiveUsername}</h1>
                 <div className="pf-subRow">
-                  <span className="pf-handle">@{displayUsername}</span>
-                  <span className="pf-dot" aria-hidden="true">
-                    •
-                  </span>
-                  <span className="pf-meta">{email}</span>
+                  <span className="pf-handle">{handle}</span>
+                  <span className="pf-dot">•</span>
+                  <span className="pf-meta">Sable Reader & Writer</span>
+                  <span className="pf-badge">Logged In</span>
                 </div>
 
                 <div className="pf-metaRow">
-                  <span className="pf-badge">{membership}</span>
-                  <span className="pf-meta">{joined}</span>
+                  <span className="pf-meta">Works: {worksCount}</span>
+                  <span className="pf-dot">•</span>
+                  <span className="pf-meta">Drafts: {draftsCount}</span>
                 </div>
               </div>
             </div>
 
-            {/* ✅ IMPORTANT: pf-cta stays a sibling of pf-id (CSS expects this) */}
             <div className="pf-cta">
-              <button
-                type="button"
-                className="pf-btn pf-btn--primary"
-                onClick={() => navigate("/new-draft")}
-              >
+              <button type="button" className="pf-btn pf-btn--primary" onClick={() => navigate("/new-draft")}>
                 New Draft
               </button>
               <button type="button" className="pf-btn" onClick={() => navigate("/settings")}>
@@ -163,194 +175,240 @@ export default function Profile({ username = "john.doe" }) {
             </div>
           </div>
 
-          <div className="pf-stats" aria-label="Account stats">
-            <Stat label="Published Works" value={String(works.length)} />
-            <Stat label="Drafts" value={String(drafts.length)} />
-            <Stat label="Bookmarks" value="18" />
-            <Stat label="Followers" value="8.7k" />
+          <div className="pf-stats" aria-label="Profile stats">
+            <Stat label="Published Works" value={worksCount} />
+            <Stat label="Drafts" value={draftsCount} />
+            <Stat label="Bookmarks" value="—" />
+            <Stat label="Communities" value="—" />
           </div>
-        </header>
+        </section>
 
+        {/* GRID */}
         <div className="pf-grid">
           {/* LEFT NAV */}
-          <aside className="pf-left" aria-label="Profile navigation">
-            <div className="pf-navCard">
-              <div className="pf-navTitle">Your Dashboard</div>
+          <aside className="pf-navCard" aria-label="Profile navigation">
+            <div className="pf-navTitle">Profile</div>
 
-              <div className="pf-navList" role="tablist" aria-label="Profile sections">
-                {["Overview", "Works", "Drafts"].map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    className={active === t ? "pf-navItem pf-navItem--active" : "pf-navItem"}
-                    onClick={() => setActive(t)}
-                    role="tab"
-                    aria-selected={active === t ? "true" : "false"}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-
-              <div className="pf-navDivider" aria-hidden="true" />
-
-              <button type="button" className="pf-navLink" onClick={() => navigate("/communities/me")}>
-                Your Community Page →
-              </button>
-
-              {/* ✅ Added: skins access (routes to settings where skins live) */}
-              <button type="button" className="pf-navLink" onClick={() => navigate("/settings")}>
-                Your Skins →
-              </button>
-
-              {/* ✅ Removed: duplicate "Your Works" and "Your Drafts" links (per your request) */}
-
-              <button type="button" className="pf-navLink" onClick={() => navigate("/communities")}>
-                Communities →
-              </button>
+            <div className="pf-navList">
+              <NavItem active={active === "Overview"} onClick={() => setActive("Overview")}>
+                Overview
+              </NavItem>
+              <NavItem active={active === "Works"} onClick={() => setActive("Works")}>
+                Works
+              </NavItem>
+              <NavItem active={active === "Drafts"} onClick={() => setActive("Drafts")}>
+                Drafts
+              </NavItem>
             </div>
+
+            <div className="pf-navDivider" />
+
+            <button type="button" className="pf-navLink" onClick={goToWorksPage}>
+              Go to Works Page
+            </button>
+            <button type="button" className="pf-navLink" onClick={goToDraftsPage}>
+              Go to Drafts Page
+            </button>
           </aside>
 
           {/* MAIN */}
-          <main className="pf-main" aria-label="Profile content">
+          <section className="pf-main" aria-label="Profile content">
             {active === "Overview" ? (
               <>
-                <div className="pf-actionsGrid" aria-label="Quick actions">
-                  <QuickAction
-                    icon="✍︎"
-                    title="Continue writing"
-                    desc="Jump back into your latest draft."
-                    onClick={goToDraftsPage}
-                  />
-                  <QuickAction
-                    icon="🗣"
-                    title="Go to Communities"
-                    desc="Post updates, reply, and follow creators."
-                    onClick={() => navigate("/communities")}
-                  />
-                  <QuickAction
-                    icon="⚙︎"
-                    title="Account settings"
-                    desc="Privacy, skins, personal info."
-                    onClick={() => navigate("/settings")}
-                  />
-                  <QuickAction
-                    icon="📌"
-                    title="Bookmarks"
-                    desc="Your saved library and reading list."
-                    onClick={() => navigate("/bookmarks")}
-                  />
+                <div className="pf-card">
+                  <div className="pf-cardHead">
+                    <div className="pf-cardTitle">Quick actions</div>
+                    <div className="pf-cardRight">
+                      <span className="pf-softMeta">Shortcuts</span>
+                    </div>
+                  </div>
+
+                  <div className="pf-cardBody">
+                    <div className="pf-actionsGrid">
+                      <ActionCard
+                        icon="✍️"
+                        title="Write a new draft"
+                        desc="Start something fresh in the editor."
+                        onClick={() => navigate("/new-draft")}
+                      />
+                      <ActionCard
+                        icon="📚"
+                        title="View your works"
+                        desc="Browse your published library."
+                        onClick={goToWorksPage}
+                      />
+                      <ActionCard
+                        icon="🗂️"
+                        title="Edit drafts"
+                        desc="Jump back into something unfinished."
+                        onClick={goToDraftsPage}
+                      />
+                      <ActionCard
+                        icon="🔎"
+                        title="Search"
+                        desc="Find works, tags, or keywords."
+                        onClick={() => navigate("/search")}
+                      />
+                    </div>
+
+                    <div className="pf-row" aria-label="Overview highlights">
+                      <div className="pf-mini">
+                        <div className="pf-miniTitle">Latest work</div>
+                        <div className="pf-miniMeta">
+                          {worksCount
+                            ? getItemTitle(works[0], "Untitled")
+                            : "No published works yet."}
+                        </div>
+                      </div>
+
+                      <div className="pf-mini">
+                        <div className="pf-miniTitle">Latest draft</div>
+                        <div className="pf-miniMeta">
+                          {draftsCount
+                            ? getItemTitle(drafts[0], "Untitled")
+                            : "No drafts yet."}
+                        </div>
+                      </div>
+
+                      <div className="pf-mini">
+                        <div className="pf-miniTitle">Status</div>
+                        <div className="pf-miniMeta">Mock data mode (localStorage)</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <RowCard
-                  title="Recently Viewed"
-                  right={
-                    <button className="pf-linkBtn" type="button" onClick={() => navigate("/browse")}>
-                      Browse
-                    </button>
-                  }
-                >
-                  <div className="pf-row">
-                    {[
-                      { title: "Night in The Woods", meta: "last opened • 2h ago" },
-                      { title: "Rain on Glass — Audio", meta: "last opened • yesterday" },
-                      { title: "Parchment Noir Skin", meta: "last opened • 4d ago" },
-                    ].map((x) => (
-                      <div key={x.title} className="pf-mini">
-                        <div className="pf-miniTitle">{x.title}</div>
-                        <div className="pf-miniMeta">{x.meta}</div>
-                      </div>
-                    ))}
+                <div className="pf-card">
+                  <div className="pf-cardHead">
+                    <div className="pf-cardTitle">Library</div>
+                    <div className="pf-cardRight">
+                      <button type="button" className="pf-linkBtn" onClick={() => setActive("Works")}>
+                        View works
+                      </button>
+                      <button type="button" className="pf-linkBtn" onClick={() => setActive("Drafts")}>
+                        View drafts
+                      </button>
+                    </div>
                   </div>
-                </RowCard>
+
+                  <div className="pf-cardBody">
+                    <div className="pf-library" aria-label="Library stats">
+                      <div className="pf-libraryItem">
+                        <div className="pf-libraryLabel">Published works</div>
+                        <div className="pf-libraryValue">{worksCount}</div>
+                      </div>
+                      <div className="pf-libraryItem">
+                        <div className="pf-libraryLabel">Drafts</div>
+                        <div className="pf-libraryValue">{draftsCount}</div>
+                      </div>
+                      <div className="pf-libraryItem">
+                        <div className="pf-libraryLabel">Bookmarks</div>
+                        <div className="pf-libraryValue">—</div>
+                      </div>
+                      <div className="pf-libraryItem">
+                        <div className="pf-libraryLabel">Communities</div>
+                        <div className="pf-libraryValue">—</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </>
             ) : null}
 
             {active === "Works" ? (
-              <RowCard
-                title="Published Works"
-                right={
-                  <div>
-                    <button className="pf-linkBtn" type="button" onClick={goToWorksPage}>
-                      View all
-                    </button>
-                    <button className="pf-linkBtn" type="button" onClick={() => navigate("/new-draft")}>
-                      New
+              <div className="pf-card">
+                <div className="pf-cardHead">
+                  <div className="pf-cardTitle">Published works</div>
+                  <div className="pf-cardRight">
+                    <button type="button" className="pf-linkBtn" onClick={goToWorksPage}>
+                      Open Works
                     </button>
                   </div>
-                }
-              >
-                <div className="pf-covers">
-                  {worksPreview.length === 0 ? (
-                    <div className="pf-coverCard">
-                      <div className="pf-cover" />
-                      <div className="pf-coverTitle">No published works yet</div>
-                      <div className="pf-coverMeta">Post a draft to publish</div>
-                      <button type="button" className="pf-linkBtn" onClick={() => navigate("/new-draft")}>
-                        Start a draft
-                      </button>
+                </div>
+
+                <div className="pf-cardBody">
+                  {worksCount ? (
+                    <div className="pf-list" aria-label="Works list">
+                      {works.slice(0, 8).map((w, i) => {
+                        const id = getItemId(w, "work", i);
+                        const title = getItemTitle(w, `Work ${i + 1}`);
+                        const meta = getItemMeta(w, "Published");
+
+                        return (
+                          <div key={id} className="pf-listRow">
+                            <div>
+                              <div className="pf-listTitle">{title}</div>
+                              <div className="pf-listMeta">{meta}</div>
+                            </div>
+
+                            <div className="pf-cardRight">
+                              <button type="button" className="pf-linkBtn" onClick={() => openWorkView(id)}>
+                                View
+                              </button>
+                              <button type="button" className="pf-linkBtn" onClick={() => openWorkEditor(id)}>
+                                Edit
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
-                    worksPreview.map((w) => (
-                      <div key={String(w.id)} className="pf-coverCard">
-                        <div className="pf-cover" />
-                        <div className="pf-coverTitle">{w.title || "Untitled"}</div>
-                        <div className="pf-coverMeta">published</div>
-                        <button type="button" className="pf-linkBtn" onClick={() => openWorkEditor(w.id)}>
-                          Edit
-                        </button>
-                      </div>
-                    ))
+                    <div className="pf-softMeta">No published works found yet.</div>
                   )}
                 </div>
-              </RowCard>
+              </div>
             ) : null}
 
             {active === "Drafts" ? (
-              <RowCard
-                title="Drafts"
-                right={
-                  <div>
-                    <button className="pf-linkBtn" type="button" onClick={goToDraftsPage}>
-                      View all
-                    </button>
-                    <button className="pf-linkBtn" type="button" onClick={() => navigate("/new-draft")}>
-                      New
+              <div className="pf-card">
+                <div className="pf-cardHead">
+                  <div className="pf-cardTitle">Drafts</div>
+                  <div className="pf-cardRight">
+                    <button type="button" className="pf-linkBtn" onClick={goToDraftsPage}>
+                      Open Drafts
                     </button>
                   </div>
-                }
-              >
-                <div className="pf-covers">
-                  {draftsPreview.length === 0 ? (
-                    <div className="pf-coverCard">
-                      <div className="pf-cover" />
-                      <div className="pf-coverTitle">No drafts yet</div>
-                      <div className="pf-coverMeta">Start writing</div>
-                      <button type="button" className="pf-linkBtn" onClick={() => navigate("/new-draft")}>
-                        New Draft
-                      </button>
+                </div>
+
+                <div className="pf-cardBody">
+                  {draftsCount ? (
+                    <div className="pf-list" aria-label="Drafts list">
+                      {drafts.slice(0, 10).map((d, i) => {
+                        const id = getItemId(d, "draft", i);
+                        const title = getItemTitle(d, `Draft ${i + 1}`);
+                        const meta = getItemMeta(d, "Unpublished");
+
+                        return (
+                          <div key={id} className="pf-listRow">
+                            <div>
+                              <div className="pf-listTitle">{title}</div>
+                              <div className="pf-listMeta">{meta}</div>
+                            </div>
+
+                            <div className="pf-cardRight">
+                              <button type="button" className="pf-linkBtn" onClick={() => openDraftEditor(id)}>
+                                Edit
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
-                    draftsPreview.map((d) => (
-                      <div key={String(d.id)} className="pf-coverCard">
-                        <div className="pf-cover" />
-                        <div className="pf-coverTitle">{d.title || "Untitled"}</div>
-                        <div className="pf-coverMeta">unpublished</div>
-                        <button type="button" className="pf-linkBtn" onClick={() => openDraftEditor(d.id)}>
-                          Edit
-                        </button>
-                      </div>
-                    ))
+                    <div className="pf-softMeta">No drafts found yet.</div>
                   )}
                 </div>
-              </RowCard>
+              </div>
             ) : null}
-          </main>
+          </section>
         </div>
       </div>
     </div>
   );
 }
+
+
 
 
 

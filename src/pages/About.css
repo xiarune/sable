@@ -1,0 +1,128 @@
+.aboutPage {
+  background-color: #f3efe6;
+
+  background-image: url("../assets/images/about_sable.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: contain;
+
+  min-height: calc(100vh - 64px);
+  padding: 56px 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aboutInner {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* LAYOUT — SAME GRID, MOVED AS A BLOCK (UP + RIGHT) */
+.aboutGrid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 56px;
+
+  max-width: 760px;
+  width: 100%;
+
+  align-items: start;
+
+  margin-top: -120px;
+  margin-left: 120px;
+}
+
+/* LEFT COLUMN */
+.aboutMain {
+  max-width: 460px;
+}
+
+.aboutTitle {
+  margin: 0 0 10px;
+
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 28px;
+
+  letter-spacing: 0.25px;
+  color: #224c2a;
+}
+
+.aboutBody {
+  margin: 0 0 8px;
+
+  font-family: "Libre Baskerville", serif;
+  font-size: 13.5px;
+  line-height: 1.45;
+
+  color: #24492b;
+}
+
+/* RIGHT COLUMN */
+.aboutSupport {
+  max-width: 260px;
+  padding-top: 6px;
+}
+
+.aboutSupportTitle {
+  margin: 0 0 8px;
+
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1.15;
+
+  color: #224c2a;
+}
+
+.aboutSupportBody {
+  margin: 0 0 10px;
+
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  line-height: 1.45;
+
+  color: #24492b;
+}
+
+.aboutSupportBtn {
+  padding: 5px 12px;
+
+  border-radius: 999px;
+  border: 1.25px solid #224c2a;
+  background: transparent;
+
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 11px;
+
+  color: #224c2a;
+  cursor: pointer;
+
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.aboutSupportBtn:hover {
+  background: rgba(34, 76, 42, 0.06);
+  transform: translateY(-1px);
+}
+
+/* RESPONSIVE — RESET OFFSET */
+@media (max-width: 820px) {
+  .aboutGrid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    max-width: 520px;
+
+    margin-top: 0;
+    margin-left: 0;
+  }
+}
+
+
+
+
+

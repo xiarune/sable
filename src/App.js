@@ -29,9 +29,13 @@ import TagsIndex from "./pages/TagsIndex";
 
 import YourWorks from "./pages/YourWorks";
 import WorkEditor from "./pages/WorkEditor";
+import WorkView from "./pages/WorkView";
 
 import Drafts from "./pages/Drafts";
 import DraftEditor from "./pages/DraftEditor";
+
+// ✅ NEW
+import SupportSable from "./pages/SupportSable";
 
 export default function App() {
   const [isAuthed, setIsAuthed] = React.useState(false);
@@ -51,12 +55,7 @@ export default function App() {
 
   return (
     <>
-      <Navbar
-        isAuthed={isAuthed}
-        username={effectiveUsername}
-        onLogin={handleLogin}
-        onLogout={handleLogout}
-      />
+      <Navbar isAuthed={isAuthed} username={effectiveUsername} onLogin={handleLogin} onLogout={handleLogout} />
 
       <main>
         <Routes>
@@ -65,13 +64,13 @@ export default function App() {
 
           {/* Main nav */}
           <Route path="/browse" element={<Browse />} />
-          <Route
-            path="/communities"
-            element={<Communities isAuthed={isAuthed} username={effectiveUsername} />}
-          />
+          <Route path="/communities" element={<Communities isAuthed={isAuthed} username={effectiveUsername} />} />
           <Route path="/about" element={<About />} />
 
-          {/* ✅ Search must render Search page */}
+          {/* ✅ Support / payments */}
+          <Route path="/support" element={<SupportSable />} />
+
+          {/* Search */}
           <Route path="/search" element={<Search />} />
 
           {/* Browse Library routes */}
@@ -84,51 +83,29 @@ export default function App() {
           {/* Communities profiles */}
           <Route
             path="/communities/me"
-            element={
-              isAuthed ? <YourCommunityPage username={effectiveUsername} /> : <Navigate to="/" replace />
-            }
+            element={isAuthed ? <YourCommunityPage username={effectiveUsername} /> : <Navigate to="/" replace />}
           />
-          <Route
-            path="/communities/:handle"
-            element={<PublicCommunityPage isAuthed={isAuthed} username={effectiveUsername} />}
-          />
+          <Route path="/communities/:handle" element={<PublicCommunityPage isAuthed={isAuthed} username={effectiveUsername} />} />
 
           {/* Published works */}
           <Route path="/works" element={isAuthed ? <YourWorks /> : <Navigate to="/" replace />} />
-          <Route
-            path="/works/edit/:workId"
-            element={isAuthed ? <WorkEditor /> : <Navigate to="/" replace />}
-          />
+          <Route path="/works/:workId" element={<WorkView isAuthed={isAuthed} username={effectiveUsername} />} />
+          <Route path="/works/edit/:workId" element={isAuthed ? <WorkEditor /> : <Navigate to="/" replace />} />
 
           {/* Drafts */}
           <Route path="/drafts" element={isAuthed ? <Drafts /> : <Navigate to="/" replace />} />
-          <Route
-            path="/drafts/edit/:draftId"
-            element={isAuthed ? <DraftEditor /> : <Navigate to="/" replace />}
-          />
+          <Route path="/drafts/edit/:draftId" element={isAuthed ? <DraftEditor /> : <Navigate to="/" replace />} />
 
           {/* Create draft */}
           <Route path="/new-draft" element={isAuthed ? <NewDraft /> : <Navigate to="/" replace />} />
 
           {/* Auth-only pages */}
           <Route path="/inbox" element={isAuthed ? <Inbox /> : <Navigate to="/" replace />} />
-          <Route
-            path="/notifications"
-            element={isAuthed ? <Notifications /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="/profile"
-            element={isAuthed ? <Profile username={effectiveUsername} /> : <Navigate to="/" replace />}
-          />
+          <Route path="/notifications" element={isAuthed ? <Notifications /> : <Navigate to="/" replace />} />
+          <Route path="/profile" element={isAuthed ? <Profile username={effectiveUsername} /> : <Navigate to="/" replace />} />
           <Route
             path="/settings"
-            element={
-              isAuthed ? (
-                <Settings username={effectiveUsername} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
+            element={isAuthed ? <Settings username={effectiveUsername} onLogout={handleLogout} /> : <Navigate to="/" replace />}
           />
           <Route path="/bookmarks" element={isAuthed ? <Bookmarks /> : <Navigate to="/" replace />} />
 
@@ -139,6 +116,8 @@ export default function App() {
     </>
   );
 }
+
+
 
 
 

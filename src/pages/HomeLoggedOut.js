@@ -1,5 +1,6 @@
 // HomeLoggedOut.js
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import WorkCarousel from "../components/WorkCarousel";
 import homeIcon from "../assets/images/home_icon.png";
 
@@ -23,6 +24,13 @@ const FEATURED_WORKS = [
 ];
 
 export default function HomeLoggedOut() {
+  const navigate = useNavigate();
+
+  function openWork(item) {
+    if (!item?.id) return;
+    navigate(`/works/${encodeURIComponent(item.id)}`);
+  }
+
   return (
     <div>
       <WorkCarousel
@@ -32,6 +40,7 @@ export default function HomeLoggedOut() {
         ariaLabel="Popular works"
         titleIcon={homeIcon}
         autoScroll
+        onItemClick={openWork}
       />
 
       <WorkCarousel
@@ -41,9 +50,11 @@ export default function HomeLoggedOut() {
         ariaLabel="Featured works"
         titleIcon={homeIcon}
         autoScroll
+        onItemClick={openWork}
       />
     </div>
   );
 }
+
 
 

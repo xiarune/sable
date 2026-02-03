@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { works } from "../data/libraryWorks";
 import "./Library.css";
 
@@ -31,6 +31,7 @@ function groupByFirstLetter(items) {
 }
 
 export default function GenreDetail() {
+  const navigate = useNavigate();
   const { genreSlug } = useParams();
 
   const genreName = React.useMemo(() => {
@@ -44,6 +45,11 @@ export default function GenreDetail() {
   }, [genreSlug]);
 
   const grouped = React.useMemo(() => groupByFirstLetter(filtered), [filtered]);
+
+  function openWork(w) {
+    if (!w?.id) return;
+    navigate(`/works/${encodeURIComponent(w.id)}`);
+  }
 
   return (
     <div className="shelfPage">
@@ -89,7 +95,7 @@ export default function GenreDetail() {
 
                 <div className="workPills">
                   {g.items.map((w) => (
-                    <button key={w.id} type="button" className="workPill">
+                    <button key={w.id} type="button" className="workPill" onClick={() => openWork(w)}>
                       {w.title}
                     </button>
                   ))}
@@ -102,3 +108,4 @@ export default function GenreDetail() {
     </div>
   );
 }
+

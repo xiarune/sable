@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import WorkCarousel from "../components/WorkCarousel";
 import homeIcon from "../assets/images/home_icon.png";
 
@@ -29,6 +30,13 @@ const FEATURED_WORKS = [
 ];
 
 export default function HomeLoggedIn() {
+  const navigate = useNavigate();
+
+  function openWork(item) {
+    if (!item?.id) return;
+    navigate(`/works/${encodeURIComponent(item.id)}`);
+  }
+
   return (
     <div>
       <WorkCarousel
@@ -37,6 +45,7 @@ export default function HomeLoggedIn() {
         items={FOR_YOU}
         ariaLabel="For you works"
         titleIcon={homeIcon}
+        onItemClick={openWork}
       />
 
       <WorkCarousel
@@ -45,6 +54,7 @@ export default function HomeLoggedIn() {
         items={POPULAR_WORKS}
         ariaLabel="Popular works"
         titleIcon={homeIcon}
+        onItemClick={openWork}
       />
 
       <WorkCarousel
@@ -53,10 +63,12 @@ export default function HomeLoggedIn() {
         items={FEATURED_WORKS}
         ariaLabel="Featured works"
         titleIcon={homeIcon}
+        onItemClick={openWork}
       />
     </div>
   );
 }
+
 
 
 
