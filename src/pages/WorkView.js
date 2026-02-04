@@ -145,10 +145,14 @@ function getChaptersFromWork(work) {
   const w = work || {};
   if (Array.isArray(w.chapters) && w.chapters.length) return w.chapters;
 
+  // Fallback: if work has old single body format, wrap in a chapter
+  if (w.body) {
+    return [{ id: "c1", title: "Chapter 1", body: w.body }];
+  }
+
+  // Mock fallback for library works without chapters
   return [
-    { id: "c1", title: "Chapter 1" },
-    { id: "c2", title: "Chapter 2" },
-    { id: "c3", title: "Chapter 3" },
+    { id: "c1", title: "Chapter 1", body: "" },
   ];
 }
 
@@ -270,12 +274,20 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   const language = work?.language || "English";
   const views = work?.views || "—";
 
-  const bodyRaw =
-    published?.body?.trim()
-      ? published.body
-      : library?.body?.trim()
-      ? library.body
-      : makePlaceholderBody(title);
+  const audioTracks = React.useMemo(() => getMockAudioTracks(decodedId, authorHandle), [decodedId, authorHandle]);
+  const chapters = React.useMemo(() => getChaptersFromWork(work), [work]);
+
+  // Get the active chapter's body
+  const activeChapter = chapters.find((c) => String(c.id) === String(activeChapterId)) || chapters[0] || null;
+
+  const bodyRaw = (() => {
+    // First try to get from active chapter
+    if (activeChapter?.body?.trim()) return activeChapter.body;
+    // Fallback to old single body format
+    if (published?.body?.trim()) return published.body;
+    if (library?.body?.trim()) return library.body;
+    return makePlaceholderBody(title);
+  })();
 
   const wordCount =
     work?.wordCount ||
@@ -286,9 +298,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
         .trim();
       return cleaned ? String(cleaned.split(" ").length) : "—";
     })();
-
-  const audioTracks = React.useMemo(() => getMockAudioTracks(decodedId, authorHandle), [decodedId, authorHandle]);
-  const chapters = React.useMemo(() => getChaptersFromWork(work), [work]);
 
   const isBookmarked = Boolean(workFavs?.[decodedId]);
 

@@ -323,6 +323,87 @@ textarea.nd-textarea {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
+/* Chapter list */
+.nd-chapterList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.nd-chapterItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.nd-chapterItem--active {
+  border-color: rgba(214, 168, 64, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(214, 168, 64, 0.30);
+}
+
+.nd-chapterSelect {
+  flex: 1;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+}
+
+.nd-chapterTitleInput {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: transparent;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.78);
+  outline: none;
+}
+
+.nd-chapterTitleInput:focus {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(0, 0, 0, 0.10);
+}
+
+.nd-chapterActions {
+  display: flex;
+  gap: 4px;
+}
+
+.nd-chapterBtn {
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 6px;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nd-chapterBtn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.nd-chapterBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.nd-chapterBtn--delete {
+  color: rgba(180, 60, 60, 0.75);
+}
+
 
 
 
