@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/sable/static/css/main.3b2369ab.css",
-    "main.js": "/sable/static/js/main.03985418.js",
+    "main.css": "/sable/static/css/main.c5ffc392.css",
+    "main.js": "/sable/static/js/main.01d38baf.js",
     "static/media/payment_confirmation.png": "/sable/static/media/payment_confirmation.f1c71a10ea8525bc72be.png",
     "static/media/about_sable.png": "/sable/static/media/about_sable.b0919caec0f078377f4e.png",
     "static/media/night_woods.png": "/sable/static/media/night_woods.5acb19f48aa2561f0c77.png",
@@ -16,11 +16,11 @@
     "static/media/inbox_nav.svg": "/sable/static/media/inbox_nav.71604770e5da501fb48453323c8fd6e1.svg",
     "static/media/search_nav.svg": "/sable/static/media/search_nav.f40a98ffd95b90fa922db1c181a1ceb0.svg",
     "index.html": "/sable/index.html",
-    "main.3b2369ab.css.map": "/sable/static/css/main.3b2369ab.css.map",
-    "main.03985418.js.map": "/sable/static/js/main.03985418.js.map"
+    "main.c5ffc392.css.map": "/sable/static/css/main.c5ffc392.css.map",
+    "main.01d38baf.js.map": "/sable/static/js/main.01d38baf.js.map"
   },
   "entrypoints": [
-    "static/css/main.3b2369ab.css",
-    "static/js/main.03985418.js"
+    "static/css/main.c5ffc392.css",
+    "static/js/main.01d38baf.js"
   ]
 }
