@@ -1,11 +1,23 @@
        
-≽^•⩊•^≼  Welcome!
+≽^•⩊•^≼ Welcome to Sable!
 
-For Docker, clone the repo, and run "docker compose up --build" within the sable folder.
+This repository contains the completed front-end implementation of the Sable application.
 
-In the event that Docker cannot be run, a GitHub Pages deployment is also available as a fallback to view the completed front-end interface in a browser. 
+Project Root
+All commands should be executed from the project root directory (`./sable`). This directory contains the `Dockerfile`, `docker-compose.yml`, and `package.json` required to run the application.
 
-GH Pages: https://xiarune.github.io/sable/
+Running the Project with Docker
+With Docker Desktop installed, navigate to the project root and run:
+
+docker compose up --build
+
+The application will be available at:
+http://localhost:3000
+
+GitHub Pages Fallback
+In the event that Docker cannot be run, a GitHub Pages deployment is also available to view the completed front-end interface in a browser:
+
+https://xiarune.github.io/sable/
 
 
 
