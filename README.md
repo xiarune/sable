@@ -1,6 +1,8 @@
        
 ≽^•⩊•^≼  Welcome!
 
+For Docker, clone the repo, and run "docker compose up --build" within the sable folder.
+
 In the event that Docker cannot be run, a GitHub Pages deployment is also available as a fallback to view the completed front-end interface in a browser. 
 
 GH Pages: https://xiarune.github.io/sable/
