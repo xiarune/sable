@@ -433,3 +433,337 @@
   }
 }
 
+/* Chatroom styles */
+.pcp-panel--chatroom {
+  grid-column: 1 / -1;
+}
+
+.pcp-chatBox {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.pcp-chatMessages {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pcp-chatMessage {
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+}
+
+.pcp-chatMsgHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.pcp-chatMsgUser {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1f3a2a;
+}
+
+.pcp-chatMsgTime {
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.pcp-chatMsgText {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.82);
+  line-height: 1.4;
+}
+
+.pcp-chatInputRow {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.pcp-chatInput {
+  flex: 1;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+}
+
+.pcp-chatInput:focus {
+  border-color: #1f3a2a;
+}
+
+.pcp-chatInput:disabled {
+  background: rgba(0, 0, 0, 0.04);
+  cursor: not-allowed;
+}
+
+.pcp-chatSendBtn {
+  border: 1px solid #1f3a2a;
+  background: #1f3a2a;
+  color: #fff;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.pcp-chatSendBtn:hover:not(:disabled) {
+  background: #2a4d38;
+}
+
+.pcp-chatSendBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Donations widget styles */
+.pcp-panel--donations {
+  grid-column: 1 / -1;
+}
+
+.pcp-donationBox {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.pcp-donationAmounts {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pcp-donationBtn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  border-radius: 6px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f3a2a;
+  cursor: pointer;
+}
+
+.pcp-donationBtn:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.pcp-donationBtn--active {
+  background: #1f3a2a;
+  color: #fff;
+  border-color: #1f3a2a;
+}
+
+.pcp-donationCustom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.pcp-donationDollar {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.pcp-donationInput {
+  flex: 1;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  outline: none;
+}
+
+.pcp-donationInput:focus {
+  border-color: #1f3a2a;
+}
+
+.pcp-donationNote {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  outline: none;
+  margin-bottom: 10px;
+}
+
+.pcp-donationNote:focus {
+  border-color: #1f3a2a;
+}
+
+.pcp-donateBtn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: #1f3a2a;
+  color: #fff;
+  border-radius: 6px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pcp-donateBtn:hover {
+  background: #2a4d38;
+}
+
+.pcp-donationSuccess {
+  text-align: center;
+  padding: 20px;
+}
+
+.pcp-donationSuccessIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1f3a2a;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.pcp-donationSuccessText {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f3a2a;
+}
+
+/* Recent Works widget styles */
+.pcp-panel--recentWorks {
+  grid-column: 1 / -1;
+}
+
+.pcp-recentWorksBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pcp-recentWorkItem {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.pcp-recentWorkItem:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.pcp-recentWorkCover {
+  width: 50px;
+  height: 60px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.pcp-recentWorkInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.pcp-recentWorkTitle {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f3a2a;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pcp-recentWorkMeta {
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* Announcements widget styles */
+.pcp-panel--announcements {
+  grid-column: 1 / -1;
+}
+
+.pcp-announcementsBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pcp-announcementItem {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+}
+
+.pcp-announcementItem--pinned {
+  background: rgba(31, 58, 42, 0.05);
+  border-color: rgba(31, 58, 42, 0.15);
+}
+
+.pcp-announcementPin {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.pcp-announcementContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.pcp-announcementText {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: #1f3a2a;
+  margin-bottom: 4px;
+}
+
+.pcp-announcementDate {
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.45);
+}
+

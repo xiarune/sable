@@ -10,7 +10,7 @@ export const works = [
     language: "Chinese",
     wordCount: 20000,
     views: 1024,
-    tags: ["night", "woods", "coming of age", "melancholy"],
+    tags: ["Hurt/Comfort", "Found Family", "Trauma", "Emotional Healing", "Friendship"],
   },
   {
     id: "w2",
@@ -21,7 +21,7 @@ export const works = [
     language: "Turkish",
     wordCount: 54000,
     views: 873,
-    tags: ["royalty", "betrayal", "magic"],
+    tags: ["Enemies to Lovers", "Slow Burn", "Redemption Arc", "Forbidden Romance", "Violence"],
   },
   {
     id: "w3",
@@ -32,7 +32,7 @@ export const works = [
     language: "Japanese",
     wordCount: 8200,
     views: 214,
-    tags: ["introspection", "grief"],
+    tags: ["Hurt/Comfort", "Trauma", "Emotional Healing", "One Shot"],
   },
   {
     id: "w4",
@@ -43,7 +43,7 @@ export const works = [
     language: "English",
     wordCount: 31200,
     views: 641,
-    tags: ["space", "isolation", "memory"],
+    tags: ["Amnesia", "Time Loop", "Canon Universe", "Slow Burn", "Miscommunication"],
   },
   {
     id: "w5",
@@ -54,7 +54,7 @@ export const works = [
     language: "English",
     wordCount: 4600,
     views: 97,
-    tags: ["nonlinear", "vignette"],
+    tags: ["One Shot", "Canon Divergence", "Alternate Universe"],
   },
   {
     id: "w6",
@@ -65,7 +65,7 @@ export const works = [
     language: "English",
     wordCount: 17800,
     views: 388,
-    tags: ["suspense", "survival"],
+    tags: ["Violence", "Blood and Injury", "Major Character Death", "Hurt/Comfort"],
   },
 ];
 

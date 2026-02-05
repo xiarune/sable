@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./YourCommunityPage.css";
 
 import bannerImg from "../assets/images/community_banner.png";
@@ -57,8 +57,28 @@ const MOCK_AUDIOS = [
   { id: "a3", title: "Ambient Writing Music", duration: "45:00", plays: 1289 },
 ];
 
+const INITIAL_CHAT_MESSAGES = [
+  { id: "m1", user: "amira.salem", text: "Love the new chapter!", time: "2:34 PM" },
+  { id: "m2", user: "hadassah", text: "When's the next update coming?", time: "2:36 PM" },
+  { id: "m3", user: "zoey", text: "This community is amazing!", time: "2:40 PM" },
+];
+
+const DONATION_PRESETS = [5, 10, 25];
+
+const MOCK_RECENT_DONATIONS = [
+  { user: "bookworm", amount: "$10", time: "2 hours ago" },
+  { user: "storyfan", amount: "$5", time: "Yesterday" },
+];
+
+const MOCK_ANNOUNCEMENTS = [
+  { id: "a1", text: "New chapter coming this weekend!", date: "2 hours ago", pinned: true },
+  { id: "a2", text: "Thank you for 1000 followers!", date: "3 days ago", pinned: false },
+  { id: "a3", text: "Taking a short break next week", date: "1 week ago", pinned: false },
+];
+
 export default function YourCommunityPage({ username }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const initialDisplayName = (username || "john.doe").toUpperCase();
 
@@ -88,6 +108,45 @@ export default function YourCommunityPage({ username }) {
 
   // Widget settings state
   const [widgets, setWidgets] = React.useState(() => getWidgetSettings());
+
+  // Chatroom state
+  const [chatMessages, setChatMessages] = React.useState(INITIAL_CHAT_MESSAGES);
+  const [chatInput, setChatInput] = React.useState("");
+  const chatEndRef = React.useRef(null);
+
+  function handleSendMessage() {
+    const text = chatInput.trim();
+    if (!text) return;
+    const newMsg = {
+      id: `m_${Date.now()}`,
+      user: (username || "john.doe").toLowerCase(),
+      text,
+      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    };
+    setChatMessages((prev) => [...prev, newMsg]);
+    setChatInput("");
+  }
+
+  function handleChatKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  }
+
+  React.useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages]);
+
+  // Donation state (for viewing received donations)
+  const [donationHistory] = React.useState(MOCK_RECENT_DONATIONS);
+  const [totalReceived] = React.useState("$245.00");
+
+  function handleWorkClick(workId) {
+    navigate(`/works/view/${encodeURIComponent(workId)}`);
+  }
 
   function toggleWidget(widgetKey) {
     setWidgets((prev) => {
@@ -278,7 +337,15 @@ export default function YourCommunityPage({ username }) {
                 <div className="ycp-tabContent" aria-label="Works">
                   <div className="ycp-worksRow">
                     {MOCK_WORKS.map((work) => (
-                      <div key={work.id} className="ycp-workCard" role="button" tabIndex={0} aria-label={work.title}>
+                      <div
+                        key={work.id}
+                        className="ycp-workCard"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={work.title}
+                        onClick={() => handleWorkClick(work.id)}
+                        onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work.id)}
+                      >
                         <div className="ycp-workCover ycp-workCover--placeholder" />
                         <div className="ycp-workInfo">
                           <div className="ycp-workTitle">{work.title}</div>
@@ -342,30 +409,111 @@ export default function YourCommunityPage({ username }) {
             <aside className="ycp-right" aria-label="Community panels">
               <div className="ycp-panels">
                 {widgets.announcements && (
-                  <div className="ycp-panel">
+                  <div className="ycp-panel ycp-panel--announcements">
                     <div className="ycp-panelTitle">Announcements</div>
-                    <div className="ycp-panelBox" />
+                    <div className="ycp-announcementsBox">
+                      {MOCK_ANNOUNCEMENTS.map((ann) => (
+                        <div key={ann.id} className={`ycp-announcementItem ${ann.pinned ? "ycp-announcementItem--pinned" : ""}`}>
+                          {ann.pinned && <span className="ycp-announcementPin">📌</span>}
+                          <div className="ycp-announcementContent">
+                            <div className="ycp-announcementText">{ann.text}</div>
+                            <div className="ycp-announcementDate">{ann.date}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 {widgets.donations && (
-                  <div className="ycp-panel">
+                  <div className="ycp-panel ycp-panel--donations">
                     <div className="ycp-panelTitle">Donations</div>
-                    <div className="ycp-panelBox" />
+                    <div className="ycp-donationBox">
+                      <div className="ycp-donationTotal">
+                        <span className="ycp-donationTotalLabel">Total Received</span>
+                        <span className="ycp-donationTotalAmount">{totalReceived}</span>
+                      </div>
+                      <div className="ycp-donationRecent">
+                        <div className="ycp-donationRecentTitle">Recent Donations</div>
+                        {donationHistory.length > 0 ? (
+                          <div className="ycp-donationList">
+                            {donationHistory.map((d, idx) => (
+                              <div key={idx} className="ycp-donationItem">
+                                <span className="ycp-donationUser">@{d.user}</span>
+                                <span className="ycp-donationAmount">{d.amount}</span>
+                                <span className="ycp-donationTime">{d.time}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="ycp-donationEmpty">No donations yet</div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {widgets.recentWorks && (
-                  <div className="ycp-panel">
+                  <div className="ycp-panel ycp-panel--recentWorks">
                     <div className="ycp-panelTitle">Recent Works</div>
-                    <div className="ycp-panelBox" />
+                    <div className="ycp-recentWorksBox">
+                      {MOCK_WORKS.slice(0, 3).map((work) => (
+                        <div
+                          key={work.id}
+                          className="ycp-recentWorkItem"
+                          onClick={() => handleWorkClick(work.id)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work.id)}
+                        >
+                          <div className="ycp-recentWorkCover" />
+                          <div className="ycp-recentWorkInfo">
+                            <div className="ycp-recentWorkTitle">{work.title}</div>
+                            <div className="ycp-recentWorkMeta">{work.genre} · {work.wordCount}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 {widgets.chatroom && (
-                  <div className="ycp-panel">
+                  <div className="ycp-panel ycp-panel--chatroom">
                     <div className="ycp-panelTitle">Chatroom</div>
-                    <div className="ycp-panelBox" />
+                    <div className="ycp-chatBox">
+                      <div className="ycp-chatMessages">
+                        {chatMessages.map((msg) => (
+                          <div key={msg.id} className="ycp-chatMessage">
+                            <div className="ycp-chatMsgHeader">
+                              <span className="ycp-chatMsgUser">@{msg.user}</span>
+                              <span className="ycp-chatMsgTime">{msg.time}</span>
+                            </div>
+                            <div className="ycp-chatMsgText">{msg.text}</div>
+                          </div>
+                        ))}
+                        <div ref={chatEndRef} />
+                      </div>
+                      <div className="ycp-chatInputRow">
+                        <input
+                          type="text"
+                          className="ycp-chatInput"
+                          placeholder="Type a message..."
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={handleChatKeyDown}
+                          aria-label="Chat message"
+                        />
+                        <button
+                          type="button"
+                          className="ycp-chatSendBtn"
+                          onClick={handleSendMessage}
+                          disabled={!chatInput.trim()}
+                          aria-label="Send message"
+                        >
+                          Send
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

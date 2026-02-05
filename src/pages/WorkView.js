@@ -924,6 +924,17 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
               <div className="wv-sep wv-sep--soft" />
 
+              {/* Current chapter indicator */}
+              {chapters.length > 0 && (
+                <div className="wv-currentChapter">
+                  <span className="wv-currentChapterLabel">Currently Reading:</span>
+                  <span className="wv-currentChapterTitle">{activeChapter?.title || "Chapter 1"}</span>
+                  <span className="wv-currentChapterCount">
+                    ({chapters.findIndex((c) => c.id === activeChapterId) + 1} of {chapters.length})
+                  </span>
+                </div>
+              )}
+
               {/* Body */}
               <article
                 className="wv-body"

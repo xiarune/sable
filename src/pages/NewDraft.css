@@ -404,6 +404,54 @@ textarea.nd-textarea {
   color: rgba(180, 60, 60, 0.75);
 }
 
+/* Chapter selector dropdown */
+.nd-chapterSelector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  margin-bottom: 4px;
+  padding: 12px 14px;
+  background: rgba(36, 75, 43, 0.06);
+  border-radius: 10px;
+  border: 1px solid rgba(36, 75, 43, 0.12);
+}
+
+.nd-chapterSelectorLabel {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(36, 75, 43, 0.85);
+  white-space: nowrap;
+}
+
+.nd-chapterDropdown {
+  flex: 1;
+  max-width: 280px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 8px 12px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.95);
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.82);
+  cursor: pointer;
+}
+
+.nd-chapterDropdown:focus {
+  border-color: rgba(214, 168, 64, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(214, 168, 64, 0.35);
+}
+
+.nd-chapterCount {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+
 
 
 

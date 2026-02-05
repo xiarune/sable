@@ -641,8 +641,26 @@ export default function DraftEditor() {
               <div className="nd-bodyLabel">Title</div>
               <input className="nd-textarea" style={{ minHeight: 44 }} value={title} onChange={(e) => setTitle(e.target.value)} />
 
-              <div className="nd-bodyLabel" style={{ marginTop: 14 }}>
-                {activeChapter ? activeChapter.title : "Chapter"} Body
+              <div className="nd-chapterSelector">
+                <label className="nd-chapterSelectorLabel">Currently Editing:</label>
+                <select
+                  className="nd-chapterDropdown"
+                  value={activeChapterId}
+                  onChange={(e) => setActiveChapterId(e.target.value)}
+                >
+                  {chapters.map((ch, idx) => (
+                    <option key={ch.id} value={ch.id}>
+                      {ch.title || `Chapter ${idx + 1}`}
+                    </option>
+                  ))}
+                </select>
+                <span className="nd-chapterCount">
+                  ({chapters.findIndex((c) => c.id === activeChapterId) + 1} of {chapters.length})
+                </span>
+              </div>
+
+              <div className="nd-bodyLabel" style={{ marginTop: 8 }}>
+                Chapter Content
               </div>
               <textarea ref={bodyRef} className="nd-textarea" value={body} onChange={(e) => setBody(e.target.value)} />
             </>

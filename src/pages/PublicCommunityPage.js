@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams, Link, Navigate } from "react-router-dom";
+import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import "./PublicCommunityPage.css";
 
 // John assets
@@ -68,6 +68,19 @@ const MOCK_AUDIOS = [
   { id: "a3", title: "Ambient Writing Music", duration: "45:00", plays: 1289 },
 ];
 
+const INITIAL_CHAT_MESSAGES = [
+  { id: "m1", user: "reader42", text: "Anyone here read the latest chapter?", time: "1:15 PM" },
+  { id: "m2", user: "bookworm", text: "Yes! It was amazing!", time: "1:18 PM" },
+  { id: "m3", user: "storyfan", text: "Can't wait for the next update!", time: "1:22 PM" },
+];
+
+const DONATION_PRESETS = [5, 10, 25];
+
+const MOCK_ANNOUNCEMENTS = [
+  { id: "a1", text: "New chapter coming this weekend!", date: "2 hours ago", pinned: true },
+  { id: "a2", text: "Thank you for 1000 followers!", date: "3 days ago", pinned: false },
+];
+
 const MOCK_PUBLIC_PROFILES = {
   "john.doe": {
     displayName: "JOHN.DOE",
@@ -98,6 +111,7 @@ const MOCK_PUBLIC_PROFILES = {
 
 export default function PublicCommunityPage({ isAuthed = false, username = "john.doe" }) {
   const { handle } = useParams();
+  const navigate = useNavigate();
 
   const normalizedHandle = (handle || "").trim().toLowerCase();
   const normalizedUsername = (username || "").trim().toLowerCase();
@@ -112,6 +126,66 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
 
   // Active tab state
   const [activeTab, setActiveTab] = React.useState("works");
+
+  // Chatroom state
+  const [chatMessages, setChatMessages] = React.useState(INITIAL_CHAT_MESSAGES);
+  const [chatInput, setChatInput] = React.useState("");
+  const chatEndRef = React.useRef(null);
+
+  function handleSendMessage() {
+    if (!isAuthed) {
+      window.dispatchEvent(new Event("sable:open-auth"));
+      return;
+    }
+    const text = chatInput.trim();
+    if (!text) return;
+    const newMsg = {
+      id: `m_${Date.now()}`,
+      user: normalizedUsername || "guest",
+      text,
+      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    };
+    setChatMessages((prev) => [...prev, newMsg]);
+    setChatInput("");
+  }
+
+  function handleChatKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  }
+
+  React.useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages]);
+
+  // Donation state
+  const [donationAmount, setDonationAmount] = React.useState(5);
+  const [customDonation, setCustomDonation] = React.useState("");
+  const [donationSuccess, setDonationSuccess] = React.useState(false);
+  const [donationNote, setDonationNote] = React.useState("");
+
+  function handleDonate() {
+    if (!isAuthed) {
+      window.dispatchEvent(new Event("sable:open-auth"));
+      return;
+    }
+    setDonationSuccess(true);
+    setTimeout(() => setDonationSuccess(false), 3000);
+  }
+
+  function getEffectiveDonation() {
+    const custom = parseFloat(customDonation);
+    if (!isNaN(custom) && custom > 0) return custom;
+    return donationAmount;
+  }
+
+  function handleWorkClick(workId) {
+    navigate(`/works/view/${encodeURIComponent(workId)}`);
+  }
 
   function handleFollow() {
     if (!isAuthed) {
@@ -287,7 +361,15 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
               <div className="pcp-tabContent" aria-label="Works">
                 <div className="pcp-worksRow">
                   {MOCK_WORKS.map((work) => (
-                    <div key={work.id} className="pcp-workCard" role="button" tabIndex={0} aria-label={work.title}>
+                    <div
+                      key={work.id}
+                      className="pcp-workCard"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={work.title}
+                      onClick={() => handleWorkClick(work.id)}
+                      onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work.id)}
+                    >
                       <div className="pcp-workCover pcp-workCover--placeholder" />
                       <div className="pcp-workInfo">
                         <div className="pcp-workTitle">{work.title}</div>
@@ -372,24 +454,134 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
 
           <aside className="pcp-right" aria-label="Community panels">
             <div className="pcp-panels">
-              <div className="pcp-panel">
+              <div className="pcp-panel pcp-panel--announcements">
                 <div className="pcp-panelTitle">Announcements</div>
-                <div className="pcp-panelBox" />
+                <div className="pcp-announcementsBox">
+                  {MOCK_ANNOUNCEMENTS.map((ann) => (
+                    <div key={ann.id} className={`pcp-announcementItem ${ann.pinned ? "pcp-announcementItem--pinned" : ""}`}>
+                      {ann.pinned && <span className="pcp-announcementPin">📌</span>}
+                      <div className="pcp-announcementContent">
+                        <div className="pcp-announcementText">{ann.text}</div>
+                        <div className="pcp-announcementDate">{ann.date}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="pcp-panel">
-                <div className="pcp-panelTitle">Donations</div>
-                <div className="pcp-panelBox" />
+              <div className="pcp-panel pcp-panel--donations">
+                <div className="pcp-panelTitle">Support {profile.displayName}</div>
+                <div className="pcp-donationBox">
+                  {donationSuccess ? (
+                    <div className="pcp-donationSuccess">
+                      <div className="pcp-donationSuccessIcon">✓</div>
+                      <div className="pcp-donationSuccessText">Thank you for your support!</div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="pcp-donationAmounts">
+                        {DONATION_PRESETS.map((amt) => (
+                          <button
+                            key={amt}
+                            type="button"
+                            className={`pcp-donationBtn ${donationAmount === amt && !customDonation ? "pcp-donationBtn--active" : ""}`}
+                            onClick={() => {
+                              setDonationAmount(amt);
+                              setCustomDonation("");
+                            }}
+                          >
+                            ${amt}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="pcp-donationCustom">
+                        <span className="pcp-donationDollar">$</span>
+                        <input
+                          type="text"
+                          className="pcp-donationInput"
+                          placeholder="Other"
+                          value={customDonation}
+                          onChange={(e) => setCustomDonation(e.target.value.replace(/[^\d.]/g, ""))}
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        className="pcp-donationNote"
+                        placeholder="Add a note (optional)"
+                        value={donationNote}
+                        onChange={(e) => setDonationNote(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="pcp-donateBtn"
+                        onClick={handleDonate}
+                      >
+                        Donate ${getEffectiveDonation().toFixed(2)}
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
 
-              <div className="pcp-panel">
+              <div className="pcp-panel pcp-panel--recentWorks">
                 <div className="pcp-panelTitle">Recent Works</div>
-                <div className="pcp-panelBox" />
+                <div className="pcp-recentWorksBox">
+                  {MOCK_WORKS.slice(0, 3).map((work) => (
+                    <div
+                      key={work.id}
+                      className="pcp-recentWorkItem"
+                      onClick={() => handleWorkClick(work.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work.id)}
+                    >
+                      <div className="pcp-recentWorkCover" />
+                      <div className="pcp-recentWorkInfo">
+                        <div className="pcp-recentWorkTitle">{work.title}</div>
+                        <div className="pcp-recentWorkMeta">{work.genre} · {work.wordCount}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="pcp-panel">
+              <div className="pcp-panel pcp-panel--chatroom">
                 <div className="pcp-panelTitle">Chatroom</div>
-                <div className="pcp-panelBox" />
+                <div className="pcp-chatBox">
+                  <div className="pcp-chatMessages">
+                    {chatMessages.map((msg) => (
+                      <div key={msg.id} className="pcp-chatMessage">
+                        <div className="pcp-chatMsgHeader">
+                          <span className="pcp-chatMsgUser">@{msg.user}</span>
+                          <span className="pcp-chatMsgTime">{msg.time}</span>
+                        </div>
+                        <div className="pcp-chatMsgText">{msg.text}</div>
+                      </div>
+                    ))}
+                    <div ref={chatEndRef} />
+                  </div>
+                  <div className="pcp-chatInputRow">
+                    <input
+                      type="text"
+                      className="pcp-chatInput"
+                      placeholder={isAuthed ? "Type a message..." : "Log in to chat..."}
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={handleChatKeyDown}
+                      aria-label="Chat message"
+                      disabled={!isAuthed}
+                    />
+                    <button
+                      type="button"
+                      className="pcp-chatSendBtn"
+                      onClick={handleSendMessage}
+                      disabled={!isAuthed || !chatInput.trim()}
+                      aria-label="Send message"
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </aside>
