@@ -187,7 +187,6 @@
   padding: 16px 0;
 }
 
-/* ===== Added for checkbox styling consistency (pink checks like your screenshot) ===== */
 .filterRow input[type="checkbox"] {
   accent-color: #e05a93;
 }

@@ -22,7 +22,7 @@ function saveArray(key, arr) {
   try {
     localStorage.setItem(key, JSON.stringify(arr));
   } catch {
-    // front-end only
+    // front end only
   }
 }
 

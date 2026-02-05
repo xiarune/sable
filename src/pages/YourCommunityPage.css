@@ -13,7 +13,7 @@
   position: relative;
 }
 
-/* Pencil edit icon in banner (top-right) */
+/* Pencil edit icon */
 .ycp-bannerEditBtn {
   position: absolute;
   right: 14px;
@@ -97,7 +97,6 @@
   display: block;
 }
 
-/* VIEW MODE GRID */
 .ycp-grid {
   display: grid;
   grid-template-columns: 1fr 360px;
@@ -239,7 +238,7 @@
   opacity: 1;
 }
 
-/* Works row (placeholders) */
+/* Works row */
 .ycp-worksRow {
   display: flex;
   gap: 22px;
@@ -347,7 +346,7 @@
   color: #fff;
 }
 
-/* Right panels (shared) */
+/* Right panels*/
 .ycp-right {
   display: flex;
   justify-content: flex-end;
@@ -376,9 +375,7 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* =========================
-   EDIT MODE
-   ========================= */
+/* EDIT MODE */
 .ycp-editGrid {
   display: grid;
   grid-template-columns: 1fr 420px;
@@ -534,7 +531,7 @@
   display: block;
 }
 
-/* Add Widget section */
+/* Add widget section */
 .ycp-addWidgetSection {
   margin-top: 24px;
   padding-top: 20px;

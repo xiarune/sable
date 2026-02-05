@@ -13,7 +13,7 @@ export default function Settings({ username, onLogout }) {
   // Left nav
   const [activeNav, setActiveNav] = React.useState("account");
 
-  // Right-side visibility card (UI-only)
+  // Right-side visibility card 
   const [visibility, setVisibility] = React.useState("public"); // public | private | invisible
 
   // Modals
@@ -73,7 +73,7 @@ export default function Settings({ username, onLogout }) {
     { id: "a2", title: "Parchment Noir Theme", duration: "2:11" },
   ]);
 
-  // Skin modal (UI-only)
+  // Skin modal
   const [skinName, setSkinName] = React.useState("");
   const [skinAppliesTo, setSkinAppliesTo] = React.useState("Community Page");
   const [skinCss, setSkinCss] = React.useState(
@@ -105,7 +105,7 @@ export default function Settings({ username, onLogout }) {
   }
 
   function handleConfirmGoodbye() {
-    // Front-end placeholder: "Yes" logs out and returns to Home (logged out)
+   
     closeModal();
 
     if (typeof onLogout === "function") {
@@ -161,7 +161,7 @@ export default function Settings({ username, onLogout }) {
   function handleModalSave() {
     // Front-end placeholder only
     setModalStatus("Saved (placeholder).");
-    // Keep modal open so it feels functional, unless you prefer auto-close.
+   
   }
 
   function handleDownloadGenerate() {
@@ -172,7 +172,7 @@ export default function Settings({ username, onLogout }) {
   }
 
   function handleSkinSave() {
-    // Front-end placeholder only (no persistence yet)
+    // Front-end placeholder only 
     setSkinName("");
     setSkinAppliesTo("Community Page");
     setSkinCss("/* Example */\n.ycp-card {\n  background: rgba(255,255,255,0.8);\n}\n");
@@ -180,11 +180,9 @@ export default function Settings({ username, onLogout }) {
   }
 
   function renderMiniModalBody() {
-    // Uses existing classes — no CSS changes.
+    
     switch (activeModal) {
-      // ---------------------------
-      // ACCOUNT MODALS
-      // ---------------------------
+     
       case "username":
         return (
           <>
@@ -409,9 +407,8 @@ export default function Settings({ username, onLogout }) {
           </>
         );
 
-      // ---------------------------
-      // PRIVACY MODALS
-      // ---------------------------
+      // Privacy
+
       case "blocked":
         return (
           <>
@@ -614,9 +611,8 @@ export default function Settings({ username, onLogout }) {
           </>
         );
 
-      // ---------------------------
-      // AUDIO MODALS
-      // ---------------------------
+      // Audio
+
       case "uploadDefaults":
         return (
           <>
@@ -888,7 +884,8 @@ export default function Settings({ username, onLogout }) {
     <div className="st">
       <div className="st-shell">
         <div className="st-grid">
-          {/* LEFT NAV */}
+
+          {/* Left nav */}
           <aside className="st-side" aria-label="Settings navigation">
             <div className="st-sideTitle">Settings</div>
 
@@ -933,9 +930,10 @@ export default function Settings({ username, onLogout }) {
             </button>
           </aside>
 
-          {/* CENTER COLUMN */}
+          {/* Center */}
           <main className="st-main" aria-label="Settings content">
-            {/* ACCOUNT */}
+
+            {/* Account */}
             {activeNav === "account" && (
               <>
                 <h1 className="st-title">ACCOUNT</h1>
@@ -1037,7 +1035,7 @@ export default function Settings({ username, onLogout }) {
               </>
             )}
 
-            {/* PERSONAL INFO */}
+            {/* Personal Info */}
             {activeNav === "personal" && (
               <>
                 <h1 className="st-title">Personal Info</h1>
@@ -1088,7 +1086,7 @@ export default function Settings({ username, onLogout }) {
               </>
             )}
 
-            {/* PRIVACY */}
+            {/* Privacy */}
             {activeNav === "privacy" && (
               <>
                 <h1 className="st-title">Privacy</h1>
@@ -1159,7 +1157,7 @@ export default function Settings({ username, onLogout }) {
               </>
             )}
 
-            {/* AUDIO */}
+            {/* Audio */}
             {activeNav === "audio" && (
               <>
                 <h1 className="st-title">Audio</h1>
@@ -1253,7 +1251,7 @@ export default function Settings({ username, onLogout }) {
         </div>
       </div>
 
-      {/* GOODBYE MODAL (Delete / Deactivate) */}
+      {/* Goodbye (Delete / Deactivate) */}
       {isGoodbyeModal && (
         <div className="st-modalOverlay" role="dialog" aria-modal="true" onClick={closeModal}>
           <div className="st-modal" onClick={(e) => e.stopPropagation()}>
@@ -1280,7 +1278,7 @@ export default function Settings({ username, onLogout }) {
         </div>
       )}
 
-      {/* SKIN MODAL */}
+      {/* Skins */}
       {isSkinModal && (
         <div className="st-modalOverlay" role="dialog" aria-modal="true" onClick={closeModal}>
           <div className="st-modal" onClick={(e) => e.stopPropagation()}>
@@ -1339,7 +1337,7 @@ export default function Settings({ username, onLogout }) {
         </div>
       )}
 
-      {/* MINI MODAL (Everything else) */}
+      {/* Mini modal */}
       {isMiniEditModal && (
         <div className="st-modalOverlay" role="dialog" aria-modal="true" onClick={closeModal}>
           <div className="st-modal" onClick={(e) => e.stopPropagation()}>

@@ -1,4 +1,4 @@
-// src/pages/Search.js
+
 import React from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { works } from "../data/libraryWorks";
@@ -10,7 +10,7 @@ export default function Search() {
   const urlQuery = (params.get("q") || "").trim();
   const [input, setInput] = React.useState(urlQuery);
 
-  // Keep input synced when navigating to /search?q=... (Navbar, tags, back button, etc.)
+
   React.useEffect(() => {
     setInput(urlQuery);
   }, [urlQuery]);
@@ -65,7 +65,7 @@ export default function Search() {
       <div className="searchWrap">
         <header className="searchHeader" aria-label="Search header">
           <div className="searchTitleBlock">
-            <h1 className="searchTitle">SEARCH RESULTS FOR:</h1>
+            <h1 className="searchTitle">Serach Results For:</h1>
             <div className="searchQuery" title={input.trim() || ""}>
               {hasQuery ? input.trim() : "Type a title, author, genre, fandom, or keyword."}
             </div>

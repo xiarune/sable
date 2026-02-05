@@ -1,8 +1,15 @@
+
+
+//         (\_/)
+ //    (  =(^Y^)=
+ // ____\_(m___m)____Welcome___
+
+
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 
-// Assets (src/assets/images)
+// Assets 
 import sableLogo from "../assets/images/Sable_Logo.png";
 
 import draftNavIcon from "../assets/images/draft_nav.svg";
@@ -18,7 +25,7 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
 
   const path = location.pathname;
 
-  // Show browse bar on browse + library index/detail pages
+  // Show browse bar on browse library index/detail pages
   const showBrowseBar =
     path === "/browse" ||
     path === "/genres" ||

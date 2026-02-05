@@ -9,7 +9,7 @@ import editBannerIcon from "../assets/images/edit_banner.png";
 import editProfileIcon from "../assets/images/edit_profile_picture.png";
 import subtractWidgetIcon from "../assets/images/subtract_widget.png";
 
-// LocalStorage key for widget settings
+// localstorage key for widget settings
 const WIDGETS_KEY = "sable_community_widgets_v1";
 
 const DEFAULT_WIDGETS = {
@@ -97,14 +97,14 @@ export default function YourCommunityPage({ username }) {
     });
   }
 
-  // Check if any widgets are disabled (for showing "Add Widget" option)
+  // Check if any widgets are disabled
   const hasDisabledWidgets = !widgets.announcements || !widgets.donations || !widgets.recentWorks || !widgets.chatroom;
 
   function handleShare() {
     const url = window.location.href;
     if (navigator.share) {
       navigator.share({ title: `${displayName}'s Community Page`, url }).catch(() => {
-        // User cancelled share or share failed - ignore
+        // User cancelled share or share failed error
       });
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(url);
@@ -132,9 +132,7 @@ export default function YourCommunityPage({ username }) {
     setIsEditing(false);
   }
 
-  // Auto-open edit mode if we arrive from Settings:
-  // - /communities/me?edit=1
-  // - navigate("/communities/me", { state: { edit: true } })
+
   React.useEffect(() => {
     const search = new URLSearchParams(location.search || "");
     const editParam = search.get("edit");
@@ -176,7 +174,7 @@ export default function YourCommunityPage({ username }) {
               aria-label="Edit profile picture"
               title="Edit profile picture"
               onClick={() => {
-                // front-end only for now
+                
               }}
             >
               <img className="ycp-avatarEditIcon" src={editProfileIcon} alt="" aria-hidden="true" />
@@ -184,7 +182,7 @@ export default function YourCommunityPage({ username }) {
           ) : null}
         </div>
 
-        {/* VIEW MODE */}
+        {/* View mode */}
         {!isEditing ? (
           <div className="ycp-grid">
             <div className="ycp-left">
@@ -192,7 +190,7 @@ export default function YourCommunityPage({ username }) {
                 <h1 className="ycp-name">{displayName}</h1>
 
                 <div className="ycp-actions" aria-label="Profile actions">
-                  {/* Make the pencil actually edit */}
+          
                   <button type="button" className="ycp-actionBtn" aria-label="Edit" onClick={openEdit} title="Edit">
                     ✎
                   </button>
@@ -375,7 +373,7 @@ export default function YourCommunityPage({ username }) {
           </div>
         ) : null}
 
-        {/* EDIT MODE */}
+        {/* Edit mode */}
         {isEditing ? (
           <div className="ycp-editGrid" aria-label="Edit community page">
             {/* Left form */}

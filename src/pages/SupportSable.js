@@ -14,7 +14,7 @@ export default function SupportSable() {
   const [method, setMethod] = React.useState("providers"); // providers | card
   const [showSuccess, setShowSuccess] = React.useState(false);
 
-  // Validation + UI errors
+  // Validation, UI errors
   const [amountError, setAmountError] = React.useState("");
   const [cardErrors, setCardErrors] = React.useState({});
 
@@ -45,7 +45,7 @@ export default function SupportSable() {
     setAmountError("");
   }
 
-  // ===== Validation helpers =====
+  //Validation helper
   function validateAmount(rawValue, fallbackPreset) {
     const raw = String(rawValue ?? "").trim();
     if (!raw) return ""; // preset is fine
@@ -132,7 +132,6 @@ export default function SupportSable() {
     return next;
   }
 
-  // ===== Handlers =====
   function handleProviderPay() {
     const err = validateAmount(customAmount, selectedAmount);
     setAmountError(err);
@@ -321,7 +320,7 @@ export default function SupportSable() {
                   placeholder="1234 5678 9012 3456"
                   value={cardNumber}
                   onChange={(e) => {
-                    // keep what user typed, but lightly space digits for readability
+                
                     const digits = onlyDigits(e.target.value).slice(0, 19);
                     const spaced = digits.replace(/(.{4})/g, "$1 ").trim();
                     setCardNumber(spaced);
@@ -469,12 +468,12 @@ export default function SupportSable() {
           }}
         >
           <div className="supModal supModal--thankyou">
-            <div className="supThankTitle">THANK YOU FOR YOUR CONTRIBUTION!</div>
+            <div className="supThankTitle">Thank You For Your Contribution!</div>
 
             <img className="supConfirmImg supConfirmImg--thankyou" src={confirmationImg} alt="" aria-hidden="true" />
 
             <button type="button" className="supBackHome" onClick={handleBackToHome}>
-              BACK TO HOME
+              Back to Home
             </button>
           </div>
         </div>

@@ -13,13 +13,13 @@ export default function About() {
             <h1 className="aboutTitle">ABOUT SABLE</h1>
 
             <p className="aboutBody">
-              Sable is a community-driven writing platform built for people who care about craft, atmosphere, and discovering stories the
+              Sable is a community driven writing platform built for people who care about craft, atmosphere, and discovering stories the
               same way you’d find a book you can’t put down. Browse by genre, fandom, or tags, publish works, and keep drafts in
-              progress—configured around a clean reading experience.
+              progress configured around a clean reading experience.
             </p>
 
             <p className="aboutBody">
-              The goal is simple: make it easy to write, easy to share, and easy to find the kind of stories you actually want to read—without
+              Our goal is to make it easy to write, easy to share, and easy to find the kind of stories you actually want to read—without
               drowning in noise. Communities help you connect around themes and niches, and bookmarks let you save what you want to come back to.
             </p>
 

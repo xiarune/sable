@@ -19,7 +19,7 @@
   align-items: start;
 }
 
-/* LEFT */
+/* Left */
 .st-side {
   background: #b89b57;
   border-radius: 10px;
@@ -67,7 +67,7 @@
   text-shadow: 0 0 0 rgba(0, 0, 0, 0.02);
 }
 
-/* CENTER */
+/* Center */
 .st-main {
   padding-top: 14px;
 }
@@ -147,7 +147,7 @@
   background: #fff;
 }
 
-/* Light “modernized” section cards */
+/* Light section cards */
 .st-sectionCard {
   background: rgba(255, 255, 255, 0.60);
   border-radius: 14px;
@@ -259,7 +259,7 @@
   filter: brightness(1.03);
 }
 
-/* RIGHT */
+/* Right */
 .st-right {
   display: grid;
   gap: 18px;
@@ -621,7 +621,7 @@
   filter: brightness(1.03);
 }
 
-/* RESPONSIVE */
+/* Responsive */
 @media (max-width: 1100px) {
   .st-grid {
     grid-template-columns: 240px 1fr;

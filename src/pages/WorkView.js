@@ -97,10 +97,7 @@ function isImageUrl(url) {
   );
 }
 
-/**
- * Parses body string into blocks.
- * Supports Markdown-ish image syntax: ![alt](url)
- */
+
 function parseBodyToBlocks(body) {
   const raw = String(body || "");
   const lines = raw.split("\n");
@@ -152,7 +149,7 @@ function getChaptersFromWork(work) {
   const w = work || {};
   if (Array.isArray(w.chapters) && w.chapters.length) return w.chapters;
 
-  // Fallback: if work has old single body format, wrap in a chapter
+  // if work has old single body format, wrap in a chapter
   if (w.body) {
     return [{ id: "c1", title: "Chapter 1", body: w.body }];
   }
@@ -196,7 +193,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   const normalizedUser = (username || "john.doe").trim().toLowerCase();
   const decodedId = decodeURIComponent(workId || "");
 
-  // Modal panel (settings + audio library picker)
+  // Modal panel, settings + audio library picker
   const [panel, setPanel] = React.useState(null); // "settings" | "audioLibrary" | null
 
   // Chapters
@@ -247,12 +244,12 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   const [audioBarOpen, setAudioBarOpen] = React.useState(false);
   const [musicBarOpen, setMusicBarOpen] = React.useState(false);
 
-  // Audio progress UI (Apple-ish)
+  // Audio progress UI 
   const [audioCurrentSec, setAudioCurrentSec] = React.useState(0);
   const [audioDurationSec, setAudioDurationSec] = React.useState(0);
   const [audioSeeking, setAudioSeeking] = React.useState(false);
 
-  // Music provider state (mock but functional like audio)
+  // Music provider state
   const [musicProvider, setMusicProvider] = React.useState("spotify");
   const [musicQuery, setMusicQuery] = React.useState("");
   const [musicIsPlaying, setMusicIsPlaying] = React.useState(false);
@@ -297,7 +294,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   React.useEffect(() => {
     if (!chapters.length) return;
     if (!chapters.find((c) => c.id === activeChapterId)) setActiveChapterId(chapters[0].id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapters]);
 
   const bodyRaw = String(activeChapter?.body ?? work?.body ?? "");
@@ -364,7 +360,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     };
   }, [audioSeeking]);
 
-  // Mock playback ticker (for tracks without src)
+  // Mock playback ticker
   React.useEffect(() => {
     if (!audioBarOpen) return;
     if (!currentTrack) return;
@@ -391,7 +387,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     return () => window.clearInterval(t);
   }, [audioBarOpen, currentTrack, isPlaying, audioDurationSec]);
 
-  // Music ticker (mock but works like audio)
+  // Music ticker
   React.useEffect(() => {
     if (!musicBarOpen) return;
     if (!musicIsPlaying) return;
@@ -468,7 +464,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
         el.removeAttribute("src");
         el.load();
       } catch {
-        // ignore
+       
       }
     }
   }
@@ -529,7 +525,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
       try {
         el.currentTime = sec;
       } catch {
-        // ignore
+      
       }
     }
   }
@@ -567,14 +563,12 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
     const wasBookmarked = Boolean(workFavs?.[decodedId]);
 
-    // Update per-user bookmark state
     setWorkFavs((prev) => {
       const next = { ...(prev || {}) };
       next[decodedId] = !next[decodedId];
       return next;
     });
-
-    // Update shared bookmarks list for Bookmarks page
+   
     try {
       const stored = JSON.parse(localStorage.getItem(BOOKMARKS_KEY)) || [];
       if (wasBookmarked) {
@@ -594,7 +588,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
         localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(updated));
       }
     } catch {
-      // ignore localStorage errors
     }
   }
 
@@ -738,7 +731,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                 </div>
               ) : null}
 
-              {/* STICKY MUSIC BAR (NOW BEHAVES LIKE AUDIO, MOCK) */}
+              {/* Stickyyy music barrr*/}
               {musicBarOpen ? (
                 <div className="wv-miniPlayer" aria-label="Music player">
                   <div className="wv-miniHead">
@@ -872,7 +865,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                     <img src={musicIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
                   </button>
 
-                  {/* Audio (keep as-is until you have audio_icon.png) */}
+                  {/* Audio (to be changed later) */}
                   <button
                     type="button"
                     className={`wv-iconBtn ${audioBarOpen ? "wv-iconBtn--active" : ""}`}
@@ -924,7 +917,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
               <div className="wv-sep" />
 
-              {/* Cover image (mock) */}
+              {/* Cover image */}
               <div className="wv-cover">
                 <img className="wv-coverImg" src={nightWoodsImg} alt="" />
               </div>
@@ -992,7 +985,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
               ) : null}
             </div>
 
-            {/* Modal panel: settings + audio library */}
+            {/* Modal panel, settings, audio library */}
             {panel ? (
               <div className="wv-panelOverlay" role="dialog" aria-modal="true" aria-label="Modal panel">
                 <div className="wv-panel">

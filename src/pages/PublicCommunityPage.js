@@ -10,10 +10,10 @@ import johnAvatar from "../assets/images/profile_picture.png";
 import janeBanner from "../assets/images/other_profile_banner.jpg";
 import janeAvatar from "../assets/images/other_profile.png";
 
-// Optional: a generic banner (if you want others to not reuse Jane's)
+// Amira
 import genericBanner from "../assets/images/amira_profile.jpg";
 
-// LocalStorage key for following data
+// localstorage key for following data
 const FOLLOWING_KEY = "sable_following_v1";
 
 function getFollowing() {

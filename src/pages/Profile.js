@@ -52,7 +52,6 @@ function getItemId(item, fallbackPrefix, index) {
   if (!item) return `${fallbackPrefix}-${index}`;
   if (typeof item === "string") return item;
 
-  // Common shapes across mock data / future backend
   return (
     item.id ||
     item.workId ||
@@ -74,7 +73,6 @@ function getItemTitle(item, fallback) {
 function getItemMeta(item, fallback) {
   if (!item || typeof item === "string") return fallback;
 
-  // Optional nice-to-haves if your stored objects include them
   const bits = [];
   if (item.genre) bits.push(item.genre);
   if (item.fandom) bits.push(item.fandom);
@@ -157,14 +155,13 @@ export default function Profile({ username = "john.doe" }) {
     navigate(`/drafts/edit/${encodeURIComponent(draftId)}`);
   }
 
-  // Counts (works/drafts could be strings or objects)
   const worksCount = Array.isArray(works) ? works.length : 0;
   const draftsCount = Array.isArray(drafts) ? drafts.length : 0;
 
   return (
     <div className="pf">
       <div className="pf-shell">
-        {/* HERO */}
+        {/* Hero */}
         <section className="pf-hero" aria-label="Profile header">
           <div className="pf-heroTop">
             <div className="pf-id">
@@ -210,9 +207,9 @@ export default function Profile({ username = "john.doe" }) {
           </div>
         </section>
 
-        {/* GRID */}
+        {/* Grid */}
         <div className="pf-grid">
-          {/* LEFT NAV */}
+          {/* Left nav */}
           <aside className="pf-navCard" aria-label="Profile navigation">
             <div className="pf-navTitle">Profile</div>
 
@@ -250,7 +247,7 @@ export default function Profile({ username = "john.doe" }) {
             </button>
           </aside>
 
-          {/* MAIN */}
+          {/* Main */}
           <section className="pf-main" aria-label="Profile content">
             {active === "Overview" ? (
               <>

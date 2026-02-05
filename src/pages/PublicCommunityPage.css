@@ -57,7 +57,7 @@
   background: rgba(0, 0, 0, 0.10);
 }
 
-/* VIEW GRID */
+/* View grid */
 .pcp-grid {
   display: grid;
   grid-template-columns: 1fr 360px;

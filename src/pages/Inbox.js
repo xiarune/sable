@@ -582,7 +582,7 @@ export default function Inbox() {
       );
     }
 
-    // CHAT MODE
+    // chat modee
     return (
       <section className="in-col in-col--right" aria-label="Conversation">
         <div className="in-chatHeader">
@@ -596,7 +596,7 @@ export default function Inbox() {
             </div>
           </div>
 
-          {/* Wrap actions in a positioned container so dropdown can anchor without CSS changes */}
+          {/* Wrap actions in a positioned container so dropdown can anchor without css changes */}
           <div
             className="in-chatHeaderActions"
             aria-label="Chat actions"
@@ -751,7 +751,7 @@ export default function Inbox() {
   return (
     <div className="in-page">
       <div className="in-shell" aria-label="Inbox layout">
-        {/* LEFT COLUMN */}
+        {/* left column */}
         <aside className="in-col in-col--left" aria-label="Inbox sidebar">
           <div className="in-leftHeader">
             <div className="in-me">
@@ -810,10 +810,10 @@ export default function Inbox() {
           </div>
         </aside>
 
-        {/* MIDDLE COLUMN */}
+        {/* middle comuln */}
         {renderMiddleColumn()}
 
-        {/* RIGHT COLUMN */}
+        {/* Right column */}
         {renderRightColumn()}
       </div>
     </div>

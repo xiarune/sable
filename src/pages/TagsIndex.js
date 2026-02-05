@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./Library.css";
 
-// Curated "Trending Tags" (matches your screenshot)
+// trending tags
 const TRENDING_TAGS = [
   "Hurt/Comfort",
   "Enemies to Lovers",
@@ -85,7 +85,7 @@ export default function TagsIndex() {
             />
           </div>
 
-          {/* Visual-only filters to match Genre/Fandom */}
+          {/* Visual only filters to match genre/fandom */}
           <label className="filterRow">
             <input type="checkbox" defaultChecked />
             <span>Trending</span>
@@ -110,10 +110,9 @@ export default function TagsIndex() {
 
         <section className="shelfMain">
           <h2 className="letterHeading" style={{ marginTop: 0 }}>
-            TRENDING TAGS
+            Trending Tags
           </h2>
 
-          {/* This renders the pills in a grid like your screenshot */}
           <div className="workPills" style={{ marginBottom: 22 }}>
             {filteredTags.map((tag) => (
               <button key={tag} type="button" className="workPill" onClick={() => openTag(tag)}>

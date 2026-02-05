@@ -1,15 +1,11 @@
-/* =========================
-   GOOGLE FONTS
-   ========================= */
+/* Google fonts */
 @import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
 
 .sable-header {
   width: 100%;
 }
 
-/* =========================
-   TOP BLUE BAR
-   ========================= */
+/* Blue Top nav */
 .topbar {
   height: 64px;
   background: #0b3f87;
@@ -27,9 +23,7 @@
   min-width: 0;
 }
 
-/* =========================
-   BRAND (LOGO + TITLE)
-   ========================= */
+/* Name and Logo */
 .brand {
   display: flex;
   align-items: center;
@@ -62,9 +56,7 @@
   line-height: 1;
 }
 
-/* =========================
-   TOP NAV LINKS
-   ========================= */
+/* Nav Links */
 .topnav {
   display: flex;
   align-items: center;
@@ -98,9 +90,7 @@
   border-radius: 2px;
 }
 
-/* =========================
-   RIGHT SIDE / ICONS
-   ========================= */
+/* Right side icons */
 .topbar-right {
   display: flex;
   align-items: center;
@@ -154,9 +144,7 @@
   background: rgba(255, 255, 255, 0.18);
 }
 
-/* =========================
-   USER DROPDOWN
-   ========================= */
+/* User Dropdown */
 .userMenu {
   position: relative;
 }
@@ -189,9 +177,7 @@
   transform: translateY(1px);
 }
 
-/* =========================
-   DROPDOWN MENU
-   ========================= */
+/* Drop down menu */
 .dropdown {
   position: absolute;
   right: 0;
@@ -236,9 +222,7 @@
   margin: 6px 0;
 }
 
-/* =========================
-   SECONDARY GREEN BAR
-   ========================= */
+/* Green bar */
 .subbar {
   background: #244b2b;
   padding: 10px 18px;
@@ -268,9 +252,7 @@
   font-family: "Libre Baskerville", serif;
 }
 
-/* =========================
-   LOGIN / SIGNUP MODAL
-   ========================= */
+/* Login Signup */
 .loginOverlay {
   position: fixed;
   inset: 0;
@@ -482,9 +464,7 @@
   font-family: "Libre Baskerville", serif;
 }
 
-/* =========================
-   BROWSE DROPDOWN (REFINED SIZE)
-   ========================= */
+/* Browse Dropdown */
 
 .browseWrap {
   position: relative;
@@ -539,9 +519,7 @@
   box-shadow: 0 0 0 2px rgba(214, 168, 64, 0.35);
 }
 
-/* =========================
-   HAMBURGER MENU (MOBILE)
-   ========================= */
+/* Mobile View Nav, hamburgur */
 .hamburger-wrap {
   display: none;
   position: relative;
@@ -681,9 +659,7 @@
   background: #0a3672;
 }
 
-/* =========================
-   RESPONSIVE BREAKPOINTS
-   ========================= */
+/* Resposnive */
 @media (max-width: 768px) {
   .topnav--desktop {
     display: none;

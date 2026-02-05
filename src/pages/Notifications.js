@@ -248,7 +248,7 @@ export default function Notifications() {
                         className={n.unread ? "no-item no-item--unread" : "no-item"}
                         aria-label={`${n.user} ${n.title}`}
                         onClick={() => {
-                          // front-end only: later open source context
+                          
                         }}
                       >
                         <div className="no-left">

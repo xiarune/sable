@@ -268,9 +268,7 @@
   z-index: 9999;
 }
 
-/* ====== POPUP UPDATED (ONLY THIS PART) ====== */
 .supModal {
-  /* UPDATED: make box smaller */
   width: min(680px, 84vw);
 
   background: #f2ebdd;
@@ -278,7 +276,6 @@
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.35);
   position: relative;
 
-  /* UPDATED: center contents */
   display: grid;
   justify-items: center;
   align-content: start;
@@ -286,7 +283,6 @@
   max-height: calc(100vh - 84px);
   overflow: hidden;
 
-  /* UPDATED: push content DOWN so title sits lower */
   padding: 86px 46px 38px;
 
   box-sizing: border-box;
@@ -296,7 +292,6 @@
   border: 6px solid #d29a2b;
 }
 
-/* UPDATED: title smaller + centered */
 .supThankTitle {
   font-family: "Cinzel Decorative", serif;
   font-weight: 700;
@@ -311,7 +306,6 @@
   text-align: center;
 }
 
-/* UPDATED: image smaller and centered */
 .supConfirmImg--thankyou {
   width: min(480px, 78%);
   height: auto;
@@ -319,7 +313,6 @@
   margin: 18px auto 10px;
 }
 
-/* UPDATED: center the bottom text inside the modal */
 .supBackHome {
   margin-top: 10px;
 
@@ -342,7 +335,6 @@
 .supBackHome:hover {
   color: rgba(40, 40, 40, 0.75);
 }
-/* ====== END POPUP ====== */
 
 @media (max-width: 720px) {
   .supAmtBtn {

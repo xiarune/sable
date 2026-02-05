@@ -2,13 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "./Communities.css";
 
-// Assets (src/assets/images)
+// Assets 
 import profileImg from "../assets/images/profile_picture.png";
 import otherProfileImg from "../assets/images/other_profile.png";
 
 import { works as libraryWorks } from "../data/libraryWorks";
 
-// LocalStorage keys
+// localstorage keys
 const LIKES_KEY = "sable_likes_v1";
 const BOOKMARKS_KEY = "sable_bookmarks_v1";
 const FOLLOWING_KEY = "sable_following_v1";
@@ -181,12 +181,12 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   // Feed state (front-end only)
   const [posts, setPosts] = React.useState(BASE_POSTS);
 
-  // Likes, bookmarks, following state
+  // Likes, bookmarks, following
   const [likedPosts, setLikedPosts] = React.useState(() => getLikes());
   const [bookmarkedPosts, setBookmarkedPosts] = React.useState(() => getBookmarks());
   const [followingList, setFollowingList] = React.useState(() => getFollowing());
 
-  // Reply state
+  // Reply
   const [replyingTo, setReplyingTo] = React.useState(null);
   const [replyDraft, setReplyDraft] = React.useState("");
 
@@ -213,7 +213,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
       setBookmarkedPosts(updated);
       setBookmarksStorage(updated);
     } else {
-      // Add bookmark - store relevant info for bookmarks page
+      // Add bookmark, store relevant info for bookmarks page
       const bookmarkData = {
         id: postId,
         title: post.title,
@@ -249,7 +249,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
 
     if (navigator.share) {
       navigator.share({ title: post.title, url }).catch(() => {
-        // User cancelled share or share failed - ignore
+        // User cancelled share or share failed ignore
       });
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(url);
@@ -269,8 +269,10 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
 
   function submitReply(postId) {
     if (!replyDraft.trim()) return;
+
     // In a real app, this would add a reply to the post
-    // For now, we'll just close the reply box and show confirmation
+    // For now, it just closes the reply box and show confirmation
+
     alert(`Reply submitted: "${replyDraft}"`);
     setReplyingTo(null);
     setReplyDraft("");
@@ -330,7 +332,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
     return base;
   }, [posts, query, tab]);
 
-  // (Optional) if a post is a work but lacks workId, try to resolve from library mock data by title
+  // if a post is a work but lacks workId, try to resolve from library mock data by title
   function resolveWorkIdFromTitle(title) {
     const t = String(title || "").trim().toLowerCase();
     if (!t) return null;
@@ -341,7 +343,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   return (
     <div className="co-page" aria-label="Communities explore page">
       <div className="co-shell">
-        {/* LEFT RAIL */}
+        {/* Left Sidebar */}
         <aside className="co-left" aria-label="Community center navigation">
           <div className="co-leftCard">
             <div className="co-leftTitle">Community Center</div>
@@ -383,7 +385,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
           </div>
         </aside>
 
-        {/* MAIN FEED */}
+        {/* Main Feed */}
         <main className="co-main" aria-label="Explore feed">
           <div className="co-mainHeader">
             <div className="co-mainHeaderTop">
@@ -677,7 +679,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
           </section>
         </main>
 
-        {/* RIGHT RAIL */}
+        {/* Right Sidebar */}
         <aside className="co-right" aria-label="Suggestions and live activity">
           <div className="co-rightCard">
             <div className="co-rightTitle">Suggested Creators</div>

@@ -34,7 +34,6 @@ import WorkView from "./pages/WorkView";
 import Drafts from "./pages/Drafts";
 import DraftEditor from "./pages/DraftEditor";
 
-// ✅ NEW
 import SupportSable from "./pages/SupportSable";
 
 export default function App() {
@@ -67,7 +66,7 @@ export default function App() {
           <Route path="/communities" element={<Communities isAuthed={isAuthed} username={effectiveUsername} />} />
           <Route path="/about" element={<About />} />
 
-          {/* ✅ Support / payments */}
+          {/* Support / payments */}
           <Route path="/support" element={<SupportSable />} />
 
           {/* Search */}
@@ -99,7 +98,7 @@ export default function App() {
           {/* Create draft */}
           <Route path="/new-draft" element={isAuthed ? <NewDraft /> : <Navigate to="/" replace />} />
 
-          {/* Auth-only pages */}
+          {/* Auth only pages */}
           <Route path="/inbox" element={isAuthed ? <Inbox /> : <Navigate to="/" replace />} />
           <Route path="/notifications" element={isAuthed ? <Notifications /> : <Navigate to="/" replace />} />
           <Route path="/profile" element={isAuthed ? <Profile username={effectiveUsername} /> : <Navigate to="/" replace />} />

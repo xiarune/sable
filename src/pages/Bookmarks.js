@@ -4,7 +4,7 @@ import "./Bookmarks.css";
 
 import { works as libraryWorks } from "../data/libraryWorks";
 
-// LocalStorage key for bookmarks (same as Communities.js)
+// localstorage key for bookmarks, same as communities.js
 const BOOKMARKS_KEY = "sable_bookmarks_v1";
 
 function normalizeUsernameFromAuthor(author) {
@@ -47,7 +47,7 @@ function getBookmarkedWorks() {
     }));
   }
 
-  // Fall back to seeded mock data if no stored bookmarks
+  // Fall back to mock data if no stored bookmarks
   const seeded = Array.isArray(libraryWorks) ? libraryWorks.slice(0, 12) : [];
 
   const normalized = seeded.map((w, idx) => {
@@ -87,7 +87,7 @@ export default function Bookmarks() {
   }
 
   function handleOpenBookmark(work) {
-    // Navigate to the work if it has a workId, otherwise just show the title
+    // Navigate to the work if it has a workId, if not it just shows the title
     const targetId = work.workId || work.id;
     if (targetId && !targetId.startsWith("ph-") && !targetId.startsWith("p_")) {
       navigate(`/works/${encodeURIComponent(targetId)}`);

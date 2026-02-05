@@ -8,7 +8,7 @@ import { works } from "../data/libraryWorks";
 export default function Browse() {
   const navigate = useNavigate();
 
-  // Front-end placeholder “site” sections (swap for API later)
+  // Front end placeholder site sections which we swap for API later
   const TRENDING = works.slice(0, 7);
   const FEATURED = works.slice(2, 8);
   const NEW_AND_NOTEWORTHY = works.slice(4, 10);
