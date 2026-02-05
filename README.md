@@ -1,7 +1,5 @@
-
-//         (\_/)
- //       =(^Y^)=
- // ______(m___m)____Hello!___
+       
+≽^•⩊•^≼  Welcome!
 
 In the event that Docker cannot be run, a GitHub Pages deployment is also available as a fallback to view the completed front-end interface in a browser. 
 
