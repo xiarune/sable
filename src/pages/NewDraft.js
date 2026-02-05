@@ -3,6 +3,15 @@ import React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./NewDraft.css";
 
+import chapterIcon from "../assets/images/chapter_icon.png";
+import importIcon from "../assets/images/import_icon.png";
+import tagsIcon from "../assets/images/tags_icon.png";
+import skinsIcon from "../assets/images/skins_icon.png";
+import privacyIcon from "../assets/images/privacy_icon.png";
+import langIcon from "../assets/images/lang_icon.png";
+import imageIcon from "../assets/images/image_icon.png";
+import previewIcon from "../assets/images/preview_icon.png";
+
 const STORAGE_KEY = "sable_drafts_v1";
 const WORKS_KEY = "sable_published_v1";
 
@@ -70,12 +79,6 @@ function ActionPill({ icon, label, subLabel, active, onClick }) {
   );
 }
 
-/**
- * Minimal, safe markdown-ish renderer:
- * - Renders image markdown: ![alt](url) -> <img>
- * - Preserves newlines
- * - No HTML injection, no dangerouslySetInnerHTML
- */
 function renderBodyWithImages(text) {
   const src = String(text || "");
   const re = /!\[([^\]]*)\]\(([^)]+)\)/g;
@@ -127,7 +130,6 @@ function renderBodyWithImages(text) {
       );
     }
 
-    // text: preserve newlines
     const lines = String(node.value).split("\n");
     return (
       <span key={node.key}>
@@ -147,7 +149,6 @@ export default function NewDraft() {
   const [params] = useSearchParams();
   const draftId = params.get("draft") || "";
 
-  // Core fields
   const [title, setTitle] = React.useState("");
   const [chapters, setChapters] = React.useState(() => {
     const ch = makeDefaultChapter();
@@ -155,7 +156,6 @@ export default function NewDraft() {
   });
   const [activeChapterId, setActiveChapterId] = React.useState("");
 
-  // Initialize activeChapterId once chapters are set
   React.useEffect(() => {
     if (!activeChapterId && chapters.length > 0) {
       setActiveChapterId(chapters[0].id);
@@ -167,7 +167,11 @@ export default function NewDraft() {
 
   function setBody(newBody) {
     setChapters((prev) =>
-      prev.map((ch) => (ch.id === activeChapterId ? { ...ch, body: typeof newBody === "function" ? newBody(ch.body) : newBody } : ch))
+      prev.map((ch) =>
+        ch.id === activeChapterId
+          ? { ...ch, body: typeof newBody === "function" ? newBody(ch.body) : newBody }
+          : ch
+      )
     );
   }
 
@@ -182,7 +186,7 @@ export default function NewDraft() {
   }
 
   function deleteChapter(chId) {
-    if (chapters.length <= 1) return; // Keep at least one chapter
+    if (chapters.length <= 1) return;
     setChapters((prev) => {
       const next = prev.filter((ch) => ch.id !== chId);
       if (activeChapterId === chId && next.length > 0) {
@@ -204,17 +208,14 @@ export default function NewDraft() {
     });
   }
 
-  // Metadata
   const [tags, setTags] = React.useState([]);
   const [skin, setSkin] = React.useState("Default");
   const [privacy, setPrivacy] = React.useState("Public");
   const [language, setLanguage] = React.useState("English");
 
-  // Media
-  const [audio, setAudio] = React.useState(null); // { name, type, size, dataUrl }
-  const [images, setImages] = React.useState([]); // [{ id, name, type, size, dataUrl }]
+  const [audio, setAudio] = React.useState(null);
+  const [images, setImages] = React.useState([]);
 
-  // UI state
   const [activeTool, setActiveTool] = React.useState("");
   const [tagInput, setTagInput] = React.useState("");
   const [status, setStatus] = React.useState("");
@@ -266,7 +267,6 @@ export default function NewDraft() {
     setTags((prev) => prev.filter((t) => t !== tag));
   }
 
-  // Load existing draft
   React.useEffect(() => {
     if (!draftId) return;
 
@@ -275,12 +275,10 @@ export default function NewDraft() {
     if (!found) return;
 
     setTitle(found.title || "");
-    // Load chapters or migrate from old body format
     if (Array.isArray(found.chapters) && found.chapters.length > 0) {
       setChapters(found.chapters);
       setActiveChapterId(found.chapters[0].id);
     } else if (found.body) {
-      // Migrate old single-body format to chapters
       const migratedCh = { id: makeId("ch"), title: "Chapter 1", body: found.body };
       setChapters([migratedCh]);
       setActiveChapterId(migratedCh.id);
@@ -414,7 +412,6 @@ export default function NewDraft() {
 
       setImages((prev) => [img, ...prev]);
 
-      // Insert into body at cursor as markdown image
       const safeAlt = (file.name || "image").replace(/\.[^/.]+$/, "");
       const snippet = `\n\n![${safeAlt}](${dataUrl})\n\n`;
       insertIntoBody(snippet);
@@ -428,20 +425,66 @@ export default function NewDraft() {
     }
   }
 
+  const IconImg = ({ src, alt }) => (
+    <img
+      src={src}
+      alt={alt}
+      width={18}
+      height={18}
+      style={{ display: "block", width: 18, height: 18, objectFit: "contain" }}
+      draggable={false}
+    />
+  );
+
   return (
     <div className="nd-page">
       <div className="nd-shell">
         <h1 className="nd-title">{draftId ? "Edit Draft" : "New Draft"}</h1>
 
         <section className="nd-card">
-          {/* Toolbar */}
           <div className="nd-pillRow">
-            <ActionPill icon="📑" label="Chapters" subLabel={`${chapters.length}`} onClick={() => toggleTool("chapters")} active={activeTool === "chapters"} />
-            <ActionPill icon="☁︎" label="Import" subLabel="Soon" onClick={() => toggleTool("import")} active={activeTool === "import"} />
-            <ActionPill icon="🏷" label="Tags" subLabel={tags.length ? `${tags.length}` : ""} onClick={() => toggleTool("tags")} active={activeTool === "tags"} />
-            <ActionPill icon="★" label="Skin" subLabel={skin} onClick={() => toggleTool("skin")} active={activeTool === "skin"} />
-            <ActionPill icon="🌐" label="Privacy" subLabel={privacy} onClick={() => toggleTool("privacy")} active={activeTool === "privacy"} />
-            <ActionPill icon="🗨" label="Language" subLabel={language} onClick={() => toggleTool("language")} active={activeTool === "language"} />
+            <ActionPill
+              icon={<IconImg src={chapterIcon} alt="Chapters" />}
+              label="Chapters"
+              subLabel={`${chapters.length}`}
+              onClick={() => toggleTool("chapters")}
+              active={activeTool === "chapters"}
+            />
+            <ActionPill
+              icon={<IconImg src={importIcon} alt="Import" />}
+              label="Import"
+              subLabel="Soon"
+              onClick={() => toggleTool("import")}
+              active={activeTool === "import"}
+            />
+            <ActionPill
+              icon={<IconImg src={tagsIcon} alt="Tags" />}
+              label="Tags"
+              subLabel={tags.length ? `${tags.length}` : ""}
+              onClick={() => toggleTool("tags")}
+              active={activeTool === "tags"}
+            />
+            <ActionPill
+              icon={<IconImg src={skinsIcon} alt="Skin" />}
+              label="Skin"
+              subLabel={skin}
+              onClick={() => toggleTool("skin")}
+              active={activeTool === "skin"}
+            />
+            <ActionPill
+              icon={<IconImg src={privacyIcon} alt="Privacy" />}
+              label="Privacy"
+              subLabel={privacy}
+              onClick={() => toggleTool("privacy")}
+              active={activeTool === "privacy"}
+            />
+            <ActionPill
+              icon={<IconImg src={langIcon} alt="Language" />}
+              label="Language"
+              subLabel={language}
+              onClick={() => toggleTool("language")}
+              active={activeTool === "language"}
+            />
             <ActionPill
               icon="🎧"
               label="Audio"
@@ -450,14 +493,14 @@ export default function NewDraft() {
               active={activeTool === "audio"}
             />
             <ActionPill
-              icon="🖼"
+              icon={<IconImg src={imageIcon} alt="Images" />}
               label="Images"
               subLabel={images.length ? `${images.length}` : "0"}
               onClick={() => toggleTool("images")}
               active={activeTool === "images"}
             />
             <ActionPill
-              icon="👁"
+              icon={<IconImg src={previewIcon} alt="Preview" />}
               label="Preview"
               subLabel={previewOn ? "On" : "Off"}
               onClick={() => setPreviewOn((v) => !v)}
@@ -465,21 +508,13 @@ export default function NewDraft() {
             />
           </div>
 
-          {/* Tool panels */}
           {activeTool === "chapters" && (
             <div className="nd-toolPanel">
               <div className="nd-toolTitle">Chapters</div>
               <div className="nd-chapterList">
                 {chapters.map((ch, idx) => (
-                  <div
-                    key={ch.id}
-                    className={`nd-chapterItem ${ch.id === activeChapterId ? "nd-chapterItem--active" : ""}`}
-                  >
-                    <button
-                      type="button"
-                      className="nd-chapterSelect"
-                      onClick={() => setActiveChapterId(ch.id)}
-                    >
+                  <div key={ch.id} className={`nd-chapterItem ${ch.id === activeChapterId ? "nd-chapterItem--active" : ""}`}>
+                    <button type="button" className="nd-chapterSelect" onClick={() => setActiveChapterId(ch.id)}>
                       <input
                         className="nd-chapterTitleInput"
                         value={ch.title}
@@ -488,13 +523,7 @@ export default function NewDraft() {
                       />
                     </button>
                     <div className="nd-chapterActions">
-                      <button
-                        type="button"
-                        className="nd-chapterBtn"
-                        onClick={() => moveChapter(ch.id, -1)}
-                        disabled={idx === 0}
-                        title="Move up"
-                      >
+                      <button type="button" className="nd-chapterBtn" onClick={() => moveChapter(ch.id, -1)} disabled={idx === 0} title="Move up">
                         ↑
                       </button>
                       <button
@@ -530,12 +559,7 @@ export default function NewDraft() {
               <div className="nd-toolTitle">Tags</div>
 
               <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  className="nd-toolInput"
-                  placeholder="Add a tag"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                />
+                <input className="nd-toolInput" placeholder="Add a tag" value={tagInput} onChange={(e) => setTagInput(e.target.value)} />
                 <button type="button" className="nd-ornateBtn nd-ornateBtn--small" onClick={addTag}>
                   Add
                 </button>
@@ -610,26 +634,15 @@ export default function NewDraft() {
             </div>
           )}
 
-          {/* Editor or Preview */}
           {!previewOn ? (
             <>
               <div className="nd-bodyLabel">Title</div>
-              <input
-                className="nd-textarea"
-                style={{ minHeight: 44 }}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
+              <input className="nd-textarea" style={{ minHeight: 44 }} value={title} onChange={(e) => setTitle(e.target.value)} />
 
               <div className="nd-bodyLabel" style={{ marginTop: 14 }}>
                 {activeChapter ? activeChapter.title : "Chapter"} Body
               </div>
-              <textarea
-                ref={bodyRef}
-                className="nd-textarea"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-              />
+              <textarea ref={bodyRef} className="nd-textarea" value={body} onChange={(e) => setBody(e.target.value)} />
             </>
           ) : (
             <div className="nd-toolPanel" style={{ marginTop: 12 }}>

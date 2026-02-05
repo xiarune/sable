@@ -5,6 +5,12 @@ import "./WorkView.css";
 import { works as libraryWorks } from "../data/libraryWorks";
 import nightWoodsImg from "../assets/images/night_woods.png";
 
+import musicIcon from "../assets/images/music_icon.png";
+import settingsIcon from "../assets/images/settings_icon.png";
+import commentsIcon from "../assets/images/comments_icon.png";
+import bookmarkOffIcon from "../assets/images/bookmark_icon_off.png";
+import bookmarkOnIcon from "../assets/images/bookmark_icon_on.png";
+
 const WORKS_KEY = "sable_published_v1";
 const VIEW_PREFS_KEY = "sable_workview_prefs_v1";
 const AUDIO_FAVS_KEY = "sable_audio_favs_v1";
@@ -151,9 +157,7 @@ function getChaptersFromWork(work) {
   }
 
   // Mock fallback for library works without chapters
-  return [
-    { id: "c1", title: "Chapter 1", body: "" },
-  ];
+  return [{ id: "c1", title: "Chapter 1", body: "" }];
 }
 
 // Helpers for mock duration
@@ -255,135 +259,71 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   const [musicDurationSec, setMusicDurationSec] = React.useState(210); // 3:30 mock
   const [musicSeeking, setMusicSeeking] = React.useState(false);
 
-  // Work data
-  const published = React.useMemo(() => findPublishedById(decodedId), [decodedId]);
-  const library = React.useMemo(() => {
-    return (libraryWorks || []).find((w) => String(w.id) === String(decodedId)) || null;
-  }, [decodedId]);
+  // Persist view prefs per-user
+  React.useEffect(() => {
+    const all = loadJson(VIEW_PREFS_KEY, {});
+    const next = { ...(all || {}) };
+    next[normalizedUser] = { ...prefs };
+    saveJson(VIEW_PREFS_KEY, next);
+  }, [normalizedUser, prefs]);
 
+  // Persist audio favs per-user
+  React.useEffect(() => {
+    const all = loadJson(AUDIO_FAVS_KEY, {});
+    const next = { ...(all || {}) };
+    next[normalizedUser] = { ...(audioFavs || {}) };
+    saveJson(AUDIO_FAVS_KEY, next);
+  }, [normalizedUser, audioFavs]);
+
+  // Persist work favs per-user
+  React.useEffect(() => {
+    const all = loadJson(WORK_FAVS_KEY, {});
+    const next = { ...(all || {}) };
+    next[normalizedUser] = { ...(workFavs || {}) };
+    saveJson(WORK_FAVS_KEY, next);
+  }, [normalizedUser, workFavs]);
+
+  const library = libraryWorks.find((w) => String(w.id) === String(decodedId)) || null;
+  const published = findPublishedById(decodedId);
   const work = published || library;
 
-  const authorHandle = React.useMemo(() => {
-    if (published) return normalizedUser; // mock assumption
-    return (library?.author || "author").trim();
-  }, [published, library, normalizedUser]);
+  const title = (work?.title || "Untitled").trim();
+  const authorHandle = (work?.author || "author").trim();
 
-  const canEdit = Boolean(isAuthed && authorHandle && authorHandle.toLowerCase() === normalizedUser);
-
-  const title = work?.title || "Untitled";
-  const language = work?.language || "English";
-  const views = work?.views || "—";
-
-  const audioTracks = React.useMemo(() => getMockAudioTracks(decodedId, authorHandle), [decodedId, authorHandle]);
   const chapters = React.useMemo(() => getChaptersFromWork(work), [work]);
-
-  // Get the active chapter's body
   const activeChapter = chapters.find((c) => String(c.id) === String(activeChapterId)) || chapters[0] || null;
 
-  const bodyRaw = (() => {
-    // First try to get from active chapter
-    if (activeChapter?.body?.trim()) return activeChapter.body;
-    // Fallback to old single body format
-    if (published?.body?.trim()) return published.body;
-    if (library?.body?.trim()) return library.body;
-    return makePlaceholderBody(title);
-  })();
+  React.useEffect(() => {
+    if (!chapters.length) return;
+    if (!chapters.find((c) => c.id === activeChapterId)) setActiveChapterId(chapters[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapters]);
 
-  const wordCount =
-    work?.wordCount ||
-    (() => {
-      const cleaned = String(bodyRaw || "")
-        .replace(/!\[.*?\]\(.*?\)/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-      return cleaned ? String(cleaned.split(" ").length) : "—";
-    })();
+  const bodyRaw = String(activeChapter?.body ?? work?.body ?? "");
+  const blocks = React.useMemo(() => parseBodyToBlocks(bodyRaw), [bodyRaw]);
+
+  const audioTracks = React.useMemo(() => getMockAudioTracks(decodedId, authorHandle), [decodedId, authorHandle]);
+  const currentTrack = audioTracks.find((t) => t.id === nowPlayingId) || null;
+
+  const currentTrackFav = currentTrack ? Boolean(audioFavs?.[currentTrack.id]) : false;
 
   const isBookmarked = Boolean(workFavs?.[decodedId]);
 
-  const currentTrack = React.useMemo(() => {
-    if (!nowPlayingId) return null;
-    return audioTracks.find((t) => t.id === nowPlayingId) || null;
-  }, [nowPlayingId, audioTracks]);
+  const audioHasDuration = Boolean(audioDurationSec) || Boolean(currentTrack?.duration);
+  const audioProgressPct = React.useMemo(() => {
+    const dur = audioDurationSec || (currentTrack ? parseDurationToSeconds(currentTrack.duration) : 0);
+    if (!dur) return 0;
+    return Math.max(0, Math.min(100, (audioCurrentSec / dur) * 100));
+  }, [audioCurrentSec, audioDurationSec, currentTrack]);
 
-  const currentTrackFav = Boolean(currentTrack?.id && audioFavs?.[currentTrack.id]);
+  const musicHasDuration = Boolean(musicDurationSec);
+  const musicProgressPct = React.useMemo(() => {
+    const dur = musicDurationSec || 0;
+    if (!dur) return 0;
+    return Math.max(0, Math.min(100, (musicCurrentSec / dur) * 100));
+  }, [musicCurrentSec, musicDurationSec]);
 
-  // Parse body
-  const baseBlocks = React.useMemo(() => parseBodyToBlocks(bodyRaw), [bodyRaw]);
-
-  // Insert ONLY Night in the Woods image (and only that)
-  const bodyBlocks = React.useMemo(() => {
-    const blocks = [...baseBlocks];
-
-    if (String(title).trim().toLowerCase() === "night in the woods") {
-      const alreadyHasThatImage = blocks.some(
-        (b) => b.type === "img" && String(b.url || "").includes("night_woods")
-      );
-
-      if (!alreadyHasThatImage) {
-        const firstParaIdx = blocks.findIndex((b) => b.type === "p");
-        const insertAt = firstParaIdx >= 0 ? firstParaIdx + 1 : 0;
-
-        blocks.splice(insertAt, 0, {
-          type: "img",
-          alt: "Night in the Woods",
-          url: nightWoodsImg,
-        });
-      }
-    }
-
-    return blocks;
-  }, [baseBlocks, title]);
-
-  // Current chapter label (centered under author)
-  const chapterNumber = React.useMemo(() => {
-    const idx = chapters.findIndex((c) => String(c.id) === String(activeChapterId));
-    return idx >= 0 ? idx + 1 : 1;
-  }, [chapters, activeChapterId]);
-
-  // Persist prefs per-user
-  React.useEffect(() => {
-    const all = loadJson(VIEW_PREFS_KEY, {});
-    const nextAll = { ...(all || {}), [normalizedUser]: prefs };
-    saveJson(VIEW_PREFS_KEY, nextAll);
-  }, [prefs, normalizedUser]);
-
-  // Persist audio favorites per-user
-  React.useEffect(() => {
-    const all = loadJson(AUDIO_FAVS_KEY, {});
-    const nextAll = { ...(all || {}), [normalizedUser]: audioFavs };
-    saveJson(AUDIO_FAVS_KEY, nextAll);
-  }, [audioFavs, normalizedUser]);
-
-  // Persist work bookmarks per-user
-  React.useEffect(() => {
-    const all = loadJson(WORK_FAVS_KEY, {});
-    const nextAll = { ...(all || {}), [normalizedUser]: workFavs };
-    saveJson(WORK_FAVS_KEY, nextAll);
-  }, [workFavs, normalizedUser]);
-
-  // Close panel on ESC
-  React.useEffect(() => {
-    function onKeyDown(e) {
-      if (e.key === "Escape") setPanel(null);
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  // Keep duration in sync whenever track changes
-  React.useEffect(() => {
-    if (!currentTrack) {
-      setAudioDurationSec(0);
-      setAudioCurrentSec(0);
-      return;
-    }
-    const dur = currentTrack.src ? 0 : parseDurationToSeconds(currentTrack.duration);
-    setAudioDurationSec(dur);
-    setAudioCurrentSec(0);
-  }, [currentTrack]);
-
-  // Audio element events (real audio)
+  // Audio element events
   React.useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
@@ -580,30 +520,45 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     else el.pause();
   }
 
-  function closeAudioBarAndStop() {
-    stopAndResetAudioElement();
-    setIsPlaying(false);
-    setAudioCurrentSec(0);
-    setNowPlayingId(null);
-    setAudioBarOpen(false);
-  }
-
-  function seekAudioTo(seconds) {
-    const target = clamp(Number(seconds), 0, audioDurationSec || 0);
-
+  function seekAudioTo(sec) {
     const el = audioRef.current;
-    if (el && currentTrack?.src) {
+    setAudioCurrentSec(sec);
+
+    if (el && currentTrack && currentTrack.src) {
       try {
-        el.currentTime = target;
+        el.currentTime = sec;
       } catch {
         // ignore
       }
     }
-
-    setAudioCurrentSec(target);
   }
 
-  function toggleWorkFavorite() {
+  function closeAudioBar() {
+    setAudioBarOpen(false);
+    setIsPlaying(false);
+    setAudioCurrentSec(0);
+    stopAndResetAudioElement();
+  }
+
+  function toggleMusicBar() {
+    setMusicBarOpen((v) => !v);
+  }
+
+  function closeMusicBar() {
+    setMusicBarOpen(false);
+    setMusicIsPlaying(false);
+    setMusicCurrentSec(0);
+  }
+
+  function toggleMusicPlayPause() {
+    setMusicIsPlaying((p) => !p);
+  }
+
+  function seekMusicTo(sec) {
+    setMusicCurrentSec(sec);
+  }
+
+  function toggleBookmark() {
     if (!isAuthed) {
       openLoginModal();
       return;
@@ -615,63 +570,16 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     });
   }
 
-  function selectChapter(chapter) {
-    setActiveChapterId(chapter.id);
-    // Placeholder for later: scroll to anchor
-  }
-
-  // Music bar actions (now functional mock)
-  function openMusicBar() {
-    setMusicBarOpen(true);
-  }
-
-  function closeMusicBar() {
-    setMusicIsPlaying(false);
-    setMusicCurrentSec(0);
-    setMusicBarOpen(false);
-  }
-
-  function toggleMusicPlayPause() {
-    setMusicIsPlaying((p) => !p);
-  }
-
-  function seekMusicTo(seconds) {
-    const target = clamp(Number(seconds), 0, musicDurationSec || 0);
-    setMusicCurrentSec(target);
-  }
-
-  if (!work) {
-    return (
-      <div className="wv-page">
-        <div className="wv-shell">
-          <div className="wv-empty">
-            <div className="wv-emptyTitle">Work not found.</div>
-            <div className="wv-emptySub">That ID doesn’t exist in the mock library or published works yet.</div>
-
-            <button type="button" className="wv-primary" onClick={() => navigate("/browse")}>
-              Go to Browse
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const pageThemeClass = prefs.theme === "dark" ? "wv-themeDark" : "wv-themePaper";
-
-  const audioHasDuration = (audioDurationSec || 0) > 0;
-  const audioProgressPct = audioHasDuration ? (audioCurrentSec / audioDurationSec) * 100 : 0;
-
-  const musicHasDuration = (musicDurationSec || 0) > 0;
-  const musicProgressPct = musicHasDuration ? (musicCurrentSec / musicDurationSec) * 100 : 0;
+  const themeClass = prefs.theme === "dark" ? "wv-themeDark" : "wv-themePaper";
 
   return (
-    <div className={`wv-page ${pageThemeClass}`}>
+    <div className={`wv-page ${themeClass}`}>
       <div className="wv-shell">
         <div className="wv-layout">
-          {/* LEFT: TOC + sticky bars */}
-          <aside className="wv-toc" aria-label="Chapters and players">
+          {/* Sidebar */}
+          <aside className="wv-toc" aria-label="Sidebar">
             <div className="wv-tocStack">
+              {/* Chapters */}
               <div className="wv-tocCard">
                 <div className="wv-tocHeader">
                   <div className="wv-tocTitle">Chapters</div>
@@ -682,31 +590,32 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                     aria-label={chaptersOpen ? "Collapse chapters" : "Expand chapters"}
                     title={chaptersOpen ? "Collapse" : "Expand"}
                   >
-                    {chaptersOpen ? "▾" : "▸"}
+                    {chaptersOpen ? "–" : "+"}
                   </button>
                 </div>
 
                 {chaptersOpen ? (
                   <div className="wv-chapterList" aria-label="Chapter list">
-                    {chapters.map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className={`wv-chapterItem ${activeChapterId === c.id ? "wv-chapterItem--active" : ""}`}
-                        onClick={() => selectChapter(c)}
-                        aria-label={`Go to ${c.title}`}
-                        title={c.title}
-                      >
-                        {c.title}
-                      </button>
-                    ))}
+                    {chapters.map((c) => {
+                      const active = String(c.id) === String(activeChapterId);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className={`wv-chapterItem ${active ? "wv-chapterItem--active" : ""}`}
+                          onClick={() => setActiveChapterId(c.id)}
+                        >
+                          {c.title}
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <div className="wv-tocHint">Choose a chapter to jump (anchor wiring later).</div>
+                  <div className="wv-tocHint">{chapters.length} chapters</div>
                 )}
               </div>
 
-              {/* STICKY AUDIO BAR */}
+              {/* Audio player */}
               {audioBarOpen ? (
                 <div className="wv-miniPlayer" aria-label="Audio player">
                   <div className="wv-miniHead">
@@ -714,8 +623,8 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                     <button
                       type="button"
                       className="wv-miniClose"
-                      onClick={closeAudioBarAndStop}
-                      aria-label="Close audio and stop"
+                      onClick={closeAudioBar}
+                      aria-label="Close audio bar"
                       title="Close"
                     >
                       ✕
@@ -723,19 +632,11 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   </div>
 
                   <div className="wv-miniBody">
-                    <div className="wv-miniTrack">
-                      <div className="wv-miniTrackTitle">{currentTrack ? currentTrack.title : "Choose a track"}</div>
-                      <div className="wv-miniTrackMeta">
-                        {currentTrack ? (
-                          <>
-                            <span>by {currentTrack.author}</span>
-                            <span className="wv-dot">•</span>
-                            <span>{currentTrack.duration}</span>
-                          </>
-                        ) : (
-                          <span>Select from the library</span>
-                        )}
-                      </div>
+                    <div className="wv-miniTrackTitle">{currentTrack ? currentTrack.title : "Select an audio track"}</div>
+                    <div className="wv-miniTrackMeta">
+                      <span>{currentTrack ? currentTrack.author : authorHandle}</span>
+                      <span className="wv-dot">•</span>
+                      <span>{currentTrack ? currentTrack.duration : "0:00"}</span>
                     </div>
 
                     <div className="wv-playerRow">
@@ -779,11 +680,16 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                         type="button"
                         className={`wv-miniIcon ${currentTrackFav ? "wv-miniIcon--on" : ""}`}
                         onClick={() => currentTrack && toggleAudioFav(currentTrack.id)}
+                        style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                         aria-label={currentTrackFav ? "Unbookmark audio" : "Bookmark audio"}
                         title={currentTrackFav ? "Remove bookmark" : "Bookmark"}
                         disabled={!currentTrack}
                       >
-                        {currentTrackFav ? "🔖" : "📑"}
+                        {currentTrackFav ? (
+                          <img src={bookmarkOnIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                        ) : (
+                          <img src={bookmarkOffIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                        )}
                       </button>
 
                       <button
@@ -884,364 +790,333 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                     </div>
 
                     <div className="wv-miniRow">
+                      <div className="wv-miniLabel">Search</div>
                       <input
                         className="wv-miniInput"
                         value={musicQuery}
                         onChange={(e) => setMusicQuery(e.target.value)}
-                        placeholder="Search playlist (API later)…"
+                        placeholder="Paste a track link or search…"
                         aria-label="Music search"
                       />
                     </div>
 
-                    <div className="wv-miniControls">
-                      <button type="button" className="wv-miniBtn" onClick={() => {}} aria-label="Connect provider">
-                        Connect
-                      </button>
-                    </div>
-
-                    <div className="wv-miniHint">This is a functional mock: play/pause + seek + progress. Replace with real embed later.</div>
+                    <div className="wv-miniHint">Mock music bar: provider + query state only. Wiring can come later.</div>
                   </div>
                 </div>
               ) : null}
             </div>
           </aside>
 
-          {/* RIGHT: main reading column */}
-          <main className="wv-main" aria-label="Work reading area">
+          {/* Main */}
+          <main className="wv-main" aria-label="Work content">
             <div className="wv-card">
+              {/* Header */}
               <div className="wv-header">
                 <div className="wv-headerLeft">
                   <button type="button" className="wv-backBtn" onClick={handleBack} aria-label="Go back" title="Back">
                     ← Back
                   </button>
-
-                  {canEdit ? (
-                    <button type="button" className="wv-editBtn" onClick={handleEdit} aria-label="Edit your work" title="Edit work">
-                      Edit
-                    </button>
-                  ) : null}
+                  <button type="button" className="wv-editBtn" onClick={handleEdit} aria-label="Edit work" title="Edit">
+                    Edit
+                  </button>
                 </div>
 
                 <div className="wv-headerMid">
                   <h1 className="wv-title">{title}</h1>
-
-                  <div className="wv-meta" aria-label="Work metadata">
-                    <span className="wv-metaItem">Language: {language}</span>
+                  <div className="wv-meta">
+                    <span className="wv-metaItem">
+                      by <Link to={`/profile/${encodeURIComponent(authorHandle)}`}>{authorHandle}</Link>
+                    </span>
                     <span className="wv-dot">•</span>
-                    <span className="wv-metaItem">Words: {wordCount}</span>
-                    <span className="wv-dot">•</span>
-                    <span className="wv-metaItem">Views: {views}</span>
+                    <span className="wv-metaItem">{chapters.length} chapters</span>
                   </div>
                 </div>
 
-                <div className="wv-headerRight" aria-label="Reading actions">
+                <div className="wv-headerRight">
+                  {/* Music */}
                   <button
                     type="button"
                     className={`wv-iconBtn ${musicBarOpen ? "wv-iconBtn--active" : ""}`}
-                    aria-label="Music"
+                    onClick={toggleMusicBar}
+                    aria-label="Toggle music bar"
                     title="Music"
-                    onClick={() => (musicBarOpen ? setMusicBarOpen(false) : openMusicBar())}
                   >
-                    ♫
+                    <img src={musicIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
                   </button>
 
+                  {/* Audio (keep as-is until you have audio_icon.png) */}
                   <button
                     type="button"
                     className={`wv-iconBtn ${audioBarOpen ? "wv-iconBtn--active" : ""}`}
-                    aria-label="Audio"
-                    title="Audio"
                     onClick={toggleAudioBar}
+                    aria-label="Toggle audio bar"
+                    title="Audio"
                   >
-                    🔊
+                    🎧
                   </button>
 
+                  {/* Settings */}
                   <button
                     type="button"
                     className={`wv-iconBtn ${panel === "settings" ? "wv-iconBtn--active" : ""}`}
-                    aria-label="Settings"
-                    title="Reading settings"
                     onClick={() => openPanel("settings")}
+                    aria-label="Open settings"
+                    title="Settings"
                   >
-                    ⚙
+                    <img src={settingsIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
                   </button>
 
+                  {/* Bookmark */}
                   <button
                     type="button"
                     className={`wv-iconBtn ${isBookmarked ? "wv-iconBtn--bookmarkOn" : ""}`}
-                    aria-label={isBookmarked ? "Remove bookmark" : "Bookmark"}
-                    title={isBookmarked ? "Remove bookmark" : "Bookmark"}
-                    onClick={toggleWorkFavorite}
+                    onClick={toggleBookmark}
+                    aria-label={isBookmarked ? "Remove bookmark" : "Bookmark this work"}
+                    title={isBookmarked ? "Bookmarked" : "Bookmark"}
                   >
-                    {isBookmarked ? "🔖" : "📑"}
+                    {isBookmarked ? (
+                      <img src={bookmarkOnIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                    ) : (
+                      <img src={bookmarkOffIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                    )}
                   </button>
 
+                  {/* Comments */}
                   <button
                     type="button"
                     className={`wv-iconBtn ${commentsOpen ? "wv-iconBtn--active" : ""}`}
-                    aria-label={commentsOpen ? "Close comments" : "Open comments"}
-                    title={commentsOpen ? "Close comments" : "Open comments"}
                     onClick={toggleComments}
+                    aria-label="Toggle comments"
+                    title="Comments"
                   >
-                    💬
+                    <img src={commentsIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
                   </button>
                 </div>
               </div>
 
-              <div className="wv-sep" aria-hidden="true" />
+              <div className="wv-sep" />
 
-              <div className="wv-authorRow">
-                <span className="wv-by">by</span>{" "}
-                <Link
-                  to={`/communities/${encodeURIComponent(authorHandle)}`}
-                  className="wv-author"
-                  aria-label={`Open ${authorHandle} community page`}
-                >
-                  {authorHandle}
-                </Link>
+              {/* Cover image (mock) */}
+              <div className="wv-cover">
+                <img className="wv-coverImg" src={nightWoodsImg} alt="" />
               </div>
 
-              {/* NEW: centered chapter label */}
-              <div className="wv-chapterCenter" aria-label="Current chapter">
-                Chapter {chapterNumber}
-              </div>
+              <div className="wv-sep wv-sep--soft" />
 
-              <div className="wv-sep wv-sep--soft" aria-hidden="true" />
-
+              {/* Body */}
               <article
                 className="wv-body"
-                aria-label="Work content"
                 style={{
                   fontSize: `${prefs.fontSize}px`,
                   lineHeight: prefs.lineHeight,
                   maxWidth: `${prefs.width}px`,
                 }}
               >
-                {bodyBlocks.map((b, idx) => {
-                  if (b.type === "img") {
-                    if (!b.url || !isImageUrl(b.url)) return null;
-
+                {blocks.map((b, idx) => {
+                  if (b.type === "img" && isImageUrl(b.url)) {
                     return (
-                      <figure key={`img-${idx}`} className="wv-figure" aria-label="Story image">
-                        <img className="wv-image" src={b.url} alt={b.alt || "Story image"} loading="lazy" />
-                      </figure>
+                      <div key={`${b.url}_${idx}`} className="wv-inlineImgWrap">
+                        <img className="wv-inlineImg" src={b.url} alt={b.alt || ""} />
+                      </div>
                     );
                   }
-
                   return (
-                    <p key={`p-${idx}`} className="wv-paragraph">
+                    <p key={`${b.text}_${idx}`} className="wv-p">
                       {b.text}
                     </p>
                   );
                 })}
               </article>
+
+              {/* Comments panel */}
+              {commentsOpen ? (
+                <div className="wv-comments" aria-label="Comments">
+                  <div className="wv-commentsTop">
+                    <div className="wv-commentsTitle">Comments</div>
+                    <button type="button" className="wv-toggleComments" onClick={toggleComments} aria-label="Close comments">
+                      Close
+                    </button>
+                  </div>
+
+                  <div className="wv-commentComposer">
+                    <textarea
+                      className="wv-commentInput"
+                      value={commentDraft}
+                      onChange={(e) => setCommentDraft(e.target.value)}
+                      placeholder={isAuthed ? "Write a comment…" : "Log in to comment…"}
+                      aria-label="Write a comment"
+                      disabled={!isAuthed}
+                    />
+                    <button type="button" className="wv-commentPost" onClick={handlePostComment} disabled={!isAuthed}>
+                      Post
+                    </button>
+                  </div>
+
+                  <div className="wv-commentList" aria-label="Comment list">
+                    {comments.map((c, idx) => (
+                      <div key={`${c.user}_${idx}`} className="wv-comment">
+                        <div className="wv-commentUser">@{c.user}</div>
+                        <div className="wv-commentText">{c.text}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
-            {/* COMMENTS */}
-            {commentsOpen ? (
-              <section className="wv-comments" aria-label="Comments section">
-                <div className="wv-commentsTop">
-                  <div className="wv-commentsTitle">Comments</div>
+            {/* Modal panel: settings + audio library */}
+            {panel ? (
+              <div className="wv-panelOverlay" role="dialog" aria-modal="true" aria-label="Modal panel">
+                <div className="wv-panel">
+                  <div className="wv-panelTop">
+                    <div className="wv-panelTitle">{panel === "settings" ? "Settings" : "Audio Library"}</div>
+                    <button type="button" className="wv-panelClose" onClick={() => setPanel(null)} aria-label="Close panel">
+                      ✕
+                    </button>
+                  </div>
 
-                  <button type="button" className="wv-toggleComments" onClick={toggleComments} aria-label="Close comments">
-                    Close
-                  </button>
-                </div>
+                  <div className="wv-panelBody">
+                    {panel === "settings" ? (
+                      <>
+                        <div className="wv-panelHint">These are view preferences stored per user in localStorage.</div>
 
-                <div className="wv-commentComposer">
-                  <textarea
-                    className="wv-commentInput"
-                    placeholder={isAuthed ? "Write a comment…" : "Log in to comment…"}
-                    rows={3}
-                    aria-label="Write a comment"
-                    value={commentDraft}
-                    onChange={(e) => setCommentDraft(e.target.value)}
-                    disabled={!isAuthed}
-                  />
+                        <div className="wv-settingRow">
+                          <label className="wv-settingLabel" htmlFor="wv-fontsize">
+                            Font size
+                          </label>
+                          <input
+                            id="wv-fontsize"
+                            type="range"
+                            min={13}
+                            max={20}
+                            step={1}
+                            value={prefs.fontSize}
+                            onChange={(e) => setPrefs((p) => ({ ...p, fontSize: Number(e.target.value) }))}
+                            aria-label="Font size"
+                          />
+                          <div className="wv-chip">{prefs.fontSize}px</div>
+                        </div>
 
-                  <div className="wv-commentActions">
-                    {!isAuthed ? (
-                      <button type="button" className="wv-primary" onClick={openLoginModal} aria-label="Log in to comment">
-                        Log in to comment
-                      </button>
+                        <div className="wv-settingRow">
+                          <label className="wv-settingLabel" htmlFor="wv-lineheight">
+                            Line height
+                          </label>
+                          <input
+                            id="wv-lineheight"
+                            type="range"
+                            min={1.6}
+                            max={2.3}
+                            step={0.05}
+                            value={prefs.lineHeight}
+                            onChange={(e) => setPrefs((p) => ({ ...p, lineHeight: Number(e.target.value) }))}
+                            aria-label="Line height"
+                          />
+                          <div className="wv-chip">{Number(prefs.lineHeight).toFixed(2)}</div>
+                        </div>
+
+                        <div className="wv-settingRow">
+                          <label className="wv-settingLabel" htmlFor="wv-width">
+                            Reading width
+                          </label>
+                          <input
+                            id="wv-width"
+                            type="range"
+                            min={560}
+                            max={900}
+                            step={10}
+                            value={prefs.width}
+                            onChange={(e) => setPrefs((p) => ({ ...p, width: Number(e.target.value) }))}
+                            aria-label="Reading width"
+                          />
+                          <div className="wv-chip">{prefs.width}px</div>
+                        </div>
+
+                        <div className="wv-settingRow">
+                          <div className="wv-settingLabel">Theme</div>
+                          <div className="wv-themeBtns">
+                            <button
+                              type="button"
+                              className={`wv-miniPill ${prefs.theme === "paper" ? "wv-miniPill--active" : ""}`}
+                              onClick={() => setPrefs((p) => ({ ...p, theme: "paper" }))}
+                            >
+                              Paper
+                            </button>
+                            <button
+                              type="button"
+                              className={`wv-miniPill ${prefs.theme === "dark" ? "wv-miniPill--active" : ""}`}
+                              onClick={() => setPrefs((p) => ({ ...p, theme: "dark" }))}
+                            >
+                              Dark
+                            </button>
+                          </div>
+                          <div className="wv-chip">{prefs.theme}</div>
+                        </div>
+                      </>
                     ) : (
-                      <button type="button" className="wv-secondary" onClick={handlePostComment} aria-label="Post comment">
-                        Post
-                      </button>
+                      <>
+                        <div className="wv-panelHint">Pick a track to “play”. This is still front-end mock behavior.</div>
+
+                        <div className="wv-audioList" aria-label="Audio tracks">
+                          {audioTracks.map((t) => {
+                            const active = t.id === nowPlayingId;
+                            const fav = Boolean(audioFavs?.[t.id]);
+
+                            return (
+                              <div
+                                key={t.id}
+                                className={`wv-audioPick ${active ? "wv-audioPick--active" : ""}`}
+                                onClick={() => selectTrack(t)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") selectTrack(t);
+                                }}
+                              >
+                                <div>
+                                  <div className="wv-audioTitle">{t.title}</div>
+                                  <div className="wv-audioMeta">
+                                    <span>@{t.author}</span>
+                                    <span className="wv-dot">•</span>
+                                    <span>{t.duration}</span>
+                                  </div>
+                                </div>
+
+                                <div className="wv-audioPickRight">
+                                  <button
+                                    type="button"
+                                    className={`wv-favBtn ${fav ? "wv-favBtn--on" : ""}`}
+                                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleAudioFav(t.id);
+                                    }}
+                                    aria-label={fav ? "Unbookmark track" : "Bookmark track"}
+                                    title={fav ? "Remove bookmark" : "Bookmark"}
+                                  >
+                                    {fav ? (
+                                      <img src={bookmarkOnIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                                    ) : (
+                                      <img src={bookmarkOffIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                                    )}
+                                  </button>
+                                  <span className="wv-audioPickHint">{active ? "Now playing" : "Select"}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
-
-                <div className="wv-commentList" aria-label="Comment list">
-                  {comments.map((c, i) => (
-                    <div key={i} className="wv-comment">
-                      <Link
-                        to={`/communities/${encodeURIComponent(c.user)}`}
-                        className="wv-commentUser"
-                        aria-label={`Open ${c.user} community page`}
-                      >
-                        @{c.user}
-                      </Link>
-                      <div className="wv-commentText">{c.text}</div>
-                    </div>
-                  ))}
-                </div>
-              </section>
+              </div>
             ) : null}
           </main>
         </div>
-
-        {/* PANEL OVERLAY */}
-        {panel ? (
-          <div className="wv-overlay" role="dialog" aria-modal="true" aria-label="Work view panel">
-            <div className="wv-overlayBackdrop" onMouseDown={() => setPanel(null)} aria-hidden="true" />
-
-            <div className="wv-panel" onMouseDown={(e) => e.stopPropagation()}>
-              <div className="wv-panelHead">
-                <div className="wv-panelTitle">
-                  {panel === "settings" ? "Reading Settings" : null}
-                  {panel === "audioLibrary" ? "Audio Library" : null}
-                </div>
-
-                <button type="button" className="wv-panelClose" aria-label="Close panel" onClick={() => setPanel(null)}>
-                  ✕
-                </button>
-              </div>
-
-              {panel === "settings" ? (
-                <div className="wv-panelBody">
-                  <div className="wv-settingRow">
-                    <label className="wv-settingLabel" htmlFor="wv-fontsize">
-                      Font size
-                    </label>
-                    <input
-                      id="wv-fontsize"
-                      type="range"
-                      min={13}
-                      max={20}
-                      value={prefs.fontSize}
-                      onChange={(e) => setPrefs((p) => ({ ...p, fontSize: Number(e.target.value) }))}
-                      aria-label="Font size"
-                    />
-                    <div className="wv-chip">{prefs.fontSize}px</div>
-                  </div>
-
-                  <div className="wv-settingRow">
-                    <label className="wv-settingLabel" htmlFor="wv-lineheight">
-                      Line height
-                    </label>
-                    <input
-                      id="wv-lineheight"
-                      type="range"
-                      min={1.6}
-                      max={2.3}
-                      step={0.05}
-                      value={prefs.lineHeight}
-                      onChange={(e) => setPrefs((p) => ({ ...p, lineHeight: Number(e.target.value) }))}
-                      aria-label="Line height"
-                    />
-                    <div className="wv-chip">{Number(prefs.lineHeight).toFixed(2)}</div>
-                  </div>
-
-                  <div className="wv-settingRow">
-                    <label className="wv-settingLabel" htmlFor="wv-width">
-                      Reading width
-                    </label>
-                    <input
-                      id="wv-width"
-                      type="range"
-                      min={560}
-                      max={900}
-                      step={10}
-                      value={prefs.width}
-                      onChange={(e) => setPrefs((p) => ({ ...p, width: Number(e.target.value) }))}
-                      aria-label="Reading width"
-                    />
-                    <div className="wv-chip">{prefs.width}px</div>
-                  </div>
-
-                  <div className="wv-settingRow">
-                    <div className="wv-settingLabel">Theme</div>
-                    <div className="wv-themeBtns">
-                      <button
-                        type="button"
-                        className={`wv-miniBtn ${prefs.theme === "paper" ? "wv-miniBtn--active" : ""}`}
-                        onClick={() => setPrefs((p) => ({ ...p, theme: "paper" }))}
-                      >
-                        Paper
-                      </button>
-                      <button
-                        type="button"
-                        className={`wv-miniBtn ${prefs.theme === "dark" ? "wv-miniBtn--active" : ""}`}
-                        onClick={() => setPrefs((p) => ({ ...p, theme: "dark" }))}
-                      >
-                        Dark
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="wv-panelHint">Preferences save locally per-user (mock).</div>
-                </div>
-              ) : null}
-
-              {panel === "audioLibrary" ? (
-                <div className="wv-panelBody">
-                  <div className="wv-panelHint">Pick an audio item — the sticky Audio bar stays in the sidebar and follows you.</div>
-
-                  <div className="wv-audioList" aria-label="Audio list">
-                    {audioTracks.map((t) => {
-                      const selected = nowPlayingId === t.id;
-                      const fav = Boolean(audioFavs?.[t.id]);
-
-                      return (
-                        <button
-                          key={t.id}
-                          type="button"
-                          className={`wv-audioPick ${selected ? "wv-audioPick--active" : ""}`}
-                          onClick={() => selectTrack(t)}
-                          aria-label={`Select ${t.title}`}
-                          title="Select audio"
-                        >
-                          <div className="wv-audioPickLeft">
-                            <div className="wv-audioTitle">{t.title}</div>
-                            <div className="wv-audioMeta">
-                              <span>by {t.author}</span>
-                              <span className="wv-dot">•</span>
-                              <span>{t.duration}</span>
-                            </div>
-                          </div>
-
-                          <div className="wv-audioPickRight">
-                            <button
-                              type="button"
-                              className={`wv-favBtn ${fav ? "wv-favBtn--on" : ""}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleAudioFav(t.id);
-                              }}
-                              aria-label={fav ? "Unbookmark track" : "Bookmark track"}
-                              title={fav ? "Remove bookmark" : "Bookmark"}
-                            >
-                              {fav ? "🔖" : "📑"}
-                            </button>
-
-                            <span className="wv-audioPickHint">{selected ? "Selected" : "Select"}</span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="wv-panelHint">Tip: The audio bar opens from 🔊 now — Library is just to choose what plays.</div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
       </div>
     </div>
   );
 }
-
 
 
 

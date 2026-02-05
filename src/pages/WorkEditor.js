@@ -3,6 +3,15 @@ import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./NewDraft.css";
 
+import chapterIcon from "../assets/images/chapter_icon.png";
+import importIcon from "../assets/images/import_icon.png";
+import tagsIcon from "../assets/images/tags_icon.png";
+import skinsIcon from "../assets/images/skins_icon.png";
+import privacyIcon from "../assets/images/privacy_icon.png";
+import langIcon from "../assets/images/lang_icon.png";
+import imageIcon from "../assets/images/image_icon.png";
+import previewIcon from "../assets/images/preview_icon.png";
+
 const WORKS_KEY = "sable_published_v1";
 
 const SKIN_OPTIONS = ["Default", "Emerald", "Ivory", "Midnight"];
@@ -145,7 +154,6 @@ export default function WorkEditor() {
   });
   const [activeChapterId, setActiveChapterId] = React.useState("");
 
-  // Initialize activeChapterId once chapters are set
   React.useEffect(() => {
     if (!activeChapterId && chapters.length > 0) {
       setActiveChapterId(chapters[0].id);
@@ -157,7 +165,11 @@ export default function WorkEditor() {
 
   function setBody(newBody) {
     setChapters((prev) =>
-      prev.map((ch) => (ch.id === activeChapterId ? { ...ch, body: typeof newBody === "function" ? newBody(ch.body) : newBody } : ch))
+      prev.map((ch) =>
+        ch.id === activeChapterId
+          ? { ...ch, body: typeof newBody === "function" ? newBody(ch.body) : newBody }
+          : ch
+      )
     );
   }
 
@@ -263,7 +275,6 @@ export default function WorkEditor() {
     }
 
     setTitle(found.title || "");
-    // Load chapters or migrate from old body format
     if (Array.isArray(found.chapters) && found.chapters.length > 0) {
       setChapters(found.chapters);
       setActiveChapterId(found.chapters[0].id);
@@ -371,6 +382,17 @@ export default function WorkEditor() {
     }
   }
 
+  const IconImg = ({ src, alt }) => (
+    <img
+      src={src}
+      alt={alt}
+      width={18}
+      height={18}
+      style={{ display: "block", width: 18, height: 18, objectFit: "contain" }}
+      draggable={false}
+    />
+  );
+
   return (
     <div className="nd-page">
       <div className="nd-shell">
@@ -378,15 +400,69 @@ export default function WorkEditor() {
 
         <section className="nd-card">
           <div className="nd-pillRow">
-            <ActionPill icon="📑" label="Chapters" subLabel={`${chapters.length}`} onClick={() => toggleTool("chapters")} active={activeTool === "chapters"} />
-            <ActionPill icon="☁︎" label="Import" subLabel="Soon" onClick={() => toggleTool("import")} active={activeTool === "import"} />
-            <ActionPill icon="🏷" label="Tags" subLabel={tags.length ? `${tags.length}` : ""} onClick={() => toggleTool("tags")} active={activeTool === "tags"} />
-            <ActionPill icon="★" label="Skin" subLabel={skin} onClick={() => toggleTool("skin")} active={activeTool === "skin"} />
-            <ActionPill icon="🌐" label="Privacy" subLabel={privacy} onClick={() => toggleTool("privacy")} active={activeTool === "privacy"} />
-            <ActionPill icon="🗨" label="Language" subLabel={language} onClick={() => toggleTool("language")} active={activeTool === "language"} />
-            <ActionPill icon="🎧" label="Audio" subLabel={audio?.name ? "Attached" : "None"} onClick={() => toggleTool("audio")} active={activeTool === "audio"} />
-            <ActionPill icon="🖼" label="Images" subLabel={images.length ? `${images.length}` : "0"} onClick={() => toggleTool("images")} active={activeTool === "images"} />
-            <ActionPill icon="👁" label="Preview" subLabel={previewOn ? "On" : "Off"} onClick={() => setPreviewOn((v) => !v)} active={previewOn} />
+            <ActionPill
+              icon={<IconImg src={chapterIcon} alt="Chapters" />}
+              label="Chapters"
+              subLabel={`${chapters.length}`}
+              onClick={() => toggleTool("chapters")}
+              active={activeTool === "chapters"}
+            />
+            <ActionPill
+              icon={<IconImg src={importIcon} alt="Import" />}
+              label="Import"
+              subLabel="Soon"
+              onClick={() => toggleTool("import")}
+              active={activeTool === "import"}
+            />
+            <ActionPill
+              icon={<IconImg src={tagsIcon} alt="Tags" />}
+              label="Tags"
+              subLabel={tags.length ? `${tags.length}` : ""}
+              onClick={() => toggleTool("tags")}
+              active={activeTool === "tags"}
+            />
+            <ActionPill
+              icon={<IconImg src={skinsIcon} alt="Skin" />}
+              label="Skin"
+              subLabel={skin}
+              onClick={() => toggleTool("skin")}
+              active={activeTool === "skin"}
+            />
+            <ActionPill
+              icon={<IconImg src={privacyIcon} alt="Privacy" />}
+              label="Privacy"
+              subLabel={privacy}
+              onClick={() => toggleTool("privacy")}
+              active={activeTool === "privacy"}
+            />
+            <ActionPill
+              icon={<IconImg src={langIcon} alt="Language" />}
+              label="Language"
+              subLabel={language}
+              onClick={() => toggleTool("language")}
+              active={activeTool === "language"}
+            />
+            <ActionPill
+              icon="🎧"
+              label="Audio"
+              subLabel={audio?.name ? "Attached" : "None"}
+              onClick={() => toggleTool("audio")}
+              active={activeTool === "audio"}
+            />
+            <ActionPill
+              icon={<IconImg src={imageIcon} alt="Images" />}
+              label="Images"
+              subLabel={images.length ? `${images.length}` : "0"}
+              onClick={() => toggleTool("images")}
+              active={activeTool === "images"}
+            />
+            <ActionPill
+              icon={<IconImg src={previewIcon} alt="Preview" />}
+              label="Preview"
+              subLabel={previewOn ? "On" : "Off"}
+              onClick={() => setPreviewOn((v) => !v)}
+              active={previewOn}
+            />
           </div>
 
           {activeTool === "chapters" && (
@@ -394,15 +470,8 @@ export default function WorkEditor() {
               <div className="nd-toolTitle">Chapters</div>
               <div className="nd-chapterList">
                 {chapters.map((ch, idx) => (
-                  <div
-                    key={ch.id}
-                    className={`nd-chapterItem ${ch.id === activeChapterId ? "nd-chapterItem--active" : ""}`}
-                  >
-                    <button
-                      type="button"
-                      className="nd-chapterSelect"
-                      onClick={() => setActiveChapterId(ch.id)}
-                    >
+                  <div key={ch.id} className={`nd-chapterItem ${ch.id === activeChapterId ? "nd-chapterItem--active" : ""}`}>
+                    <button type="button" className="nd-chapterSelect" onClick={() => setActiveChapterId(ch.id)}>
                       <input
                         className="nd-chapterTitleInput"
                         value={ch.title}
@@ -411,13 +480,7 @@ export default function WorkEditor() {
                       />
                     </button>
                     <div className="nd-chapterActions">
-                      <button
-                        type="button"
-                        className="nd-chapterBtn"
-                        onClick={() => moveChapter(ch.id, -1)}
-                        disabled={idx === 0}
-                        title="Move up"
-                      >
+                      <button type="button" className="nd-chapterBtn" onClick={() => moveChapter(ch.id, -1)} disabled={idx === 0} title="Move up">
                         ↑
                       </button>
                       <button
@@ -600,5 +663,6 @@ export default function WorkEditor() {
     </div>
   );
 }
+
 
 
