@@ -1,3 +1,14 @@
+
+//         (\_/)
+ //       =(^Y^)=
+ // ______(m___m)____Hello!___
+
+In the event that Docker cannot be run, a GitHub Pages deployment is also available as a fallback to view the completed front-end interface in a browser. 
+
+GH Pages: https://xiarune.github.io/sable/
+
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
