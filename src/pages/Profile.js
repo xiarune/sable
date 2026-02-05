@@ -7,6 +7,33 @@ import profileImg from "../assets/images/profile_picture.png";
 const WORKS_KEY = "sable_published_v1";
 const DRAFTS_KEY = "sable_drafts_v1";
 
+// Mock data for audio library
+const MOCK_AUDIOS = [
+  { id: "a1", title: "Chapter 1 Reading", duration: "12:34", plays: 567, createdAt: "2024-01-15" },
+  { id: "a2", title: "Character Voice: Luna", duration: "3:45", plays: 234, createdAt: "2024-01-10" },
+  { id: "a3", title: "Ambient Writing Music", duration: "45:00", plays: 1289, createdAt: "2024-01-05" },
+  { id: "a4", title: "Story Narration - Part 1", duration: "18:22", plays: 456, createdAt: "2024-01-01" },
+];
+
+// Mock data for skins
+const MOCK_SKINS = [
+  { id: "s1", name: "Dark Academia", downloads: 234, likes: 89, status: "Published" },
+  { id: "s2", name: "Cottagecore Dreams", downloads: 156, likes: 67, status: "Published" },
+  { id: "s3", name: "Midnight Blue", downloads: 312, likes: 124, status: "Draft" },
+];
+
+// Mock data for donations
+const MOCK_DONATIONS_GIVEN = [
+  { id: "d1", to: "jane.doe", amount: "$5.00", date: "2024-01-20", note: "Love your work!" },
+  { id: "d2", to: "amira.salem", amount: "$10.00", date: "2024-01-15", note: "Keep creating!" },
+];
+
+const MOCK_DONATIONS_RECEIVED = [
+  { id: "r1", from: "hadassah", amount: "$15.00", date: "2024-01-22", note: "Your stories are amazing" },
+  { id: "r2", from: "zoey", amount: "$5.00", date: "2024-01-18", note: "Thanks for the audio reads!" },
+  { id: "r3", from: "michael", amount: "$20.00", date: "2024-01-10", note: "" },
+];
+
 function safeParse(json) {
   try {
     return JSON.parse(json);
@@ -98,7 +125,7 @@ function ActionCard({ icon, title, desc, onClick }) {
 export default function Profile({ username = "john.doe" }) {
   const navigate = useNavigate();
 
-  const [active, setActive] = React.useState("Overview"); // Overview | Works | Drafts
+  const [active, setActive] = React.useState("Overview"); // Overview | Works | Drafts | Skins | Audio | Donations
   const [works, setWorks] = React.useState([]);
   const [drafts, setDrafts] = React.useState([]);
 
@@ -199,6 +226,15 @@ export default function Profile({ username = "john.doe" }) {
               <NavItem active={active === "Drafts"} onClick={() => setActive("Drafts")}>
                 Drafts
               </NavItem>
+              <NavItem active={active === "Skins"} onClick={() => setActive("Skins")}>
+                Skins
+              </NavItem>
+              <NavItem active={active === "Audio"} onClick={() => setActive("Audio")}>
+                Audio Library
+              </NavItem>
+              <NavItem active={active === "Donations"} onClick={() => setActive("Donations")}>
+                Donations
+              </NavItem>
             </div>
 
             <div className="pf-navDivider" />
@@ -208,6 +244,9 @@ export default function Profile({ username = "john.doe" }) {
             </button>
             <button type="button" className="pf-navLink" onClick={goToDraftsPage}>
               Go to Drafts Page
+            </button>
+            <button type="button" className="pf-navLink" onClick={() => navigate("/settings")}>
+              Go to Settings
             </button>
           </aside>
 
@@ -400,6 +439,181 @@ export default function Profile({ username = "john.doe" }) {
                   )}
                 </div>
               </div>
+            ) : null}
+
+            {active === "Skins" ? (
+              <div className="pf-card">
+                <div className="pf-cardHead">
+                  <div className="pf-cardTitle">Your Skins</div>
+                  <div className="pf-cardRight">
+                    <button type="button" className="pf-linkBtn" onClick={() => navigate("/settings")}>
+                      Manage in Settings
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pf-cardBody">
+                  {MOCK_SKINS.length ? (
+                    <div className="pf-list" aria-label="Skins list">
+                      {MOCK_SKINS.map((skin) => (
+                        <div key={skin.id} className="pf-listRow">
+                          <div>
+                            <div className="pf-listTitle">{skin.name}</div>
+                            <div className="pf-listMeta">
+                              {skin.downloads} downloads · {skin.likes} likes · {skin.status}
+                            </div>
+                          </div>
+
+                          <div className="pf-cardRight">
+                            <button type="button" className="pf-linkBtn" onClick={() => navigate("/settings")}>
+                              Edit
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="pf-softMeta">No skins created yet.</div>
+                  )}
+
+                  <div className="pf-actionRow">
+                    <button type="button" className="pf-btn pf-btn--primary" onClick={() => navigate("/settings")}>
+                      Create New Skin
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {active === "Audio" ? (
+              <div className="pf-card">
+                <div className="pf-cardHead">
+                  <div className="pf-cardTitle">Audio Library</div>
+                  <div className="pf-cardRight">
+                    <span className="pf-softMeta">{MOCK_AUDIOS.length} files</span>
+                  </div>
+                </div>
+
+                <div className="pf-cardBody">
+                  {MOCK_AUDIOS.length ? (
+                    <div className="pf-list" aria-label="Audio files list">
+                      {MOCK_AUDIOS.map((audio) => (
+                        <div key={audio.id} className="pf-listRow">
+                          <div>
+                            <div className="pf-listTitle">{audio.title}</div>
+                            <div className="pf-listMeta">
+                              {audio.duration} · {audio.plays} plays · {audio.createdAt}
+                            </div>
+                          </div>
+
+                          <div className="pf-cardRight">
+                            <button type="button" className="pf-linkBtn">
+                              ▶ Play
+                            </button>
+                            <button type="button" className="pf-linkBtn">
+                              Edit
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="pf-softMeta">No audio files yet.</div>
+                  )}
+
+                  <div className="pf-actionRow">
+                    <button type="button" className="pf-btn pf-btn--primary">
+                      Upload Audio
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {active === "Donations" ? (
+              <>
+                <div className="pf-card">
+                  <div className="pf-cardHead">
+                    <div className="pf-cardTitle">Donations Received</div>
+                    <div className="pf-cardRight">
+                      <span className="pf-softMeta">
+                        Total: ${MOCK_DONATIONS_RECEIVED.reduce((sum, d) => sum + parseFloat(d.amount.replace("$", "")), 0).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pf-cardBody">
+                    {MOCK_DONATIONS_RECEIVED.length ? (
+                      <div className="pf-list" aria-label="Donations received">
+                        {MOCK_DONATIONS_RECEIVED.map((donation) => (
+                          <div key={donation.id} className="pf-listRow">
+                            <div>
+                              <div className="pf-listTitle">
+                                {donation.amount} from @{donation.from}
+                              </div>
+                              <div className="pf-listMeta">
+                                {donation.date} {donation.note && `· "${donation.note}"`}
+                              </div>
+                            </div>
+
+                            <div className="pf-cardRight">
+                              <button type="button" className="pf-linkBtn" onClick={() => navigate(`/communities/${donation.from}`)}>
+                                View Profile
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="pf-softMeta">No donations received yet.</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pf-card">
+                  <div className="pf-cardHead">
+                    <div className="pf-cardTitle">Donations Given</div>
+                    <div className="pf-cardRight">
+                      <span className="pf-softMeta">
+                        Total: ${MOCK_DONATIONS_GIVEN.reduce((sum, d) => sum + parseFloat(d.amount.replace("$", "")), 0).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pf-cardBody">
+                    {MOCK_DONATIONS_GIVEN.length ? (
+                      <div className="pf-list" aria-label="Donations given">
+                        {MOCK_DONATIONS_GIVEN.map((donation) => (
+                          <div key={donation.id} className="pf-listRow">
+                            <div>
+                              <div className="pf-listTitle">
+                                {donation.amount} to @{donation.to}
+                              </div>
+                              <div className="pf-listMeta">
+                                {donation.date} {donation.note && `· "${donation.note}"`}
+                              </div>
+                            </div>
+
+                            <div className="pf-cardRight">
+                              <button type="button" className="pf-linkBtn" onClick={() => navigate(`/communities/${donation.to}`)}>
+                                View Profile
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="pf-softMeta">No donations given yet.</div>
+                    )}
+
+                    <div className="pf-actionRow">
+                      <button type="button" className="pf-btn pf-btn--primary" onClick={() => navigate("/support")}>
+                        Support a Creator
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
             ) : null}
           </section>
         </div>

@@ -14,7 +14,8 @@ import bookmarkOnIcon from "../assets/images/bookmark_icon_on.png";
 const WORKS_KEY = "sable_published_v1";
 const VIEW_PREFS_KEY = "sable_workview_prefs_v1";
 const AUDIO_FAVS_KEY = "sable_audio_favs_v1";
-const WORK_FAVS_KEY = "sable_work_favs_v1"; // bookmark uses same storage
+const WORK_FAVS_KEY = "sable_work_favs_v1"; // per-user bookmark state
+const BOOKMARKS_KEY = "sable_bookmarks_v1"; // shared bookmarks list for Bookmarks page
 
 function safeParse(json) {
   try {
@@ -563,11 +564,38 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
       openLoginModal();
       return;
     }
+
+    const wasBookmarked = Boolean(workFavs?.[decodedId]);
+
+    // Update per-user bookmark state
     setWorkFavs((prev) => {
       const next = { ...(prev || {}) };
       next[decodedId] = !next[decodedId];
       return next;
     });
+
+    // Update shared bookmarks list for Bookmarks page
+    try {
+      const stored = JSON.parse(localStorage.getItem(BOOKMARKS_KEY)) || [];
+      if (wasBookmarked) {
+        // Remove from bookmarks
+        const updated = stored.filter((b) => b.id !== decodedId);
+        localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(updated));
+      } else {
+        // Add to bookmarks
+        const bookmarkData = {
+          id: decodedId,
+          title: title,
+          authorUsername: authorHandle,
+          type: "work",
+          workId: decodedId,
+        };
+        const updated = [bookmarkData, ...stored.filter((b) => b.id !== decodedId)];
+        localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(updated));
+      }
+    } catch {
+      // ignore localStorage errors
+    }
   }
 
   const themeClass = prefs.theme === "dark" ? "wv-themeDark" : "wv-themePaper";

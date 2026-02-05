@@ -145,6 +145,39 @@
   background: rgba(0, 0, 0, 0.06);
 }
 
+/* Search bar */
+.ycp-searchBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.ycp-searchInput {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  outline: none;
+}
+
+.ycp-searchClose {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.ycp-searchClose:hover {
+  opacity: 1;
+}
+
 .ycp-handle {
   margin-top: 4px;
   color: rgba(0, 0, 0, 0.45);
@@ -231,6 +264,87 @@
 .ycp-workCover--placeholder {
   background: rgba(0, 0, 0, 0.10);
   border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Tab content */
+.ycp-tabContent {
+  padding-top: 10px;
+}
+
+.ycp-workInfo {
+  margin-top: 8px;
+}
+
+.ycp-workTitle {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f3a2a;
+}
+
+.ycp-workMeta {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+  margin-top: 2px;
+}
+
+.ycp-listItems {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ycp-listItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ycp-listItemMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.ycp-listItemTitle {
+  font-family: "Libre Baskerville", serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f3a2a;
+}
+
+.ycp-listItemMeta {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.5);
+  margin-top: 2px;
+}
+
+.ycp-listItemProgress {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: #1f3a2a;
+  font-weight: 700;
+}
+
+.ycp-listItemBtn {
+  border: 1px solid #1f3a2a;
+  background: transparent;
+  color: #1f3a2a;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ycp-listItemBtn:hover {
+  background: #1f3a2a;
+  color: #fff;
 }
 
 /* Right panels (shared) */
@@ -418,6 +532,43 @@
   height: 26px;
   object-fit: contain;
   display: block;
+}
+
+/* Add Widget section */
+.ycp-addWidgetSection {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ycp-addWidgetTitle {
+  font-family: "Libre Baskerville", serif;
+  color: #1f3a2a;
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.ycp-addWidgetList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ycp-addWidgetBtn {
+  border: 1px dashed rgba(0, 0, 0, 0.25);
+  background: transparent;
+  color: #1f3a2a;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ycp-addWidgetBtn:hover {
+  border-style: solid;
+  background: rgba(0, 0, 0, 0.03);
 }
 
 /* Responsive */

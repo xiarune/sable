@@ -421,13 +421,6 @@ export default function Inbox() {
           </div>
 
           <div className="in-chatComposer" aria-label="Files footer">
-            <input
-              className="in-composeInput"
-              value={fileQuery}
-              onChange={(e) => setFileQuery(e.target.value)}
-              placeholder="Search files..."
-              aria-label="Search files"
-            />
             <button type="button" className="in-sendBtn" onClick={() => {}}>
               Upload
             </button>

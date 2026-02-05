@@ -890,12 +890,14 @@ export default function Settings({ username, onLogout }) {
         <div className="st-grid">
           {/* LEFT NAV */}
           <aside className="st-side" aria-label="Settings navigation">
+            <div className="st-sideTitle">Settings</div>
+
             <button
               type="button"
               className={`st-sideBtn ${activeNav === "account" ? "is-active" : ""}`}
               onClick={() => setActiveNav("account")}
             >
-              ACCOUNT
+              Account
             </button>
 
             <button
@@ -903,7 +905,7 @@ export default function Settings({ username, onLogout }) {
               className={`st-sideBtn ${activeNav === "personal" ? "is-active" : ""}`}
               onClick={() => setActiveNav("personal")}
             >
-              PERSONAL{"\n"}INFO
+              Personal Info
             </button>
 
             <button
@@ -911,7 +913,7 @@ export default function Settings({ username, onLogout }) {
               className={`st-sideBtn ${activeNav === "privacy" ? "is-active" : ""}`}
               onClick={() => setActiveNav("privacy")}
             >
-              PRIVACY
+              Privacy
             </button>
 
             <button
@@ -919,7 +921,7 @@ export default function Settings({ username, onLogout }) {
               className={`st-sideBtn ${activeNav === "skins" ? "is-active" : ""}`}
               onClick={() => setActiveNav("skins")}
             >
-              SKINS
+              Skins
             </button>
 
             <button
@@ -927,7 +929,7 @@ export default function Settings({ username, onLogout }) {
               className={`st-sideBtn ${activeNav === "audio" ? "is-active" : ""}`}
               onClick={() => setActiveNav("audio")}
             >
-              AUDIO
+              Audio
             </button>
           </aside>
 

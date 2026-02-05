@@ -43,6 +43,18 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef(null);
 
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const mobileMenuRef = React.useRef(null);
+
+  function toggleMobileMenu() {
+    setIsMobileMenuOpen((v) => !v);
+  }
+
+  function closeMobileMenu() {
+    setIsMobileMenuOpen(false);
+  }
+
   function goToSearch(optionalQuery) {
     const q = String(optionalQuery ?? query).trim();
     if (!q) {
@@ -170,12 +182,16 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
       if (isBrowseMenuOpen && browseMenuRef.current && !browseMenuRef.current.contains(e.target)) {
         closeBrowseMenu();
       }
+      if (isMobileMenuOpen && mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
+        closeMobileMenu();
+      }
     }
 
     function onKeyDown(e) {
       if (e.key === "Escape") {
         closeUserMenu();
         closeBrowseMenu();
+        closeMobileMenu();
         if (isAuthModalOpen) closeAuthModal();
       }
     }
@@ -187,11 +203,12 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
       document.removeEventListener("mousedown", onDocMouseDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [isUserMenuOpen, isBrowseMenuOpen, isAuthModalOpen]);
+  }, [isUserMenuOpen, isBrowseMenuOpen, isMobileMenuOpen, isAuthModalOpen]);
 
   React.useEffect(() => {
     closeUserMenu();
     closeBrowseMenu();
+    closeMobileMenu();
   }, [location.pathname]);
 
   React.useEffect(() => {
@@ -219,7 +236,7 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
             <span className="brand-text">SABLE</span>
           </button>
 
-          <nav className="topnav" aria-label="Primary navigation">
+          <nav className="topnav topnav--desktop" aria-label="Primary navigation">
             <NavLink
               to="/browse"
               className={({ isActive }) => (isActive ? "navlink active" : "navlink")}
@@ -247,7 +264,150 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
           </nav>
         </div>
 
-        <div className="topbar-right">
+        {/* Hamburger button for mobile */}
+        <div className="hamburger-wrap" ref={mobileMenuRef}>
+          <button
+            type="button"
+            className="hamburger-btn"
+            onClick={toggleMobileMenu}
+            aria-label="Toggle menu"
+            aria-expanded={isMobileMenuOpen}
+          >
+            <span className={`hamburger-icon ${isMobileMenuOpen ? "hamburger-icon--open" : ""}`}>
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+
+          {isMobileMenuOpen && (
+            <div className="mobile-menu" role="menu" aria-label="Mobile navigation">
+              <nav className="mobile-nav">
+                <NavLink
+                  to="/browse"
+                  className={({ isActive }) => (isActive ? "mobile-navlink active" : "mobile-navlink")}
+                  onClick={closeMobileMenu}
+                >
+                  Browse
+                </NavLink>
+                <NavLink
+                  to="/communities"
+                  className={({ isActive }) => (isActive ? "mobile-navlink active" : "mobile-navlink")}
+                  onClick={closeMobileMenu}
+                >
+                  Communities
+                </NavLink>
+                <NavLink
+                  to="/about"
+                  className={({ isActive }) => (isActive ? "mobile-navlink active" : "mobile-navlink")}
+                  onClick={closeMobileMenu}
+                >
+                  About Us
+                </NavLink>
+              </nav>
+
+              <div className="mobile-divider" />
+
+              {isAuthed ? (
+                <>
+                  <div className="mobile-section-title">Quick Actions</div>
+                  <button
+                    type="button"
+                    className="mobile-navlink"
+                    onClick={() => { closeMobileMenu(); goToSearch(); }}
+                  >
+                    Search
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-navlink"
+                    onClick={() => { closeMobileMenu(); navigate("/new-draft"); }}
+                  >
+                    New Draft
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-navlink"
+                    onClick={() => { closeMobileMenu(); navigate("/inbox"); }}
+                  >
+                    Inbox
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-navlink"
+                    onClick={() => { closeMobileMenu(); navigate("/notifications"); }}
+                  >
+                    Notifications
+                  </button>
+
+                  <div className="mobile-divider" />
+
+                  <div className="mobile-section-title">Account</div>
+                  <button
+                    type="button"
+                    className="mobile-navlink"
+                    onClick={() => { closeMobileMenu(); navigate("/communities/me"); }}
+                  >
+                    Your Community Page
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-navlink"
+                    onClick={() => { closeMobileMenu(); navigate("/profile"); }}
+                  >
+                    Profile
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-navlink"
+                    onClick={() => { closeMobileMenu(); navigate("/settings"); }}
+                  >
+                    Settings
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-navlink"
+                    onClick={() => { closeMobileMenu(); navigate("/bookmarks"); }}
+                  >
+                    Bookmarks
+                  </button>
+
+                  <div className="mobile-divider" />
+
+                  <button
+                    type="button"
+                    className="mobile-navlink mobile-navlink--danger"
+                    onClick={() => { closeMobileMenu(); onLogout(); navigate("/"); }}
+                  >
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="mobile-navlink"
+                    onClick={() => { closeMobileMenu(); goToSearch(); }}
+                  >
+                    Search
+                  </button>
+
+                  <div className="mobile-divider" />
+
+                  <button
+                    type="button"
+                    className="mobile-login-btn"
+                    onClick={() => { closeMobileMenu(); openLogin(); }}
+                  >
+                    Log In
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="topbar-right topbar-right--desktop">
           {isAuthed ? (
             <>
               <div className="userMenu" ref={userMenuRef}>

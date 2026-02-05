@@ -579,6 +579,67 @@
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
 }
 
+.co-action--active {
+  background: rgba(36, 75, 43, 0.12);
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.co-action--ghost.co-action--active {
+  background: rgba(36, 75, 43, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(36, 75, 43, 0.25);
+}
+
+/* Reply box */
+.co-replyBox {
+  padding: 0 14px 14px;
+}
+
+.co-replyInput {
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.86);
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.co-replyActions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.co-replyCancel {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: transparent;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(60, 55, 52, 0.65);
+}
+
+.co-replySubmit {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(36, 75, 43, 0.14);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(36, 75, 43, 0.95);
+}
+
 /* Type pill */
 .co-pill {
   border-radius: 999px;
@@ -680,6 +741,12 @@
   font-size: 12px;
   color: rgba(36, 75, 43, 0.92);
   flex: 0 0 auto;
+}
+
+.co-followBtn--following {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(36, 75, 43, 0.25);
+  color: rgba(36, 75, 43, 0.75);
 }
 
 /* Right rail: live */

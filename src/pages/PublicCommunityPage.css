@@ -105,6 +105,142 @@
   background: rgba(0, 0, 0, 0.06);
 }
 
+.pcp-followBtn {
+  width: auto;
+  padding: 0 16px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  background: #1f3a2a;
+  color: #fff;
+}
+
+.pcp-followBtn:hover {
+  background: #2a4f3a;
+}
+
+.pcp-followBtn--following {
+  background: transparent;
+  color: #1f3a2a;
+  border: 1px solid #1f3a2a;
+}
+
+.pcp-followBtn--following:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.pcp-searchBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.pcp-searchInput {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  outline: none;
+}
+
+.pcp-searchClose {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.pcp-searchClose:hover {
+  opacity: 1;
+}
+
+/* Tab content */
+.pcp-tabContent {
+  padding-top: 10px;
+}
+
+.pcp-workInfo {
+  margin-top: 8px;
+}
+
+.pcp-workTitle {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f3a2a;
+}
+
+.pcp-workMeta {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+  margin-top: 2px;
+}
+
+.pcp-listItems {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pcp-listItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pcp-listItemMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.pcp-listItemTitle {
+  font-family: "Libre Baskerville", serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f3a2a;
+}
+
+.pcp-listItemMeta {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.5);
+  margin-top: 2px;
+}
+
+.pcp-listItemProgress {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: #1f3a2a;
+  font-weight: 700;
+}
+
+.pcp-listItemBtn {
+  border: 1px solid #1f3a2a;
+  background: transparent;
+  color: #1f3a2a;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.pcp-listItemBtn:hover {
+  background: #1f3a2a;
+  color: #fff;
+}
+
 .pcp-handle {
   margin-top: 4px;
   color: rgba(0, 0, 0, 0.45);

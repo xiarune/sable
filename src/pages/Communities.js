@@ -8,6 +8,47 @@ import otherProfileImg from "../assets/images/other_profile.png";
 
 import { works as libraryWorks } from "../data/libraryWorks";
 
+// LocalStorage keys
+const LIKES_KEY = "sable_likes_v1";
+const BOOKMARKS_KEY = "sable_bookmarks_v1";
+const FOLLOWING_KEY = "sable_following_v1";
+
+function getLikes() {
+  try {
+    return JSON.parse(localStorage.getItem(LIKES_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function setLikesStorage(list) {
+  localStorage.setItem(LIKES_KEY, JSON.stringify(list));
+}
+
+function getBookmarks() {
+  try {
+    return JSON.parse(localStorage.getItem(BOOKMARKS_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function setBookmarksStorage(list) {
+  localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(list));
+}
+
+function getFollowing() {
+  try {
+    return JSON.parse(localStorage.getItem(FOLLOWING_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function setFollowingStorage(list) {
+  localStorage.setItem(FOLLOWING_KEY, JSON.stringify(list));
+}
+
 const MOCK_TOPICS = [
   { id: "t1", label: "Writing Prompts", count: "12.4k" },
   { id: "t2", label: "Slow-burn Romance", count: "9.8k" },
@@ -134,13 +175,106 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   const [query, setQuery] = React.useState("");
 
   // Composer (front-end only)
-  const [postType, setPostType] = React.useState("update"); // update | discussion | upload
+  const [postType, setPostType] = React.useState("post"); // post | discussion | upload
   const [draft, setDraft] = React.useState("");
 
   // Feed state (front-end only)
   const [posts, setPosts] = React.useState(BASE_POSTS);
 
+  // Likes, bookmarks, following state
+  const [likedPosts, setLikedPosts] = React.useState(() => getLikes());
+  const [bookmarkedPosts, setBookmarkedPosts] = React.useState(() => getBookmarks());
+  const [followingList, setFollowingList] = React.useState(() => getFollowing());
+
+  // Reply state
+  const [replyingTo, setReplyingTo] = React.useState(null);
+  const [replyDraft, setReplyDraft] = React.useState("");
+
   const normalizedUsername = (username || "john.doe").trim().toLowerCase();
+
+  function handleLike(postId) {
+    if (likedPosts.includes(postId)) {
+      // Unlike
+      const updated = likedPosts.filter((id) => id !== postId);
+      setLikedPosts(updated);
+      setLikesStorage(updated);
+    } else {
+      // Like
+      const updated = [...likedPosts, postId];
+      setLikedPosts(updated);
+      setLikesStorage(updated);
+    }
+  }
+
+  function handleBookmark(postId, post) {
+    if (bookmarkedPosts.some((b) => b.id === postId)) {
+      // Remove bookmark
+      const updated = bookmarkedPosts.filter((b) => b.id !== postId);
+      setBookmarkedPosts(updated);
+      setBookmarksStorage(updated);
+    } else {
+      // Add bookmark - store relevant info for bookmarks page
+      const bookmarkData = {
+        id: postId,
+        title: post.title,
+        authorUsername: post.user?.handle,
+        type: post.type,
+        workId: post.workId || null,
+      };
+      const updated = [...bookmarkedPosts, bookmarkData];
+      setBookmarkedPosts(updated);
+      setBookmarksStorage(updated);
+    }
+  }
+
+  function handleFollow(handle) {
+    const normalizedHandle = handle.trim().toLowerCase();
+    if (followingList.includes(normalizedHandle)) {
+      // Unfollow
+      const updated = followingList.filter((h) => h !== normalizedHandle);
+      setFollowingList(updated);
+      setFollowingStorage(updated);
+    } else {
+      // Follow
+      const updated = [...followingList, normalizedHandle];
+      setFollowingList(updated);
+      setFollowingStorage(updated);
+    }
+  }
+
+  function handleShare(post) {
+    const url = post.type === "work" && post.workId
+      ? `${window.location.origin}/works/${post.workId}`
+      : window.location.href;
+
+    if (navigator.share) {
+      navigator.share({ title: post.title, url }).catch(() => {
+        // User cancelled share or share failed - ignore
+      });
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      alert("Link copied to clipboard!");
+    }
+  }
+
+  function handleReply(postId) {
+    if (replyingTo === postId) {
+      setReplyingTo(null);
+      setReplyDraft("");
+    } else {
+      setReplyingTo(postId);
+      setReplyDraft("");
+    }
+  }
+
+  function submitReply(postId) {
+    if (!replyDraft.trim()) return;
+    // In a real app, this would add a reply to the post
+    // For now, we'll just close the reply box and show confirmation
+    alert(`Reply submitted: "${replyDraft}"`);
+    setReplyingTo(null);
+    setReplyDraft("");
+  }
 
   function requireAuth(action) {
     if (isAuthed) {
@@ -246,21 +380,6 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
               </div>
             </div>
 
-            <div className="co-leftSection">
-              <div className="co-leftSectionTitle">Quick Actions</div>
-
-              <button
-                type="button"
-                className="co-leftAction"
-                onClick={() => requireAuth(() => setPostType("discussion"))}
-              >
-                Start a discussion
-              </button>
-
-              <button type="button" className="co-leftAction" onClick={() => setQuery("")}>
-                Clear search
-              </button>
-            </div>
           </div>
         </aside>
 
@@ -330,10 +449,10 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                     <div className="co-composeType" aria-label="Post type">
                       <button
                         type="button"
-                        className={postType === "update" ? "co-typeBtn co-typeBtn--active" : "co-typeBtn"}
-                        onClick={() => setPostType("update")}
+                        className={postType === "post" ? "co-typeBtn co-typeBtn--active" : "co-typeBtn"}
+                        onClick={() => setPostType("post")}
                       >
-                        Update
+                        Post
                       </button>
                       <button
                         type="button"
@@ -361,7 +480,9 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                     placeholder={
                       postType === "discussion"
                         ? "Ask a question, start a thread..."
-                        : "Share an update with the community..."
+                        : postType === "upload"
+                        ? "Describe what you're uploading..."
+                        : "Share something with the community..."
                     }
                     aria-label="Write a post"
                     rows={2}
@@ -502,19 +623,53 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                     </div>
 
                     <div className="co-postActions" aria-label="Post actions">
-                      <button type="button" className="co-action" onClick={() => requireAuth(() => {})}>
-                        ♡ Like
+                      <button
+                        type="button"
+                        className={`co-action ${likedPosts.includes(p.id) ? "co-action--active" : ""}`}
+                        onClick={() => requireAuth(() => handleLike(p.id))}
+                      >
+                        {likedPosts.includes(p.id) ? "♥ Liked" : "♡ Like"}
                       </button>
-                      <button type="button" className="co-action" onClick={() => requireAuth(() => {})}>
+                      <button
+                        type="button"
+                        className={`co-action ${replyingTo === p.id ? "co-action--active" : ""}`}
+                        onClick={() => requireAuth(() => handleReply(p.id))}
+                      >
                         💬 Reply
                       </button>
-                      <button type="button" className="co-action" onClick={() => {}}>
+                      <button type="button" className="co-action" onClick={() => handleShare(p)}>
                         ⤴ Share
                       </button>
-                      <button type="button" className="co-action co-action--ghost" onClick={() => requireAuth(() => {})}>
-                        Bookmark
+                      <button
+                        type="button"
+                        className={`co-action co-action--ghost ${bookmarkedPosts.some((b) => b.id === p.id) ? "co-action--active" : ""}`}
+                        onClick={() => requireAuth(() => handleBookmark(p.id, p))}
+                      >
+                        {bookmarkedPosts.some((b) => b.id === p.id) ? "✓ Bookmarked" : "Bookmark"}
                       </button>
                     </div>
+
+                    {/* Reply input */}
+                    {replyingTo === p.id && (
+                      <div className="co-replyBox">
+                        <textarea
+                          className="co-replyInput"
+                          value={replyDraft}
+                          onChange={(e) => setReplyDraft(e.target.value)}
+                          placeholder="Write a reply..."
+                          rows={2}
+                          autoFocus
+                        />
+                        <div className="co-replyActions">
+                          <button type="button" className="co-replyCancel" onClick={() => setReplyingTo(null)}>
+                            Cancel
+                          </button>
+                          <button type="button" className="co-replySubmit" onClick={() => submitReply(p.id)}>
+                            Reply
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </article>
                 );
               })
@@ -545,8 +700,12 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                     </div>
                   </Link>
 
-                  <button type="button" className="co-followBtn" onClick={() => requireAuth(() => {})}>
-                    Follow
+                  <button
+                    type="button"
+                    className={`co-followBtn ${followingList.includes(u.handle.toLowerCase()) ? "co-followBtn--following" : ""}`}
+                    onClick={() => requireAuth(() => handleFollow(u.handle))}
+                  >
+                    {followingList.includes(u.handle.toLowerCase()) ? "Following" : "Follow"}
                   </button>
                 </div>
               ))}

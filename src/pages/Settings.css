@@ -28,6 +28,16 @@
   min-height: 560px;
 }
 
+.st-sideTitle {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f4a29;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(31, 74, 41, 0.2);
+}
+
 .st-sideBtn {
   width: 100%;
   border: 0;

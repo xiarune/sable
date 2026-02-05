@@ -95,6 +95,50 @@
   text-decoration: underline;
 }
 
+.workType {
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.45);
+  text-transform: capitalize;
+}
+
+.meta--footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bookmarkRemove {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.4);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.bookmarkRemove:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.bookmarksEmpty {
+  text-align: center;
+  padding: 40px 20px;
+  font-family: "Libre Baskerville", serif;
+  color: rgba(60, 55, 52, 0.7);
+}
+
+.bookmarksEmpty p {
+  margin: 0 0 12px;
+}
+
+.bookmarksEmpty a {
+  color: rgba(36, 75, 43, 0.92);
+}
+
 @media (max-width: 520px) {
   .bookmarksPage {
     padding: 18px 16px 48px;

@@ -539,6 +539,178 @@
   box-shadow: 0 0 0 2px rgba(214, 168, 64, 0.35);
 }
 
+/* =========================
+   HAMBURGER MENU (MOBILE)
+   ========================= */
+.hamburger-wrap {
+  display: none;
+  position: relative;
+}
+
+.hamburger-btn {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.hamburger-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.hamburger-icon {
+  width: 22px;
+  height: 16px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hamburger-icon span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: #f7f1e6;
+  border-radius: 2px;
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+
+.hamburger-icon--open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.hamburger-icon--open span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-icon--open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+.mobile-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 280px;
+  max-width: calc(100vw - 36px);
+  background: #f4efe6;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 14px;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.35);
+  padding: 12px;
+  z-index: 5000;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+.mobile-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-navlink {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 12px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  color: #1b1b1b;
+  font-family: "Libre Baskerville", serif;
+  text-decoration: none;
+  display: block;
+}
+
+.mobile-navlink:hover {
+  background: rgba(11, 63, 135, 0.08);
+}
+
+.mobile-navlink.active {
+  background: rgba(11, 63, 135, 0.12);
+  color: #0b3f87;
+}
+
+.mobile-navlink--danger {
+  color: #7a0d12;
+}
+
+.mobile-navlink--danger:hover {
+  background: rgba(122, 13, 18, 0.08);
+}
+
+.mobile-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 10px 0;
+}
+
+.mobile-section-title {
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 12px 4px;
+}
+
+.mobile-login-btn {
+  width: 100%;
+  height: 44px;
+  border: 0;
+  background: #0b3f87;
+  color: #f7f1e6;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  font-family: "Libre Baskerville", serif;
+  margin-top: 4px;
+}
+
+.mobile-login-btn:hover {
+  background: #0a3672;
+}
+
+/* =========================
+   RESPONSIVE BREAKPOINTS
+   ========================= */
+@media (max-width: 768px) {
+  .topnav--desktop {
+    display: none;
+  }
+
+  .topbar-right--desktop {
+    display: none;
+  }
+
+  .hamburger-wrap {
+    display: block;
+  }
+
+  .topbar {
+    padding: 0 12px;
+  }
+
+  .brand-text {
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+
+  .subbar {
+    padding: 8px 12px;
+  }
+}
+
 
 
 
