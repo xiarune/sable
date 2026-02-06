@@ -23,3 +23,6 @@ yarn-debug.log*
 yarn-error.log*
 *.swp
 *.swp
+
+server/.env
+server/node_modules
