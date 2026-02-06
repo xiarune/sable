@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import "./WorkView.css";
 
+import { worksApi } from "../api";
 import { works as libraryWorks } from "../data/libraryWorks";
 import nightWoodsImg from "../assets/images/night_woods.png";
 
@@ -11,7 +12,7 @@ import commentsIcon from "../assets/images/comments_icon.png";
 import bookmarkOffIcon from "../assets/images/bookmark_icon_off.png";
 import bookmarkOnIcon from "../assets/images/bookmark_icon_on.png";
 
-const WORKS_KEY = "sable_published_v1";
+// Keep localStorage for view prefs, audio favs, bookmarks (Phase 2 will move bookmarks to API)
 const VIEW_PREFS_KEY = "sable_workview_prefs_v1";
 const AUDIO_FAVS_KEY = "sable_audio_favs_v1";
 const WORK_FAVS_KEY = "sable_work_favs_v1"; // per-user bookmark state
@@ -42,32 +43,6 @@ function saveJson(key, value) {
 function clamp(n, min, max) {
   const num = Number.isFinite(n) ? n : min;
   return Math.max(min, Math.min(max, num));
-}
-
-function loadPublishedWorks() {
-  const parsed = loadJson(WORKS_KEY, []);
-  return Array.isArray(parsed) ? parsed : [];
-}
-
-function savePublishedWorks(arr) {
-  saveJson(WORKS_KEY, arr);
-}
-
-function findPublishedById(workId) {
-  const all = loadPublishedWorks();
-  return all.find((w) => String(w.id) === String(workId)) || null;
-}
-
-function upsertPublished(work) {
-  const all = loadPublishedWorks();
-  const idx = all.findIndex((w) => String(w.id) === String(work.id));
-  const next = { ...work, updatedAt: new Date().toISOString() };
-
-  if (idx >= 0) all[idx] = { ...all[idx], ...next };
-  else all.unshift(next);
-
-  savePublishedWorks(all);
-  return next;
 }
 
 function makePlaceholderBody(title) {
@@ -281,12 +256,41 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     saveJson(WORK_FAVS_KEY, next);
   }, [normalizedUser, workFavs]);
 
-  const library = libraryWorks.find((w) => String(w.id) === String(decodedId)) || null;
-  const published = findPublishedById(decodedId);
-  const work = published || library;
+  // Load work from API or fall back to library works
+  const [work, setWork] = React.useState(null);
+  const [loadingWork, setLoadingWork] = React.useState(true);
+  const [workError, setWorkError] = React.useState(null);
+
+  React.useEffect(() => {
+    async function loadWork() {
+      setLoadingWork(true);
+      setWorkError(null);
+
+      // First check if it's a library work (static demo data)
+      const library = libraryWorks.find((w) => String(w.id) === String(decodedId)) || null;
+      if (library) {
+        setWork(library);
+        setLoadingWork(false);
+        return;
+      }
+
+      // Otherwise fetch from API
+      try {
+        const data = await worksApi.get(decodedId);
+        setWork(data.work);
+      } catch (err) {
+        setWorkError(err.message || "Failed to load work");
+        setWork(null);
+      } finally {
+        setLoadingWork(false);
+      }
+    }
+
+    loadWork();
+  }, [decodedId]);
 
   const title = (work?.title || "Untitled").trim();
-  const authorHandle = (work?.author || "author").trim();
+  const authorHandle = (work?.authorUsername || work?.author || "author").trim();
 
   const chapters = React.useMemo(() => getChaptersFromWork(work), [work]);
   const activeChapter = chapters.find((c) => String(c.id) === String(activeChapterId)) || chapters[0] || null;
@@ -416,16 +420,9 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
   function handleEdit() {
     if (!work) return;
-
-    if (!published) {
-      upsertPublished({
-        id: decodedId,
-        title: library?.title || "Untitled",
-        body: bodyRaw || makePlaceholderBody(library?.title || "Untitled"),
-      });
-    }
-
-    navigate(`/works/edit/${encodeURIComponent(decodedId)}`);
+    // Navigate to work editor - uses work._id for API works or work.id for library works
+    const workId = work._id || work.id;
+    navigate(`/works/edit/${encodeURIComponent(workId)}`);
   }
 
   function toggleComments() {
@@ -592,6 +589,29 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   }
 
   const themeClass = prefs.theme === "dark" ? "wv-themeDark" : "wv-themePaper";
+
+  // Loading state
+  if (loadingWork) {
+    return (
+      <div className={`wv-page ${themeClass}`}>
+        <div className="wv-shell">
+          <p>Loading work...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (workError || !work) {
+    return (
+      <div className={`wv-page ${themeClass}`}>
+        <div className="wv-shell">
+          <p>{workError || "Work not found"}</p>
+          <button type="button" onClick={() => navigate(-1)}>Go Back</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`wv-page ${themeClass}`}>

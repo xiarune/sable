@@ -1,57 +1,54 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { draftsApi } from "../api";
 import "./YourWorks.css";
-
-const DRAFTS_KEY = "sable_drafts_v1";
-
-function safeParse(json) {
-  try {
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
-
-function loadArray(key) {
-  const raw = localStorage.getItem(key);
-  const parsed = safeParse(raw);
-  return Array.isArray(parsed) ? parsed : [];
-}
-
-function saveArray(key, arr) {
-  try {
-    localStorage.setItem(key, JSON.stringify(arr));
-  } catch {
-    
-  }
-}
-
-function seedDraftsIfEmpty() {
-  const existing = loadArray(DRAFTS_KEY);
-  if (existing.length >= 5) return existing;
-
-  const seeded = Array.from({ length: 5 }).map((_, i) => ({
-    id: `d-seed-${i + 1}`,
-    title: `Draft ${i + 1}`,
-    body: "",
-    updatedAt: new Date().toISOString(),
-  }));
-
-  saveArray(DRAFTS_KEY, seeded);
-  return seeded;
-}
 
 export default function Drafts() {
   const navigate = useNavigate();
   const [drafts, setDrafts] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  const [limits, setLimits] = React.useState({ maxDrafts: 5, currentCount: 0 });
 
   React.useEffect(() => {
-    const seeded = seedDraftsIfEmpty();
-    setDrafts(seeded);
+    loadDrafts();
   }, []);
+
+  async function loadDrafts() {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await draftsApi.list();
+      setDrafts(data.drafts || []);
+      if (data.limits) setLimits(data.limits);
+    } catch (err) {
+      setError(err.message || "Failed to load drafts");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleNewDraft() {
+    try {
+      const data = await draftsApi.create({ title: "Untitled" });
+      navigate(`/drafts/edit/${encodeURIComponent(data.draft._id)}`);
+    } catch (err) {
+      setError(err.message || "Failed to create draft");
+    }
+  }
 
   function handleEdit(draftId) {
     navigate(`/drafts/edit/${encodeURIComponent(draftId)}`);
+  }
+
+  if (loading) {
+    return (
+      <div className="yw-page">
+        <div className="yw-shell">
+          <p>Loading drafts...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -60,36 +57,51 @@ export default function Drafts() {
         <header className="yw-head">
           <div className="yw-headLeft">
             <h1 className="yw-title">Your Drafts</h1>
-            <p className="yw-subtitle">Unpublished drafts. Edit them any time.</p>
+            <p className="yw-subtitle">
+              Unpublished drafts ({limits.currentCount}/{limits.maxDrafts})
+            </p>
           </div>
 
           <div className="yw-headRight">
+            <button
+              type="button"
+              className="yw-topBtn"
+              onClick={handleNewDraft}
+              disabled={limits.currentCount >= limits.maxDrafts}
+            >
+              New Draft
+            </button>
             <button type="button" className="yw-topBtn" onClick={() => navigate("/profile")}>
               Back to Profile
             </button>
           </div>
         </header>
 
+        {error && <p className="yw-error" style={{ color: "red", marginBottom: "1rem" }}>{error}</p>}
+
         <section className="yw-gridWrap" aria-label="Draft list">
           <div className="yw-grid">
-            {drafts.slice(0, 5).map((d) => (
-              <article key={String(d.id)} className="yw-card">
-                <div className="yw-poster" aria-hidden="true" />
-                <h2 className="yw-cardTitle">{d.title || "Untitled"}</h2>
-                <div className="yw-cardMeta">unpublished</div>
+            {drafts.length === 0 ? (
+              <p>No drafts yet. Create your first draft!</p>
+            ) : (
+              drafts.map((d) => (
+                <article key={String(d._id)} className="yw-card">
+                  <div className="yw-poster" aria-hidden="true" />
+                  <h2 className="yw-cardTitle">{d.title || "Untitled"}</h2>
+                  <div className="yw-cardMeta">
+                    {d.chapterCount || 0} chapter{d.chapterCount !== 1 ? "s" : ""} &middot;{" "}
+                    {d.wordCount || 0} words
+                  </div>
 
-                <button type="button" className="yw-cardBtn" onClick={() => handleEdit(d.id)}>
-                  Edit
-                </button>
-              </article>
-            ))}
+                  <button type="button" className="yw-cardBtn" onClick={() => handleEdit(d._id)}>
+                    Edit
+                  </button>
+                </article>
+              ))
+            )}
           </div>
         </section>
       </div>
     </div>
   );
 }
-
-
-
-

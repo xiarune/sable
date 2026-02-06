@@ -1,6 +1,7 @@
-
+// WorkEditor.js - Edit published work
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { worksApi, uploadsApi } from "../api";
 import "./NewDraft.css";
 
 import chapterIcon from "../assets/images/chapter_icon.png";
@@ -12,49 +13,16 @@ import langIcon from "../assets/images/lang_icon.png";
 import imageIcon from "../assets/images/image_icon.png";
 import previewIcon from "../assets/images/preview_icon.png";
 
-const WORKS_KEY = "sable_published_v1";
-
 const SKIN_OPTIONS = ["Default", "Emerald", "Ivory", "Midnight"];
 const PRIVACY_OPTIONS = ["Public", "Following", "Private"];
 const LANGUAGE_OPTIONS = ["English", "Vietnamese", "Japanese", "French", "Spanish"];
 
-function safeParse(json) {
-  try {
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
-
-function loadAll(key) {
-  const raw = localStorage.getItem(key);
-  const parsed = safeParse(raw);
-  return Array.isArray(parsed) ? parsed : [];
-}
-
-function saveAll(key, next) {
-  localStorage.setItem(key, JSON.stringify(next));
-}
-
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function makeId(prefix = "img") {
+function makeId(prefix = "ch") {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
 function makeDefaultChapter() {
-  return { id: makeId("ch"), title: "Chapter 1", body: "" };
-}
-
-function readFileAsDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("File read failed."));
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.readAsDataURL(file);
-  });
+  return { id: makeId("ch"), title: "Chapter 1", body: "", order: 0 };
 }
 
 function ActionPill({ icon, label, subLabel, active, onClick }) {
@@ -69,7 +37,6 @@ function ActionPill({ icon, label, subLabel, active, onClick }) {
       <span className="nd-pillIcon" aria-hidden="true">
         {icon}
       </span>
-
       <span className="nd-pillText">
         <span className="nd-pillLabel">{label}</span>
         {subLabel ? <span className="nd-pillSub">{subLabel}</span> : null}
@@ -147,11 +114,11 @@ export default function WorkEditor() {
   const navigate = useNavigate();
   const { workId } = useParams();
 
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+
   const [title, setTitle] = React.useState("");
-  const [chapters, setChapters] = React.useState(() => {
-    const ch = makeDefaultChapter();
-    return [ch];
-  });
+  const [chapters, setChapters] = React.useState(() => [makeDefaultChapter()]);
   const [activeChapterId, setActiveChapterId] = React.useState("");
 
   React.useEffect(() => {
@@ -174,7 +141,7 @@ export default function WorkEditor() {
   }
 
   function addChapter() {
-    const newCh = { id: makeId("ch"), title: `Chapter ${chapters.length + 1}`, body: "" };
+    const newCh = { id: makeId("ch"), title: `Chapter ${chapters.length + 1}`, body: "", order: chapters.length };
     setChapters((prev) => [...prev, newCh]);
     setActiveChapterId(newCh.id);
   }
@@ -211,8 +178,8 @@ export default function WorkEditor() {
   const [privacy, setPrivacy] = React.useState("Public");
   const [language, setLanguage] = React.useState("English");
 
-  const [audio, setAudio] = React.useState(null);
-  const [images, setImages] = React.useState([]);
+  const [audioUrl, setAudioUrl] = React.useState("");
+  const [imageUrls, setImageUrls] = React.useState([]);
 
   const [activeTool, setActiveTool] = React.useState("");
   const [tagInput, setTagInput] = React.useState("");
@@ -265,120 +232,118 @@ export default function WorkEditor() {
     setTags((prev) => prev.filter((t) => t !== tag));
   }
 
+  // Load work from API
   React.useEffect(() => {
-    const works = loadAll(WORKS_KEY);
-    const found = works.find((w) => String(w.id) === String(workId));
-
-    if (!found) {
-      navigate("/works", { replace: true });
+    if (!workId) {
+      setLoading(false);
       return;
     }
 
-    setTitle(found.title || "");
-    if (Array.isArray(found.chapters) && found.chapters.length > 0) {
-      setChapters(found.chapters);
-      setActiveChapterId(found.chapters[0].id);
-    } else if (found.body) {
-      const migratedCh = { id: makeId("ch"), title: "Chapter 1", body: found.body };
-      setChapters([migratedCh]);
-      setActiveChapterId(migratedCh.id);
+    async function loadWork() {
+      try {
+        setLoading(true);
+        const data = await worksApi.get(workId);
+        const work = data.work;
+
+        setTitle(work.title || "");
+        if (Array.isArray(work.chapters) && work.chapters.length > 0) {
+          setChapters(work.chapters);
+          setActiveChapterId(work.chapters[0].id);
+        }
+        setTags(Array.isArray(work.tags) ? work.tags : []);
+        setSkin(work.skin || "Default");
+        setPrivacy(work.privacy || "Public");
+        setLanguage(work.language || "English");
+        setAudioUrl(work.audioUrl || "");
+        setImageUrls(Array.isArray(work.imageUrls) ? work.imageUrls : []);
+      } catch (err) {
+        setStatus(err.message || "Failed to load work");
+        navigate("/works", { replace: true });
+      } finally {
+        setLoading(false);
+      }
     }
-    setTags(Array.isArray(found.tags) ? found.tags : []);
-    setSkin(found.skin || "Default");
-    setPrivacy(found.privacy || "Public");
-    setLanguage(found.language || "English");
-    setAudio(found.audio || null);
-    setImages(Array.isArray(found.images) ? found.images : []);
+
+    loadWork();
   }, [workId, navigate]);
 
-  function upsertWork() {
-    const works = loadAll(WORKS_KEY);
-    const idx = works.findIndex((w) => String(w.id) === String(workId));
+  // Save work to API
+  async function handleSave() {
+    try {
+      setSaving(true);
+      setStatus("Saving...");
 
-    if (idx < 0) {
-      navigate("/works", { replace: true });
-      return;
+      const payload = {
+        title: title.trim() || "Untitled",
+        chapters: chapters.map((ch, idx) => ({
+          id: ch.id,
+          title: ch.title,
+          body: ch.body,
+          order: idx,
+        })),
+        tags,
+        skin,
+        privacy,
+        language,
+        audioUrl,
+        imageUrls,
+      };
+
+      await worksApi.update(workId, payload);
+      setStatus("Saved!");
+      setTimeout(() => setStatus(""), 1500);
+    } catch (err) {
+      setStatus(err.message || "Save failed");
+    } finally {
+      setSaving(false);
     }
-
-    const updated = {
-      ...works[idx],
-      title: title.trim() || "Untitled",
-      chapters,
-      tags,
-      skin,
-      privacy,
-      language,
-      audio,
-      images,
-      updatedAt: nowIso(),
-    };
-
-    const next = [...works];
-    next[idx] = updated;
-    saveAll(WORKS_KEY, next);
   }
 
-  function handleSave() {
-    upsertWork();
-    setStatus("Saved.");
-    setTimeout(() => setStatus(""), 900);
-  }
-
-  function handleDone() {
-    upsertWork();
+  async function handleDone() {
+    await handleSave();
     navigate("/works");
   }
 
+  // Upload audio to S3
   async function handleAudioUpload(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
 
     try {
-      setStatus("Uploading audio…");
-      const dataUrl = await readFileAsDataURL(file);
-      setAudio({
-        name: file.name,
-        type: file.type || "audio/*",
-        size: file.size || 0,
-        dataUrl,
-      });
+      setStatus("Uploading audio...");
+      const data = await uploadsApi.audio(file);
+      setAudioUrl(data.upload.url);
       setStatus("Audio attached.");
-    } catch {
-      setStatus("Audio upload failed.");
+    } catch (err) {
+      setStatus(err.message || "Audio upload failed.");
     } finally {
       e.target.value = "";
-      setTimeout(() => setStatus(""), 1200);
+      setTimeout(() => setStatus(""), 1500);
     }
   }
 
+  // Upload image to S3 and insert into body
   async function handleImageUpload(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
 
     try {
-      setStatus("Uploading image…");
-      const dataUrl = await readFileAsDataURL(file);
+      setStatus("Uploading image...");
+      const data = await uploadsApi.image(file);
+      const url = data.upload.url;
 
-      const img = {
-        id: makeId("img"),
-        name: file.name,
-        type: file.type || "image/*",
-        size: file.size || 0,
-        dataUrl,
-      };
-
-      setImages((prev) => [img, ...prev]);
+      setImageUrls((prev) => [url, ...prev]);
 
       const safeAlt = (file.name || "image").replace(/\.[^/.]+$/, "");
-      const snippet = `\n\n![${safeAlt}](${dataUrl})\n\n`;
+      const snippet = `\n\n![${safeAlt}](${url})\n\n`;
       insertIntoBody(snippet);
 
-      setStatus("Image inserted into body.");
-    } catch {
-      setStatus("Image upload failed.");
+      setStatus("Image inserted.");
+    } catch (err) {
+      setStatus(err.message || "Image upload failed.");
     } finally {
       e.target.value = "";
-      setTimeout(() => setStatus(""), 1200);
+      setTimeout(() => setStatus(""), 1500);
     }
   }
 
@@ -392,6 +357,16 @@ export default function WorkEditor() {
       draggable={false}
     />
   );
+
+  if (loading) {
+    return (
+      <div className="nd-page">
+        <div className="nd-shell">
+          <p>Loading work...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="nd-page">
@@ -445,14 +420,14 @@ export default function WorkEditor() {
             <ActionPill
               icon="🎧"
               label="Audio"
-              subLabel={audio?.name ? "Attached" : "None"}
+              subLabel={audioUrl ? "Attached" : "None"}
               onClick={() => toggleTool("audio")}
               active={activeTool === "audio"}
             />
             <ActionPill
               icon={<IconImg src={imageIcon} alt="Images" />}
               label="Images"
-              subLabel={images.length ? `${images.length}` : "0"}
+              subLabel={imageUrls.length ? `${imageUrls.length}` : "0"}
               onClick={() => toggleTool("images")}
               active={activeTool === "images"}
             />
@@ -575,7 +550,7 @@ export default function WorkEditor() {
             <div className="nd-toolPanel">
               <div className="nd-toolTitle">Audio Upload</div>
               <input className="nd-toolInput" type="file" accept="audio/*" onChange={handleAudioUpload} />
-              <div className="nd-toolHint">{audio?.name ? `Attached: ${audio.name}` : "Upload an audio file to attach it to this work."}</div>
+              <div className="nd-toolHint">{audioUrl ? "Audio attached" : "Upload an audio file to attach it to this work."}</div>
             </div>
           )}
 
@@ -637,12 +612,12 @@ export default function WorkEditor() {
                 {title?.trim() ? title : "Untitled"}
               </div>
 
-              {audio?.dataUrl ? (
+              {audioUrl ? (
                 <>
                   <div className="nd-bodyLabel" style={{ marginTop: 14 }}>
                     Audio
                   </div>
-                  <audio controls src={audio.dataUrl} style={{ width: "100%" }} />
+                  <audio controls src={audioUrl} style={{ width: "100%" }} />
                 </>
               ) : null}
 
@@ -669,11 +644,18 @@ export default function WorkEditor() {
           {status && <div className="nd-status">{status}</div>}
 
           <div className="nd-actions">
-            <button className="nd-ornateBtn nd-ornateBtn--primary" onClick={handleSave}>
-              Save
+            <button
+              className="nd-ornateBtn nd-ornateBtn--primary"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save"}
             </button>
             <button className="nd-ornateBtn" onClick={handleDone}>
               Done
+            </button>
+            <button className="nd-ornateBtn" onClick={() => navigate("/works")}>
+              Back to Works
             </button>
           </div>
         </section>
@@ -681,6 +663,3 @@ export default function WorkEditor() {
     </div>
   );
 }
-
-
-
