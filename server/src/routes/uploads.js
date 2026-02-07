@@ -2,7 +2,10 @@ const express = require("express");
 const multer = require("multer");
 const { uploadToS3, deleteFromS3, getKeyFromUrl } = require("../config/s3");
 const { requireAuth } = require("../middleware/auth");
+const { uploadLimiter } = require("../middleware/rateLimiter");
+const { optimizeImage, validateImage } = require("../utils/imageOptimizer");
 const Upload = require("../models/Upload");
+const logger = require("../utils/logger");
 
 const router = express.Router();
 
@@ -34,8 +37,9 @@ const upload = multer({
   },
 });
 
-// All upload routes require authentication
+// All upload routes require authentication and rate limiting
 router.use(requireAuth);
+router.use(uploadLimiter);
 
 // POST /uploads/image - Upload an image
 router.post("/image", upload.single("file"), async (req, res, next) => {
@@ -44,15 +48,73 @@ router.post("/image", upload.single("file"), async (req, res, next) => {
       return res.status(400).json({ error: "No file provided" });
     }
 
-    const { key, url } = await uploadToS3(req.file, "images");
+    // Validate image
+    const validation = await validateImage(req.file.buffer);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.errors[0], errors: validation.errors });
+    }
+
+    // Get optimization options from query params
+    const preset = req.query.preset; // 'avatar', 'banner', 'cover', 'content'
+    const quality = parseInt(req.query.quality) || 80;
+    const format = req.query.format || "webp";
+
+    // Optimize image
+    let optimizedBuffer;
+    let optimizedMimeType;
+
+    if (preset === "avatar" || preset === "banner" || preset === "cover") {
+      // Use preset dimensions
+      const presetConfigs = {
+        avatar: { width: 256, height: 256, fit: "cover" },
+        banner: { width: 1200, height: 400, fit: "cover" },
+        cover: { width: 400, height: 600, fit: "cover" },
+      };
+      optimizedBuffer = await optimizeImage(req.file.buffer, {
+        ...presetConfigs[preset],
+        quality,
+        format,
+      });
+    } else {
+      // Default optimization - resize large images, convert to webp
+      optimizedBuffer = await optimizeImage(req.file.buffer, {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality,
+        format,
+      });
+    }
+
+    optimizedMimeType = `image/${format === "jpg" ? "jpeg" : format}`;
+
+    // Create optimized file object for upload
+    const optimizedFile = {
+      buffer: optimizedBuffer,
+      mimetype: optimizedMimeType,
+      originalname: req.file.originalname.replace(/\.[^.]+$/, `.${format}`),
+    };
+
+    const { key, url } = await uploadToS3(optimizedFile, "images");
+
+    // Calculate size reduction
+    const originalSize = req.file.size;
+    const optimizedSize = optimizedBuffer.length;
+    const reduction = Math.round((1 - optimizedSize / originalSize) * 100);
+
+    logger.info("Image optimized and uploaded", {
+      userId: req.user._id,
+      originalSize,
+      optimizedSize,
+      reduction: `${reduction}%`,
+    });
 
     // Save upload record
     const uploadRecord = new Upload({
       ownerId: req.user._id,
       type: "image",
       url,
-      mimeType: req.file.mimetype,
-      size: req.file.size,
+      mimeType: optimizedMimeType,
+      size: optimizedSize,
     });
     await uploadRecord.save();
 
@@ -62,8 +124,10 @@ router.post("/image", upload.single("file"), async (req, res, next) => {
         _id: uploadRecord._id,
         url,
         type: "image",
-        mimeType: req.file.mimetype,
-        size: req.file.size,
+        mimeType: optimizedMimeType,
+        size: optimizedSize,
+        originalSize,
+        reduction: `${reduction}%`,
       },
     });
   } catch (err) {

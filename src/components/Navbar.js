@@ -7,6 +7,7 @@
 
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { authApi } from "../api";
 import "./Navbar.css";
 
 // Assets 
@@ -43,9 +44,11 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   const [authMode, setAuthMode] = React.useState("login"); // "login" | "signup"
 
   const [formUsername, setFormUsername] = React.useState("");
+  const [formEmail, setFormEmail] = React.useState("");
   const [formPassword, setFormPassword] = React.useState("");
   const [formConfirmPassword, setFormConfirmPassword] = React.useState("");
   const [authError, setAuthError] = React.useState("");
+  const [authLoading, setAuthLoading] = React.useState(false);
 
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef(null);
@@ -86,27 +89,49 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   }
 
   function closeAuthModal() {
+    if (authLoading) return; // Don't close while loading
     setIsAuthModalOpen(false);
+    setFormUsername("");
+    setFormEmail("");
     setFormPassword("");
     setFormConfirmPassword("");
     setAuthError("");
   }
 
   function resetAuthFieldsForMode(nextMode) {
+    if (authLoading) return; // Don't switch modes while loading
     setAuthMode(nextMode);
     setAuthError("");
+    setFormEmail("");
     setFormPassword("");
     setFormConfirmPassword("");
   }
 
-  function handleAuthSubmit(e) {
+  async function handleAuthSubmit(e) {
     e.preventDefault();
 
-    const u = (formUsername || "").trim() || "john.doe";
+    const u = (formUsername || "").trim();
+    const em = (formEmail || "").trim();
+    const p = formPassword || "";
+
+    if (!u) {
+      setAuthError("Please enter a username.");
+      return;
+    }
+
+    if (authMode === "signup" && !em) {
+      setAuthError("Please enter your email address.");
+      return;
+    }
+
+    if (!p) {
+      setAuthError("Please enter a password.");
+      return;
+    }
 
     if (authMode === "signup") {
-      if (!formPassword || !formConfirmPassword) {
-        setAuthError("Please enter and confirm your password.");
+      if (!formConfirmPassword) {
+        setAuthError("Please confirm your password.");
         return;
       }
       if (formPassword !== formConfirmPassword) {
@@ -115,20 +140,35 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
       }
     }
 
-    onLogin(u);
-    setIsAuthModalOpen(false);
-    setFormPassword("");
-    setFormConfirmPassword("");
+    setAuthLoading(true);
     setAuthError("");
+
+    try {
+      let data;
+      if (authMode === "signup") {
+        data = await authApi.register({ username: u, email: em, password: p });
+      } else {
+        data = await authApi.login({ username: u, password: p });
+      }
+
+      onLogin(data.user);
+      setIsAuthModalOpen(false);
+      setFormUsername("");
+      setFormEmail("");
+      setFormPassword("");
+      setFormConfirmPassword("");
+      setAuthError("");
+    } catch (err) {
+      setAuthError(err.message || "Authentication failed. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
   }
 
   function handleGoogleContinue() {
-    const u = (formUsername || "").trim() || "john.doe";
-    onLogin(u);
-    setIsAuthModalOpen(false);
-    setFormPassword("");
-    setFormConfirmPassword("");
-    setAuthError("");
+    // Redirect to Google OAuth endpoint
+    const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5050/api";
+    window.location.href = `${apiUrl}/auth/google`;
   }
 
   function toggleUserMenu() {
@@ -663,6 +703,19 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
                 />
               </label>
 
+              {authMode === "signup" ? (
+                <label className="loginField">
+                  <span className="loginLabel">Email</span>
+                  <input
+                    className="loginInput"
+                    type="email"
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                    placeholder="you@example.com"
+                  />
+                </label>
+              ) : null}
+
               <label className="loginField">
                 <span className="loginLabel">Password</span>
                 <input
@@ -687,13 +740,26 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
                 </label>
               ) : null}
 
+              {authMode === "login" ? (
+                <div className="forgotPassword">
+                  <button
+                    type="button"
+                    className="authLink"
+                    onClick={() => {
+                      closeAuthModal();
+                      navigate("/forgot-password");
+                    }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              ) : null}
+
               {authError ? <div className="authError">{authError}</div> : null}
 
-              <button type="submit" className="loginPrimary">
-                {authMode === "login" ? "Log In" : "Create Account"}
+              <button type="submit" className="loginPrimary" disabled={authLoading}>
+                {authLoading ? "Please wait..." : authMode === "login" ? "Log In" : "Create Account"}
               </button>
-
-              <p className="loginNote">Front-end only: this accepts any username/password for now.</p>
             </form>
           </div>
         </div>

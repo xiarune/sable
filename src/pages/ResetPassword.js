@@ -1,0 +1,170 @@
+import React from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { authApi } from "../api";
+import "./NewDraft.css";
+
+export default function ResetPassword() {
+  const { token } = useParams();
+  const navigate = useNavigate();
+
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [status, setStatus] = React.useState("checking"); // "checking" | "valid" | "invalid" | "submitting" | "success"
+  const [error, setError] = React.useState("");
+
+  React.useEffect(() => {
+    async function validateToken() {
+      if (!token) {
+        setStatus("invalid");
+        setError("No reset token provided.");
+        return;
+      }
+
+      try {
+        const data = await authApi.validateResetToken(token);
+        if (data.valid) {
+          setStatus("valid");
+        } else {
+          setStatus("invalid");
+          setError("This password reset link is invalid or has expired.");
+        }
+      } catch {
+        setStatus("invalid");
+        setError("This password reset link is invalid or has expired.");
+      }
+    }
+
+    validateToken();
+  }, [token]);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setStatus("submitting");
+    setError("");
+
+    try {
+      await authApi.resetPassword(token, password);
+      setStatus("success");
+    } catch (err) {
+      setError(err.message || "Failed to reset password. Please try again.");
+      setStatus("valid");
+    }
+  }
+
+  if (status === "checking") {
+    return (
+      <div className="nd-page">
+        <div className="nd-shell" style={{ maxWidth: 480, textAlign: "center" }}>
+          <h1 className="nd-title">Validating...</h1>
+          <p style={{ color: "rgba(0,0,0,0.65)" }}>Please wait while we validate your reset link.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "invalid") {
+    return (
+      <div className="nd-page">
+        <div className="nd-shell" style={{ maxWidth: 480, textAlign: "center" }}>
+          <h1 className="nd-title">Invalid Link</h1>
+          <p style={{ marginBottom: 24, color: "rgba(0,0,0,0.65)" }}>{error}</p>
+          <p style={{ marginBottom: 24, color: "rgba(0,0,0,0.65)" }}>
+            Please request a new password reset link.
+          </p>
+          <Link
+            to="/forgot-password"
+            className="nd-ornateBtn nd-ornateBtn--primary"
+            style={{ display: "inline-block", textDecoration: "none" }}
+          >
+            Request New Link
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "success") {
+    return (
+      <div className="nd-page">
+        <div className="nd-shell" style={{ maxWidth: 480, textAlign: "center" }}>
+          <h1 className="nd-title">Password Reset!</h1>
+          <p style={{ marginBottom: 24, color: "rgba(0,0,0,0.65)" }}>
+            Your password has been successfully reset. You can now log in with your new password.
+          </p>
+          <button
+            className="nd-ornateBtn nd-ornateBtn--primary"
+            onClick={() => {
+              navigate("/");
+              window.dispatchEvent(new CustomEvent("sable:open-auth"));
+            }}
+            style={{ width: "100%" }}
+          >
+            Log In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="nd-page">
+      <div className="nd-shell" style={{ maxWidth: 480 }}>
+        <h1 className="nd-title">Set New Password</h1>
+        <p style={{ marginBottom: 24, color: "rgba(0,0,0,0.65)" }}>
+          Enter your new password below.
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>New Password</label>
+            <input
+              className="nd-textarea"
+              style={{ minHeight: 44 }}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              autoFocus
+              minLength={6}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>Confirm Password</label>
+            <input
+              className="nd-textarea"
+              style={{ minHeight: 44 }}
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              minLength={6}
+            />
+          </div>
+
+          {error && <div style={{ color: "red", marginBottom: 16 }}>{error}</div>}
+
+          <button
+            type="submit"
+            className="nd-ornateBtn nd-ornateBtn--primary"
+            disabled={status === "submitting"}
+            style={{ width: "100%" }}
+          >
+            {status === "submitting" ? "Resetting..." : "Reset Password"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

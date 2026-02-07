@@ -1,6 +1,7 @@
 const express = require("express");
 const Notification = require("../models/Notification");
 const { requireAuth } = require("../middleware/auth");
+const { emitToUser } = require("../config/socket");
 
 const router = express.Router();
 
@@ -61,15 +62,35 @@ router.put("/:id/read", async (req, res, next) => {
   }
 });
 
+// GET /notifications/count - Get unread count
+router.get("/count", async (req, res, next) => {
+  try {
+    const count = await Notification.countDocuments({
+      recipientId: req.user._id,
+      read: false,
+    });
+
+    res.json({ count });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PUT /notifications/read-all - Mark all as read
 router.put("/read-all", async (req, res, next) => {
   try {
-    await Notification.updateMany(
+    const result = await Notification.updateMany(
       { recipientId: req.user._id, read: false },
       { read: true }
     );
 
-    res.json({ message: "All marked as read" });
+    // Emit real-time update
+    emitToUser(req.user._id.toString(), "notifications:read", {
+      all: true,
+      count: result.modifiedCount,
+    });
+
+    res.json({ message: "All marked as read", count: result.modifiedCount });
   } catch (err) {
     next(err);
   }
