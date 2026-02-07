@@ -119,6 +119,15 @@ const userSchema = new mongoose.Schema(
       backupCodes: [{ type: String }],
     },
 
+    // Email verification
+    emailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String },
+    emailVerificationExpires: { type: Date },
+
+    // Password reset
+    passwordResetToken: { type: String },
+    passwordResetExpires: { type: Date },
+
     // Stats (denormalized for performance)
     stats: {
       followersCount: { type: Number, default: 0 },

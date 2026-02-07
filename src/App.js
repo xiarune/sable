@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import { authApi } from "./api";
 
 import HomeLoggedIn from "./pages/HomeLoggedIn";
 import HomeLoggedOut from "./pages/HomeLoggedOut";
@@ -35,26 +36,67 @@ import Drafts from "./pages/Drafts";
 import DraftEditor from "./pages/DraftEditor";
 
 import SupportSable from "./pages/SupportSable";
+import OnboardingUsername from "./pages/OnboardingUsername";
+import VerifyEmail from "./pages/VerifyEmail";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 export default function App() {
   const [isAuthed, setIsAuthed] = React.useState(false);
-  const [username, setUsername] = React.useState("");
+  const [user, setUser] = React.useState(null);
+  const [authLoading, setAuthLoading] = React.useState(true);
 
-  function handleLogin(nextUsername) {
-    setUsername(nextUsername);
+  // Check if user is already logged in on mount
+  React.useEffect(() => {
+    async function checkAuth() {
+      try {
+        const data = await authApi.me();
+        if (data.user) {
+          setUser(data.user);
+          setIsAuthed(true);
+        }
+      } catch {
+        // Not logged in - that's fine
+        setUser(null);
+        setIsAuthed(false);
+      } finally {
+        setAuthLoading(false);
+      }
+    }
+
+    checkAuth();
+  }, []);
+
+  function handleLogin(userData) {
+    setUser(userData);
     setIsAuthed(true);
   }
 
-  function handleLogout() {
-    setUsername("");
+  async function handleLogout() {
+    try {
+      await authApi.logout();
+    } catch {
+      // Ignore logout errors
+    }
+    setUser(null);
     setIsAuthed(false);
   }
 
-  const effectiveUsername = (username || "john.doe").trim();
+  const username = user?.username || "";
+  const effectiveUsername = username || "guest";
+
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <>
-      <Navbar isAuthed={isAuthed} username={effectiveUsername} onLogin={handleLogin} onLogout={handleLogout} />
+      <Navbar isAuthed={isAuthed} user={user} username={effectiveUsername} onLogin={handleLogin} onLogout={handleLogout} />
 
       <main>
         <Routes>
@@ -68,6 +110,14 @@ export default function App() {
 
           {/* Support / payments */}
           <Route path="/support" element={<SupportSable />} />
+
+          {/* Username onboarding for Google OAuth users */}
+          <Route path="/onboarding/username" element={<OnboardingUsername onLogin={handleLogin} />} />
+
+          {/* Email verification and password reset */}
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
 
           {/* Search */}
           <Route path="/search" element={<Search />} />
@@ -115,37 +165,3 @@ export default function App() {
     </>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
