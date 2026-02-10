@@ -7,7 +7,7 @@ export default function Bookmarks() {
   const navigate = useNavigate();
   const [bookmarks, setBookmarks] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [filter, setFilter] = React.useState("all"); // all, work, post
+  const [filter, setFilter] = React.useState("all"); // all, work, post, audio
 
   React.useEffect(() => {
     async function loadBookmarks() {
@@ -31,6 +31,8 @@ export default function Bookmarks() {
         await bookmarksApi.unbookmarkWork(bookmark.workId);
       } else if (bookmark.type === "post") {
         await bookmarksApi.unbookmarkPost(bookmark.postId);
+      } else if (bookmark.type === "audio") {
+        await bookmarksApi.unbookmarkAudio(bookmark.audioId);
       }
       setBookmarks((prev) => prev.filter((b) => b._id !== bookmark._id));
     } catch (err) {
@@ -44,6 +46,9 @@ export default function Bookmarks() {
     } else if (bookmark.type === "post" && bookmark.postId) {
       // Navigate to post (community feed)
       navigate(`/communities`);
+    } else if (bookmark.type === "audio" && bookmark.workId) {
+      // Navigate to the work that contains the audio
+      navigate(`/works/${bookmark.workId}`);
     }
   }
 
@@ -83,6 +88,13 @@ export default function Bookmarks() {
           >
             Posts
           </button>
+          <button
+            type="button"
+            className={`bookmarksFilterBtn ${filter === "audio" ? "active" : ""}`}
+            onClick={() => setFilter("audio")}
+          >
+            Audio
+          </button>
         </div>
       </div>
 
@@ -116,8 +128,8 @@ export default function Bookmarks() {
                       alt={`${bookmark.title} cover`}
                     />
                   ) : (
-                    <div className="coverPlaceholder" aria-hidden="true">
-                      {bookmark.type === "work" ? "W" : "P"}
+                    <div className={`coverPlaceholder ${bookmark.type === "audio" ? "coverPlaceholder--audio" : ""}`} aria-hidden="true">
+                      {bookmark.type === "work" ? "W" : bookmark.type === "audio" ? "🎧" : "P"}
                     </div>
                   )}
                 </div>

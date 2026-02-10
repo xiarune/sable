@@ -138,6 +138,26 @@
   object-fit: contain;
 }
 
+/* FAQ Link in topbar */
+.faq-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.faq-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.faq-link.active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .loginBtn {
   border: 1px solid rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.14);

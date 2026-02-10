@@ -23,11 +23,19 @@ const bookmarksApi = {
   // Remove post bookmark
   unbookmarkPost: (postId) => api.delete(`/bookmarks/post/${postId}`),
 
+  // Bookmark an audio track
+  bookmarkAudio: (audioId, workId, title, authorUsername) =>
+    api.post(`/bookmarks/audio/${audioId}`, { workId, title, authorUsername }),
+
+  // Remove audio bookmark
+  unbookmarkAudio: (audioId) => api.delete(`/bookmarks/audio/${audioId}`),
+
   // Check if bookmarked
-  check: (workId, postId) => {
+  check: (workId, postId, audioId) => {
     const params = new URLSearchParams();
     if (workId) params.append("workId", workId);
     if (postId) params.append("postId", postId);
+    if (audioId) params.append("audioId", audioId);
     return api.get(`/bookmarks/check?${params}`);
   },
 };

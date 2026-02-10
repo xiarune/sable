@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import "./WorkView.css";
+import "../styles/skins.css";
 
 import { worksApi } from "../api";
 import { works as libraryWorks } from "../data/libraryWorks";
@@ -150,14 +151,28 @@ function formatSeconds(secs) {
   return `${m}:${String(r).padStart(2, "0")}`;
 }
 
-function getMockAudioTracks(workId, authorHandle) {
-  const base = String(workId || "work").slice(0, 6);
-  const author = String(authorHandle || "author");
-  return [
-    { id: `a_${base}_1`, title: "Ambient read-through (draft)", author, duration: "2:11", src: "" },
-    { id: `a_${base}_2`, title: "Author notes (why this scene exists)", author, duration: "1:02", src: "" },
-    { id: `a_${base}_3`, title: "Character voice test", author, duration: "0:47", src: "" },
-  ];
+// Mock audio tracks removed - now only real uploads are shown
+
+function getWorkAudioTrack(work, authorHandle) {
+  if (!work?.audioUrl) return null;
+  return {
+    id: `work_audio_${work._id || "main"}`,
+    title: work.title || "Work Audio",
+    author: authorHandle,
+    duration: "0:00", // Will be calculated from actual audio
+    src: work.audioUrl,
+  };
+}
+
+function getChapterAudioTrack(chapter, authorHandle, workTitle) {
+  if (!chapter?.audioUrl) return null;
+  return {
+    id: `chapter_audio_${chapter.id}`,
+    title: chapter.title || "Chapter Audio",
+    author: authorHandle,
+    duration: "0:00", // Will be calculated from actual audio
+    src: chapter.audioUrl,
+  };
 }
 
 export default function WorkView({ isAuthed = false, username = "john.doe" }) {
@@ -171,7 +186,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   const [panel, setPanel] = React.useState(null); // "settings" | "audioLibrary" | null
 
   // Chapters
-  const [chaptersOpen, setChaptersOpen] = React.useState(true);
   const [activeChapterId, setActiveChapterId] = React.useState("c1");
 
   // Comments
@@ -302,7 +316,20 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   const bodyRaw = String(activeChapter?.body ?? work?.body ?? "");
   const blocks = React.useMemo(() => parseBodyToBlocks(bodyRaw), [bodyRaw]);
 
-  const audioTracks = React.useMemo(() => getMockAudioTracks(decodedId, authorHandle), [decodedId, authorHandle]);
+  const audioTracks = React.useMemo(() => {
+    const tracks = [];
+    // Add current chapter's audio track if it exists
+    const chapterAudioTrack = getChapterAudioTrack(activeChapter, authorHandle, title);
+    if (chapterAudioTrack) {
+      tracks.push(chapterAudioTrack);
+    }
+    // Also add work-level audio if it exists (for backwards compatibility)
+    const workAudioTrack = getWorkAudioTrack(work, authorHandle);
+    if (workAudioTrack) {
+      tracks.push(workAudioTrack);
+    }
+    return tracks;
+  }, [authorHandle, work, activeChapter, title]);
   const currentTrack = audioTracks.find((t) => t.id === nowPlayingId) || null;
 
   const currentTrackFav = currentTrack ? Boolean(audioFavs?.[currentTrack.id]) : false;
@@ -323,7 +350,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     return Math.max(0, Math.min(100, (musicCurrentSec / dur) * 100));
   }, [musicCurrentSec, musicDurationSec]);
 
-  // Audio element events
+  // Audio element events - re-run when audioBarOpen changes so listeners attach when element renders
   React.useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
@@ -361,7 +388,27 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
       el.removeEventListener("timeupdate", onTimeUpdate);
       el.removeEventListener("loadedmetadata", onLoadedMeta);
     };
-  }, [audioSeeking]);
+  }, [audioSeeking, audioBarOpen]);
+
+  // Track to auto-play when audio bar opens
+  const [pendingAutoPlay, setPendingAutoPlay] = React.useState(false);
+
+  // Effect to load audio source when bar opens with a track selected
+  React.useEffect(() => {
+    if (!audioBarOpen || !currentTrack?.src) return;
+
+    const el = audioRef.current;
+    if (!el) return;
+
+    // Only set src if it's different or not set
+    if (el.src !== currentTrack.src) {
+      el.src = currentTrack.src;
+      if (pendingAutoPlay) {
+        el.play().catch(() => {});
+        setPendingAutoPlay(false);
+      }
+    }
+  }, [audioBarOpen, currentTrack, pendingAutoPlay]);
 
   // Mock playback ticker
   React.useEffect(() => {
@@ -485,13 +532,20 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     setAudioCurrentSec(0);
 
     const el = audioRef.current;
-    if (!el) return;
 
     if (!track.src) {
+      // Mock track without real audio
       setIsPlaying(true);
       return;
     }
 
+    if (!el) {
+      // Audio element not rendered yet - schedule auto-play for when it renders
+      setPendingAutoPlay(true);
+      return;
+    }
+
+    // Audio element exists - play immediately
     el.src = track.src;
     el.play().catch(() => {});
   }
@@ -589,10 +643,14 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
   const themeClass = prefs.theme === "dark" ? "wv-themeDark" : "wv-themePaper";
 
+  // Determine skin class from work.skin - default to "default" if not set
+  const skinName = (work?.skin || "Default").toLowerCase().replace(/\s+/g, "-");
+  const skinClass = `skin-${skinName}`;
+
   // Loading state
   if (loadingWork) {
     return (
-      <div className={`wv-page ${themeClass}`}>
+      <div className={`wv-page ${themeClass} skin-default`}>
         <div className="wv-shell">
           <p>Loading work...</p>
         </div>
@@ -603,7 +661,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   // Error state
   if (workError || !work) {
     return (
-      <div className={`wv-page ${themeClass}`}>
+      <div className={`wv-page ${themeClass} skin-default`}>
         <div className="wv-shell">
           <p>{workError || "Work not found"}</p>
           <button type="button" onClick={() => navigate(-1)}>Go Back</button>
@@ -613,46 +671,48 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   }
 
   return (
-    <div className={`wv-page ${themeClass}`}>
+    <div className={`wv-page ${themeClass} ${skinClass}`}>
       <div className="wv-shell">
         <div className="wv-layout">
           {/* Sidebar */}
           <aside className="wv-toc" aria-label="Sidebar">
             <div className="wv-tocStack">
-              {/* Chapters */}
-              <div className="wv-tocCard">
-                <div className="wv-tocHeader">
-                  <div className="wv-tocTitle">Chapters</div>
+              {/* Chapters - Hero style with nav buttons */}
+              <div className="wv-tocCard wv-chapterHero">
+                <div className="wv-chapterHeroTitle">
+                  {activeChapter?.title || "Chapter 1"}
+                </div>
+                <div className="wv-chapterHeroMeta">
+                  {chapters.findIndex((c) => c.id === activeChapterId) + 1} of {chapters.length}
+                </div>
+                <div className="wv-chapterHeroNav">
                   <button
                     type="button"
-                    className="wv-tocCollapse"
-                    onClick={() => setChaptersOpen((v) => !v)}
-                    aria-label={chaptersOpen ? "Collapse chapters" : "Expand chapters"}
-                    title={chaptersOpen ? "Collapse" : "Expand"}
+                    className="wv-chapterNavBtn"
+                    onClick={() => {
+                      const idx = chapters.findIndex((c) => c.id === activeChapterId);
+                      if (idx > 0) setActiveChapterId(chapters[idx - 1].id);
+                    }}
+                    disabled={chapters.findIndex((c) => c.id === activeChapterId) === 0}
+                    aria-label="Previous chapter"
+                    title="Previous"
                   >
-                    {chaptersOpen ? "–" : "+"}
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    className="wv-chapterNavBtn"
+                    onClick={() => {
+                      const idx = chapters.findIndex((c) => c.id === activeChapterId);
+                      if (idx < chapters.length - 1) setActiveChapterId(chapters[idx + 1].id);
+                    }}
+                    disabled={chapters.findIndex((c) => c.id === activeChapterId) === chapters.length - 1}
+                    aria-label="Next chapter"
+                    title="Next"
+                  >
+                    →
                   </button>
                 </div>
-
-                {chaptersOpen ? (
-                  <div className="wv-chapterList" aria-label="Chapter list">
-                    {chapters.map((c) => {
-                      const active = String(c.id) === String(activeChapterId);
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          className={`wv-chapterItem ${active ? "wv-chapterItem--active" : ""}`}
-                          onClick={() => setActiveChapterId(c.id)}
-                        >
-                          {c.title}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="wv-tocHint">{chapters.length} chapters</div>
-                )}
               </div>
 
               {/* Audio player */}
@@ -710,7 +770,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                         />
                         <div className="wv-timeRow">
                           <span className="wv-time">{formatSeconds(audioCurrentSec)}</span>
-                          <span className="wv-time">{currentTrack ? currentTrack.duration : "0:00"}</span>
+                          <span className="wv-time">{audioDurationSec ? formatSeconds(audioDurationSec) : (currentTrack?.duration || "0:00")}</span>
                         </div>
                       </div>
                     </div>
@@ -744,8 +804,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                     </div>
 
                     <audio ref={audioRef} />
-
-                    <div className="wv-miniHint">UI matches a standard mini-player. Audio src/API wiring can be dropped in later.</div>
                   </div>
                 </div>
               ) : null}
@@ -839,8 +897,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                         aria-label="Music search"
                       />
                     </div>
-
-                    <div className="wv-miniHint">Mock music bar: provider + query state only. Wiring can come later.</div>
                   </div>
                 </div>
               ) : null}
@@ -865,7 +921,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   <h1 className="wv-title">{title}</h1>
                   <div className="wv-meta">
                     <span className="wv-metaItem">
-                      by <Link to={`/profile/${encodeURIComponent(authorHandle)}`}>{authorHandle}</Link>
+                      by <Link to={`/communities/${encodeURIComponent(authorHandle)}`} className="wv-authorLink">{authorHandle}</Link>
                     </span>
                     <span className="wv-dot">•</span>
                     <span className="wv-metaItem">{chapters.length} chapters</span>
@@ -968,11 +1024,26 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                 </div>
               )}
 
-              {/* Audio from author - if work has audioUrl */}
-              {work?.audioUrl && (
+              {/* Audio from author - chapter audio takes priority */}
+              {(activeChapter?.audioUrl || work?.audioUrl) && (
                 <div className="wv-authorAudio">
-                  <div className="wv-authorAudioLabel">Author's Audio</div>
-                  <audio controls src={work.audioUrl} style={{ width: "100%" }} />
+                  <div className="wv-authorAudioLabel">
+                    {activeChapter?.audioUrl ? `Audio for ${activeChapter.title || "this chapter"}` : "Author's Audio"}
+                  </div>
+                  <button
+                    type="button"
+                    className="wv-playAudioBtn"
+                    onClick={() => {
+                      // Select chapter audio first, fall back to work audio
+                      const chapterTrack = audioTracks.find(t => t.src === activeChapter?.audioUrl);
+                      const workTrack = audioTracks.find(t => t.src === work?.audioUrl);
+                      if (chapterTrack) selectTrack(chapterTrack);
+                      else if (workTrack) selectTrack(workTrack);
+                      else setAudioBarOpen(true);
+                    }}
+                  >
+                    Play in Audio Player
+                  </button>
                 </div>
               )}
 
@@ -1140,7 +1211,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                       </>
                     ) : (
                       <>
-                        <div className="wv-panelHint">Pick a track to “play”. This is still front-end mock behavior.</div>
+                        <div className="wv-panelHint">{audioTracks.length ? "Select a track to play" : "No audio tracks available for this work"}</div>
 
                         <div className="wv-audioList" aria-label="Audio tracks">
                           {audioTracks.map((t) => {

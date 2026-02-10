@@ -27,15 +27,20 @@ export const uploadsApi = {
   },
 
   // Upload audio
-  audio: async (file) => {
+  audio: async (file, title, workId) => {
     const formData = new FormData();
     formData.append("file", file);
+    if (title) formData.append("title", title);
+    if (workId) formData.append("workId", workId);
     const response = await api.upload("/uploads/audio", formData);
-    return { url: response.upload.url, ...response.upload };
+    return { url: response.url || response.upload?.url, ...response.upload };
   },
 
   // List my uploads
   list: (type) => api.get(`/uploads${type ? `?type=${type}` : ""}`),
+
+  // Get a user's audio uploads (public)
+  getUserAudios: (username) => api.get(`/uploads/audio/user/${encodeURIComponent(username)}`),
 
   // Delete upload
   delete: (id) => api.delete(`/uploads/${id}`),

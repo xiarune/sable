@@ -9,14 +9,61 @@ const logger = require("../utils/logger");
 
 const router = express.Router();
 
-// Configure multer for memory storage
+// Configure multer for memory storage - images
+const uploadImage = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10 MB max for images
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`File type ${file.mimetype} not allowed. Allowed: jpeg, png, gif, webp`), false);
+    }
+  },
+});
+
+// Configure multer for audio - larger limit
+const uploadAudio = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50 MB max for audio
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "audio/mpeg",
+      "audio/wav",
+      "audio/ogg",
+      "audio/mp4",
+      "audio/webm",
+      "audio/mp3",
+      "audio/x-m4a",
+      "audio/aac",
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Audio type ${file.mimetype} not allowed. Allowed: mp3, wav, ogg, mp4, webm, m4a, aac`), false);
+    }
+  },
+});
+
+// Legacy upload for backwards compatibility
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10 MB max
   },
   fileFilter: (req, file, cb) => {
-    // Allow images and audio
     const allowedTypes = [
       "image/jpeg",
       "image/png",
@@ -42,7 +89,7 @@ router.use(requireAuth);
 router.use(uploadLimiter);
 
 // POST /uploads/image - Upload an image
-router.post("/image", upload.single("file"), async (req, res, next) => {
+router.post("/image", uploadImage.single("file"), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file provided" });
@@ -135,12 +182,21 @@ router.post("/image", upload.single("file"), async (req, res, next) => {
   }
 });
 
-// POST /uploads/audio - Upload audio
-router.post("/audio", upload.single("file"), async (req, res, next) => {
+// POST /uploads/audio - Upload audio (up to 50MB)
+router.post("/audio", uploadAudio.single("file"), async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: "No file provided" });
+      return res.status(400).json({ error: "No audio file provided" });
     }
+
+    const { title, workId } = req.body;
+
+    logger.info("Audio upload started", {
+      userId: req.user._id,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      originalname: req.file.originalname,
+    });
 
     const { key, url } = await uploadToS3(req.file, "audio");
 
@@ -151,19 +207,53 @@ router.post("/audio", upload.single("file"), async (req, res, next) => {
       url,
       mimeType: req.file.mimetype,
       size: req.file.size,
+      title: title || req.file.originalname || "Audio Track",
+      workId: workId || null,
     });
     await uploadRecord.save();
 
+    logger.info("Audio upload completed", {
+      userId: req.user._id,
+      uploadId: uploadRecord._id,
+      url,
+    });
+
     res.status(201).json({
       message: "Audio uploaded",
+      url,
       upload: {
         _id: uploadRecord._id,
         url,
         type: "audio",
         mimeType: req.file.mimetype,
         size: req.file.size,
+        title: uploadRecord.title,
       },
     });
+  } catch (err) {
+    logger.error("Audio upload failed", {
+      userId: req.user?._id,
+      error: err.message,
+    });
+    next(err);
+  }
+});
+
+// GET /uploads/audio/user/:username - Get a user's audio uploads (public)
+router.get("/audio/user/:username", async (req, res, next) => {
+  try {
+    const User = require("../models/User");
+    const user = await User.findOne({ username: req.params.username.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const audios = await Upload.find({ ownerId: user._id, type: "audio" })
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    res.json({ audios });
   } catch (err) {
     next(err);
   }

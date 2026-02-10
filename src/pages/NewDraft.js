@@ -15,7 +15,7 @@ import langIcon from "../assets/images/lang_icon.png";
 import imageIcon from "../assets/images/image_icon.png";
 import previewIcon from "../assets/images/preview_icon.png";
 
-const SKIN_OPTIONS = ["Default"];
+const SKIN_OPTIONS = ["Default", "Parchment"];
 const PRIVACY_OPTIONS = ["Public", "Following", "Private"];
 const LANGUAGE_OPTIONS = ["English", "Vietnamese", "Japanese", "French", "Spanish"];
 
@@ -31,7 +31,7 @@ function makeId(prefix = "ch") {
 }
 
 function makeDefaultChapter() {
-  return { id: makeId("ch"), title: "Chapter 1", body: "", order: 0 };
+  return { id: makeId("ch"), title: "Chapter 1", body: "", order: 0, audioUrl: "" };
 }
 
 function ActionPill({ icon, label, subLabel, active, onClick }) {
@@ -140,6 +140,7 @@ export default function NewDraft() {
 
   const activeChapter = chapters.find((c) => c.id === activeChapterId) || chapters[0] || null;
   const body = activeChapter?.body || "";
+  const chapterAudioUrl = activeChapter?.audioUrl || "";
 
   function setBody(newBody) {
     setChapters((prev) =>
@@ -151,8 +152,18 @@ export default function NewDraft() {
     );
   }
 
+  function setChapterAudio(url) {
+    setChapters((prev) =>
+      prev.map((ch) =>
+        ch.id === activeChapterId
+          ? { ...ch, audioUrl: url }
+          : ch
+      )
+    );
+  }
+
   function addChapter() {
-    const newCh = { id: makeId("ch"), title: `Chapter ${chapters.length + 1}`, body: "", order: chapters.length };
+    const newCh = { id: makeId("ch"), title: `Chapter ${chapters.length + 1}`, body: "", order: chapters.length, audioUrl: "" };
     setChapters((prev) => [...prev, newCh]);
     setActiveChapterId(newCh.id);
   }
@@ -290,7 +301,13 @@ export default function NewDraft() {
   async function saveDraft() {
     const payload = {
       title: title.trim() || "Untitled",
-      chapters: chapters.map((ch, idx) => ({ ...ch, order: idx })),
+      chapters: chapters.map((ch, idx) => ({
+        id: ch.id,
+        title: ch.title,
+        body: ch.body,
+        order: idx,
+        audioUrl: ch.audioUrl || "",
+      })),
       tags,
       skin,
       privacy,
@@ -387,8 +404,8 @@ export default function NewDraft() {
     try {
       setStatus("Uploading audio...");
       const response = await uploadsApi.upload(file, "audio");
-      setAudioUrl(response.url);
-      setStatus("Audio uploaded.");
+      setChapterAudio(response.url);
+      setStatus("Audio uploaded for this chapter.");
     } catch (err) {
       console.error("Audio upload failed:", err);
       setStatus("Audio upload failed.");
@@ -550,7 +567,7 @@ export default function NewDraft() {
             <ActionPill
               icon="🎧"
               label="Audio"
-              subLabel={audioUrl ? "Attached" : "None"}
+              subLabel={chapterAudioUrl ? "Has Audio" : "None"}
               onClick={() => toggleTool("audio")}
               active={activeTool === "audio"}
             />
@@ -694,7 +711,7 @@ export default function NewDraft() {
                 ))}
               </div>
               <div className="nd-toolHint">
-                Only the Default Sable skin is available. Custom skins you create will appear here.
+                Choose a reading skin for your work. Readers will see this theme when viewing.
               </div>
             </div>
           )}
@@ -752,19 +769,24 @@ export default function NewDraft() {
 
           {activeTool === "audio" && (
             <div className="nd-toolPanel">
-              <div className="nd-toolTitle">Audio Upload</div>
+              <div className="nd-toolTitle">Chapter Audio</div>
+              <div className="nd-toolHint" style={{ marginBottom: 8, fontWeight: 500 }}>
+                Currently editing: {activeChapter?.title || "Chapter"}
+              </div>
               <input className="nd-toolInput" type="file" accept="audio/*" onChange={handleAudioUpload} />
               <div className="nd-toolHint">
-                {audioUrl ? `Audio attached` : "Upload an audio file to attach it to this draft."}
+                {chapterAudioUrl
+                  ? "Audio attached to this chapter"
+                  : "Upload an audio file for this chapter. Each chapter can have its own audio."}
               </div>
-              {audioUrl && (
+              {chapterAudioUrl && (
                 <div style={{ marginTop: 8 }}>
-                  <audio controls src={audioUrl} style={{ width: "100%" }} />
+                  <audio controls src={chapterAudioUrl} style={{ width: "100%" }} />
                   <button
                     type="button"
                     className="nd-ornateBtn nd-ornateBtn--small"
                     style={{ marginTop: 8 }}
-                    onClick={() => setAudioUrl("")}
+                    onClick={() => setChapterAudio("")}
                   >
                     Remove Audio
                   </button>

@@ -13,6 +13,7 @@ const chapterSchema = z.object({
   title: z.string().max(200).default("Untitled Chapter"),
   body: z.string().max(MAX_BODY_LENGTH).default(""),
   order: z.number().int().min(0),
+  audioUrl: z.string().optional(),
 });
 
 const createWorkSchema = z.object({
@@ -20,7 +21,7 @@ const createWorkSchema = z.object({
   description: z.string().max(2000).optional(),
   chapters: z.array(chapterSchema).max(MAX_CHAPTERS),
   tags: z.array(z.string().max(MAX_TAG_LENGTH)).max(MAX_TAGS).optional(),
-  skin: z.enum(["Default", "Emerald", "Ivory", "Midnight"]).optional(),
+  skin: z.enum(["Default", "Parchment"]).optional(),
   privacy: z.enum(["Public", "Following", "Private"]).optional(),
   language: z.enum(["English", "Vietnamese", "Japanese", "French", "Spanish"]).optional(),
   genre: z.string().optional(),

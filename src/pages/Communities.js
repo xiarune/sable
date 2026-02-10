@@ -174,9 +174,26 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   const [tab, setTab] = React.useState("Explore"); // Explore | Following | Discussions
   const [query, setQuery] = React.useState("");
 
-  // Prevent auto-scroll on mount
+  // Prevent auto-scroll on mount - use multiple strategies
   React.useEffect(() => {
+    // Immediate scroll
     window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    // Also scroll after a brief delay to catch any late-loading content
+    const timer1 = setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 50);
+
+    const timer2 = setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 150);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, []);
 
   // Composer (front-end only)

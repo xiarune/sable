@@ -113,13 +113,79 @@
 
 /* Responsive Reset */
 @media (max-width: 820px) {
+  .aboutPage {
+    padding: 40px 20px;
+    background-size: cover;
+    background-position: top center;
+  }
+
   .aboutGrid {
     grid-template-columns: 1fr;
     gap: 28px;
     max-width: 520px;
-
     margin-top: 0;
     margin-left: 0;
+    padding: 0 16px;
+  }
+
+  .aboutMain {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .aboutSupport {
+    max-width: 100%;
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(34, 76, 42, 0.15);
+  }
+}
+
+@media (max-width: 560px) {
+  .aboutPage {
+    padding: 30px 16px;
+  }
+
+  .aboutTitle {
+    font-size: 24px;
+  }
+
+  .aboutBody {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .aboutSupportTitle {
+    font-size: 17px;
+  }
+
+  .aboutSupportBody {
+    font-size: 12px;
+  }
+
+  .aboutGrid {
+    gap: 24px;
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .aboutPage {
+    padding: 24px 12px;
+    background-size: 200%;
+    background-position: center top;
+  }
+
+  .aboutTitle {
+    font-size: 20px;
+  }
+
+  .aboutBody {
+    font-size: 12px;
+  }
+
+  .aboutSupportTitle {
+    font-size: 16px;
   }
 }
 

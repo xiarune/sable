@@ -13,16 +13,23 @@ import langIcon from "../assets/images/lang_icon.png";
 import imageIcon from "../assets/images/image_icon.png";
 import previewIcon from "../assets/images/preview_icon.png";
 
-const SKIN_OPTIONS = ["Default", "Emerald", "Ivory", "Midnight"];
+const SKIN_OPTIONS = ["Default", "Parchment"];
 const PRIVACY_OPTIONS = ["Public", "Following", "Private"];
 const LANGUAGE_OPTIONS = ["English", "Vietnamese", "Japanese", "French", "Spanish"];
+
+// Common genres for creative writing
+const GENRE_SUGGESTIONS = [
+  "Romance", "Fantasy", "Science Fiction", "Mystery", "Thriller", "Horror",
+  "Drama", "Comedy", "Action", "Adventure", "Slice of Life", "Angst",
+  "Fluff", "Hurt/Comfort", "Historical", "Supernatural", "Dystopian"
+];
 
 function makeId(prefix = "ch") {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
 function makeDefaultChapter() {
-  return { id: makeId("ch"), title: "Chapter 1", body: "", order: 0 };
+  return { id: makeId("ch"), title: "Chapter 1", body: "", order: 0, audioUrl: "" };
 }
 
 function ActionPill({ icon, label, subLabel, active, onClick }) {
@@ -129,6 +136,7 @@ export default function WorkEditor() {
 
   const activeChapter = chapters.find((c) => c.id === activeChapterId) || chapters[0] || null;
   const body = activeChapter?.body || "";
+  const chapterAudioUrl = activeChapter?.audioUrl || "";
 
   function setBody(newBody) {
     setChapters((prev) =>
@@ -140,8 +148,18 @@ export default function WorkEditor() {
     );
   }
 
+  function setChapterAudio(url) {
+    setChapters((prev) =>
+      prev.map((ch) =>
+        ch.id === activeChapterId
+          ? { ...ch, audioUrl: url }
+          : ch
+      )
+    );
+  }
+
   function addChapter() {
-    const newCh = { id: makeId("ch"), title: `Chapter ${chapters.length + 1}`, body: "", order: chapters.length };
+    const newCh = { id: makeId("ch"), title: `Chapter ${chapters.length + 1}`, body: "", order: chapters.length, audioUrl: "" };
     setChapters((prev) => [...prev, newCh]);
     setActiveChapterId(newCh.id);
   }
@@ -177,6 +195,9 @@ export default function WorkEditor() {
   const [skin, setSkin] = React.useState("Default");
   const [privacy, setPrivacy] = React.useState("Public");
   const [language, setLanguage] = React.useState("English");
+  const [genre, setGenre] = React.useState("");
+  const [fandom, setFandom] = React.useState("");
+  const [coverImageUrl, setCoverImageUrl] = React.useState("");
 
   const [audioUrl, setAudioUrl] = React.useState("");
   const [imageUrls, setImageUrls] = React.useState([]);
@@ -254,6 +275,9 @@ export default function WorkEditor() {
         setSkin(work.skin || "Default");
         setPrivacy(work.privacy || "Public");
         setLanguage(work.language || "English");
+        setGenre(work.genre || "");
+        setFandom(work.fandom || "");
+        setCoverImageUrl(work.coverImageUrl || "");
         setAudioUrl(work.audioUrl || "");
         setImageUrls(Array.isArray(work.imageUrls) ? work.imageUrls : []);
       } catch (err) {
@@ -280,11 +304,15 @@ export default function WorkEditor() {
           title: ch.title,
           body: ch.body,
           order: idx,
+          audioUrl: ch.audioUrl || "",
         })),
         tags,
         skin,
         privacy,
         language,
+        genre: genre.trim() || "",
+        fandom: fandom.trim() || "Original Work",
+        coverImageUrl,
         audioUrl,
         imageUrls,
       };
@@ -304,7 +332,25 @@ export default function WorkEditor() {
     navigate("/works");
   }
 
-  // Upload audio to S3
+  // Upload cover image
+  async function handleCoverUpload(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    try {
+      setStatus("Uploading cover...");
+      const data = await uploadsApi.image(file);
+      setCoverImageUrl(data.url);
+      setStatus("Cover uploaded.");
+    } catch (err) {
+      setStatus(err.message || "Cover upload failed.");
+    } finally {
+      e.target.value = "";
+      setTimeout(() => setStatus(""), 1500);
+    }
+  }
+
+  // Upload audio to S3 for current chapter
   async function handleAudioUpload(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
@@ -312,8 +358,8 @@ export default function WorkEditor() {
     try {
       setStatus("Uploading audio...");
       const data = await uploadsApi.audio(file);
-      setAudioUrl(data.upload.url);
-      setStatus("Audio attached.");
+      setChapterAudio(data.url);
+      setStatus("Audio attached to this chapter.");
     } catch (err) {
       setStatus(err.message || "Audio upload failed.");
     } finally {
@@ -330,7 +376,7 @@ export default function WorkEditor() {
     try {
       setStatus("Uploading image...");
       const data = await uploadsApi.image(file);
-      const url = data.upload.url;
+      const url = data.url;
 
       setImageUrls((prev) => [url, ...prev]);
 
@@ -397,6 +443,20 @@ export default function WorkEditor() {
               active={activeTool === "tags"}
             />
             <ActionPill
+              icon="📚"
+              label="Genre"
+              subLabel={genre || "Required"}
+              onClick={() => toggleTool("genre")}
+              active={activeTool === "genre"}
+            />
+            <ActionPill
+              icon="🌍"
+              label="Fandom"
+              subLabel={fandom || "Original"}
+              onClick={() => toggleTool("fandom")}
+              active={activeTool === "fandom"}
+            />
+            <ActionPill
               icon={<IconImg src={skinsIcon} alt="Skin" />}
               label="Skin"
               subLabel={skin}
@@ -418,9 +478,16 @@ export default function WorkEditor() {
               active={activeTool === "language"}
             />
             <ActionPill
+              icon="🖼️"
+              label="Cover"
+              subLabel={coverImageUrl ? "Set" : "None"}
+              onClick={() => toggleTool("cover")}
+              active={activeTool === "cover"}
+            />
+            <ActionPill
               icon="🎧"
               label="Audio"
-              subLabel={audioUrl ? "Attached" : "None"}
+              subLabel={chapterAudioUrl ? "Has Audio" : "None"}
               onClick={() => toggleTool("audio")}
               active={activeTool === "audio"}
             />
@@ -507,6 +574,49 @@ export default function WorkEditor() {
             </div>
           )}
 
+          {activeTool === "genre" && (
+            <div className="nd-toolPanel">
+              <div className="nd-toolTitle">Genre <span style={{ color: "#c44", fontWeight: "normal" }}>(Required)</span></div>
+              <input
+                className="nd-toolInput"
+                placeholder="Enter genre (e.g., Romance, Fantasy)"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+              />
+              <div className="nd-toolHint" style={{ marginTop: 8 }}>
+                Suggestions:
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                  {GENRE_SUGGESTIONS.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      className="nd-tag"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => setGenre(g)}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTool === "fandom" && (
+            <div className="nd-toolPanel">
+              <div className="nd-toolTitle">Fandom</div>
+              <input
+                className="nd-toolInput"
+                placeholder="Enter fandom (leave empty for Original Work)"
+                value={fandom}
+                onChange={(e) => setFandom(e.target.value)}
+              />
+              <div className="nd-toolHint">
+                If your work is not based on an existing property, leave empty or enter "Original Work".
+              </div>
+            </div>
+          )}
+
           {activeTool === "skin" && (
             <div className="nd-toolPanel">
               <div className="nd-toolTitle">Skin</div>
@@ -517,6 +627,9 @@ export default function WorkEditor() {
                     <span>{opt}</span>
                   </label>
                 ))}
+              </div>
+              <div className="nd-toolHint">
+                Choose a reading skin for your work. Readers will see this theme when viewing.
               </div>
             </div>
           )}
@@ -546,11 +659,54 @@ export default function WorkEditor() {
             </div>
           )}
 
+          {activeTool === "cover" && (
+            <div className="nd-toolPanel">
+              <div className="nd-toolTitle">Cover Image / Thumbnail</div>
+              <input className="nd-toolInput" type="file" accept="image/*" onChange={handleCoverUpload} />
+              <div className="nd-toolHint">
+                Upload a cover image for your work. If not set, a default Sable cover will be used.
+              </div>
+              {coverImageUrl && (
+                <div style={{ marginTop: 12 }}>
+                  <img src={coverImageUrl} alt="Cover preview" style={{ maxWidth: 200, borderRadius: 8 }} />
+                  <button
+                    type="button"
+                    className="nd-ornateBtn nd-ornateBtn--small"
+                    style={{ marginTop: 8, display: "block" }}
+                    onClick={() => setCoverImageUrl("")}
+                  >
+                    Remove Cover
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTool === "audio" && (
             <div className="nd-toolPanel">
-              <div className="nd-toolTitle">Audio Upload</div>
+              <div className="nd-toolTitle">Chapter Audio</div>
+              <div className="nd-toolHint" style={{ marginBottom: 8, fontWeight: 500 }}>
+                Currently editing: {activeChapter?.title || "Chapter"}
+              </div>
               <input className="nd-toolInput" type="file" accept="audio/*" onChange={handleAudioUpload} />
-              <div className="nd-toolHint">{audioUrl ? "Audio attached" : "Upload an audio file to attach it to this work."}</div>
+              <div className="nd-toolHint">
+                {chapterAudioUrl
+                  ? "Audio attached to this chapter"
+                  : "Upload an audio file for this chapter. Each chapter can have its own audio."}
+              </div>
+              {chapterAudioUrl && (
+                <div style={{ marginTop: 8 }}>
+                  <audio controls src={chapterAudioUrl} style={{ width: "100%" }} />
+                  <button
+                    type="button"
+                    className="nd-ornateBtn nd-ornateBtn--small"
+                    style={{ marginTop: 8 }}
+                    onClick={() => setChapterAudio("")}
+                  >
+                    Remove Audio
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

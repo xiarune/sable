@@ -1,6 +1,7 @@
 import React from "react";
 import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import "./PublicCommunityPage.css";
+import { uploadsApi, worksApi } from "../api";
 
 // John assets
 import johnBanner from "../assets/images/community_banner.png";
@@ -62,12 +63,6 @@ const MOCK_SKINS = [
   { id: "s3", name: "Midnight Blue", downloads: 312, likes: 124 },
 ];
 
-const MOCK_AUDIOS = [
-  { id: "a1", title: "Chapter 1 Reading", duration: "12:34", plays: 567 },
-  { id: "a2", title: "Character Voice: Luna", duration: "3:45", plays: 234 },
-  { id: "a3", title: "Ambient Writing Music", duration: "45:00", plays: 1289 },
-];
-
 const INITIAL_CHAT_MESSAGES = [
   { id: "m1", user: "reader42", text: "Anyone here read the latest chapter?", time: "1:15 PM" },
   { id: "m2", user: "bookworm", text: "Yes! It was amazing!", time: "1:18 PM" },
@@ -127,10 +122,40 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   // Active tab state
   const [activeTab, setActiveTab] = React.useState("works");
 
+  // Real data state
+  const [userWorks, setUserWorks] = React.useState([]);
+  const [userAudios, setUserAudios] = React.useState([]);
+
+  // Fetch user's works and audios
+  React.useEffect(() => {
+    async function loadUserData() {
+      if (!normalizedHandle) return;
+
+      try {
+        // Fetch user's audios
+        const audiosData = await uploadsApi.getUserAudios(normalizedHandle);
+        setUserAudios(audiosData.audios || []);
+      } catch (err) {
+        console.error("Failed to load audios:", err);
+      }
+
+      try {
+        // Fetch user's public works
+        const worksData = await worksApi.list({ author: normalizedHandle, limit: 20 });
+        setUserWorks(worksData.works || []);
+      } catch (err) {
+        console.error("Failed to load works:", err);
+      }
+    }
+
+    loadUserData();
+  }, [normalizedHandle]);
+
   // Chatroom state
   const [chatMessages, setChatMessages] = React.useState(INITIAL_CHAT_MESSAGES);
   const [chatInput, setChatInput] = React.useState("");
   const chatEndRef = React.useRef(null);
+  const isInitialChatMount = React.useRef(true);
 
   function handleSendMessage() {
     if (!isAuthed) {
@@ -156,7 +181,12 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
     }
   }
 
+  // Only scroll chat to bottom when new messages are added, not on initial load
   React.useEffect(() => {
+    if (isInitialChatMount.current) {
+      isInitialChatMount.current = false;
+      return;
+    }
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
@@ -359,25 +389,33 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
             {/* Tab Content */}
             {activeTab === "works" && (
               <div className="pcp-tabContent" aria-label="Works">
-                <div className="pcp-worksRow">
-                  {MOCK_WORKS.map((work) => (
-                    <div
-                      key={work.id}
-                      className="pcp-workCard"
-                      role="button"
-                      tabIndex={0}
-                      aria-label={work.title}
-                      onClick={() => handleWorkClick(work.id)}
-                      onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work.id)}
-                    >
-                      <div className="pcp-workCover pcp-workCover--placeholder" />
-                      <div className="pcp-workInfo">
-                        <div className="pcp-workTitle">{work.title}</div>
-                        <div className="pcp-workMeta">{work.genre} · {work.wordCount} words</div>
+                {userWorks.length === 0 ? (
+                  <div className="pcp-emptyState">No published works yet.</div>
+                ) : (
+                  <div className="pcp-worksRow">
+                    {userWorks.map((work) => (
+                      <div
+                        key={work._id}
+                        className="pcp-workCard"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={work.title}
+                        onClick={() => handleWorkClick(work._id)}
+                        onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work._id)}
+                      >
+                        {work.coverImageUrl ? (
+                          <img className="pcp-workCover" src={work.coverImageUrl} alt="" />
+                        ) : (
+                          <div className="pcp-workCover pcp-workCover--placeholder" />
+                        )}
+                        <div className="pcp-workInfo">
+                          <div className="pcp-workTitle">{work.title}</div>
+                          <div className="pcp-workMeta">{work.genre || "—"} · {work.wordCount?.toLocaleString() || 0} words</div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -415,17 +453,23 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
 
             {activeTab === "audios" && (
               <div className="pcp-tabContent" aria-label="Audios">
-                <div className="pcp-listItems">
-                  {MOCK_AUDIOS.map((audio) => (
-                    <div key={audio.id} className="pcp-listItem">
-                      <div className="pcp-listItemMain">
-                        <div className="pcp-listItemTitle">{audio.title}</div>
-                        <div className="pcp-listItemMeta">{audio.duration} · {audio.plays} plays</div>
+                {userAudios.length === 0 ? (
+                  <div className="pcp-emptyState">No audio uploads yet.</div>
+                ) : (
+                  <div className="pcp-listItems">
+                    {userAudios.map((audio) => (
+                      <div key={audio._id} className="pcp-listItem pcp-audioItem">
+                        <div className="pcp-listItemMain">
+                          <div className="pcp-listItemTitle">{audio.title || "Audio Track"}</div>
+                          <div className="pcp-listItemMeta">
+                            {audio.plays || 0} plays · {new Date(audio.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <audio controls src={audio.url} className="pcp-audioPlayer" />
                       </div>
-                      <button type="button" className="pcp-listItemBtn">▶ Play</button>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

@@ -346,6 +346,33 @@
   color: #fff;
 }
 
+/* Empty states */
+.ycp-emptyState {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(60, 55, 52, 0.6);
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.ycp-emptyState--small {
+  font-size: 12px;
+  padding: 12px 8px;
+}
+
+/* Audio player in list */
+.ycp-audioItem {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.ycp-audioPlayer {
+  width: 100%;
+  height: 32px;
+  border-radius: 6px;
+}
+
 /* Right panels*/
 .ycp-right {
   display: flex;
