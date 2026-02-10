@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import WorkCarousel from "../components/WorkCarousel";
 import { discoveryApi } from "../api";
 import homeIcon from "../assets/images/home_icon.png";
+import defaultCover from "../assets/images/sable_default_cover.png";
 
 export default function HomeLoggedIn() {
   const navigate = useNavigate();
@@ -25,13 +26,29 @@ export default function HomeLoggedIn() {
         const transformWork = (w) => ({
           id: w._id,
           title: w.title || "Untitled",
-          author: w.authorName || "Unknown Author",
-          coverUrl: w.coverUrl,
+          author: w.authorName || w.authorUsername || "Unknown Author",
+          cover: w.coverImageUrl || defaultCover,
         });
 
-        setTrending((trendingData.works || []).map(transformWork));
-        setFeatured((featuredData.works || []).map(transformWork));
-        setNewest((newestData.works || []).map(transformWork));
+        const trendingWorks = (trendingData.works || []).map(transformWork);
+        const featuredWorks = (featuredData.works || []).map(transformWork);
+        const newestWorks = (newestData.works || []).map(transformWork);
+
+        // Deduplicate: remove works that appear in earlier sections
+        // Convert IDs to strings for proper Set comparison
+        const trendingIds = new Set(trendingWorks.map((w) => String(w.id)));
+        const featuredIds = new Set(featuredWorks.map((w) => String(w.id)));
+
+        // Featured excludes trending
+        const dedupedFeatured = featuredWorks.filter((w) => !trendingIds.has(String(w.id)));
+
+        // Newest excludes both trending and featured
+        const usedIds = new Set([...trendingIds, ...featuredIds]);
+        const dedupedNewest = newestWorks.filter((w) => !usedIds.has(String(w.id)));
+
+        setTrending(trendingWorks);
+        setFeatured(dedupedFeatured);
+        setNewest(dedupedNewest);
       } catch (err) {
         console.error("Failed to load home data:", err);
       } finally {

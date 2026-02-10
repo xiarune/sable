@@ -108,6 +108,11 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   const { handle } = useParams();
   const navigate = useNavigate();
 
+  // Scroll to top on mount
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const normalizedHandle = (handle || "").trim().toLowerCase();
   const normalizedUsername = (username || "").trim().toLowerCase();
 

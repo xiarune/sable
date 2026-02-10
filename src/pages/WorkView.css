@@ -57,30 +57,30 @@
 
 .wv-layout {
   display: block;
-  padding-left: 310px; /* sidebar width (200px) + left offset (80px) + gap (30px) */
+  padding-left: 340px; /* sidebar width (280px) + left offset (30px) + gap (30px) */
 }
 
 /* Sidebar - FIXED to screen, always visible while scrolling */
 .wv-toc {
   position: fixed;
-  top: 82px;
-  left: 80px;
-  width: 200px;
+  top: 100px; /* Align with top of works section */
+  left: 30px;
+  width: 280px;
   z-index: 100;
 }
 
 /* Chapter hero style */
 .wv-chapterHero {
   text-align: center;
-  padding: 8px 10px;
+  padding: 14px 16px;
 }
 
 .wv-chapterHeroTitle {
   font-family: "Libre Baskerville", serif;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 14px;
   color: rgba(36, 75, 43, 0.95);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -91,9 +91,9 @@
 }
 
 .wv-chapterHeroMeta {
-  font-size: 9px;
+  font-size: 11px;
   color: rgba(27, 27, 27, 0.6);
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 .wv-themeDark .wv-chapterHeroMeta {
@@ -103,17 +103,17 @@
 .wv-chapterHeroNav {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .wv-chapterNavBtn {
-  width: 32px;
-  height: 24px;
+  width: 44px;
+  height: 32px;
   border: 1px solid var(--border-1);
   background: rgba(255, 255, 255, 0.7);
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   color: rgba(27, 27, 27, 0.8);
   transition: background 0.15s, border-color 0.15s;
 }
@@ -137,7 +137,7 @@
 .wv-tocStack {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
 /* Make chapter list very compact */
@@ -175,7 +175,7 @@
   border: 1px solid var(--border-1);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-1);
-  padding: 6px 10px;
+  padding: 12px 16px;
 }
 
 .wv-themeDark .wv-tocCard {
@@ -305,8 +305,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  padding: 5px 8px;
+  gap: 10px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-1);
 }
 
@@ -318,7 +318,7 @@
   font-family: "Cinzel Decorative", serif;
   font-weight: 900;
   letter-spacing: 0.3px;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--sable-forest);
 }
 
@@ -349,14 +349,14 @@
 }
 
 .wv-miniBody {
-  padding: 5px 8px;
+  padding: 12px 14px;
 }
 
 .wv-miniTrackTitle {
   font-weight: 800;
-  font-size: 11px;
+  font-size: 14px;
   color: rgba(27, 27, 27, 0.86);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .wv-themeDark .wv-miniTrackTitle {
@@ -364,13 +364,13 @@
 }
 
 .wv-miniTrackMeta {
-  font-size: 10px;
+  font-size: 12px;
   color: rgba(27, 27, 27, 0.62);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .wv-themeDark .wv-miniTrackMeta {
@@ -380,20 +380,20 @@
 /* Player row  */
 .wv-playerRow {
   display: grid;
-  grid-template-columns: 32px 1fr;
-  gap: 6px;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
   align-items: center;
-  margin: 4px 0;
+  margin: 8px 0;
 }
 
 .wv-iconPlay {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
   border: 1px solid var(--border-1);
   background: rgba(255, 255, 255, 0.74);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -459,7 +459,7 @@
 }
 
 .wv-time {
-  font-size: 9px;
+  font-size: 11px;
   color: rgba(27, 27, 27, 0.58);
 }
 
@@ -568,20 +568,43 @@
   border: 1px solid var(--border-1);
   background: rgba(255, 255, 255, 0.70);
   border-radius: 999px;
-  padding: 3px 6px;
+  padding: 6px 14px;
   cursor: pointer;
-  font-size: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.wv-miniPill:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.wv-miniPill:focus-visible {
+  outline: 2px solid var(--sable-blue);
+  outline-offset: 2px;
 }
 
 .wv-miniPill--active {
-  border-color: rgba(11, 63, 135, 0.35);
+  border-color: var(--sable-blue);
   background: rgba(11, 63, 135, 0.12);
+  color: var(--sable-blue);
 }
 
 .wv-themeDark .wv-miniPill {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.14);
   color: rgba(245, 240, 228, 0.86);
+}
+
+.wv-themeDark .wv-miniPill:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.wv-themeDark .wv-miniPill--active {
+  border-color: rgba(100, 160, 255, 0.6);
+  background: rgba(100, 160, 255, 0.15);
+  color: rgba(150, 190, 255, 1);
 }
 
 .wv-miniInput {
@@ -1142,6 +1165,48 @@
   color: rgba(245, 240, 228, 0.86);
 }
 
+.wv-commentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.wv-commentDelete {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: rgba(180, 60, 60, 0.75);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.wv-commentDelete:hover {
+  background: rgba(180, 60, 60, 0.10);
+}
+
+.wv-themeDark .wv-commentDelete {
+  color: rgba(220, 100, 100, 0.85);
+}
+
+.wv-themeDark .wv-commentDelete:hover {
+  background: rgba(220, 100, 100, 0.15);
+}
+
+.wv-commentsLoading,
+.wv-commentsEmpty {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.55);
+  text-align: center;
+  padding: 20px;
+}
+
+.wv-themeDark .wv-commentsLoading,
+.wv-themeDark .wv-commentsEmpty {
+  color: rgba(245, 240, 228, 0.55);
+}
+
 /* Modal panel */
 .wv-panelOverlay {
   position: fixed;
@@ -1202,12 +1267,33 @@
   height: 38px;
   cursor: pointer;
   font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.wv-panelClose:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.wv-panelClose:focus-visible {
+  outline: 2px solid var(--sable-blue);
+  outline-offset: 2px;
+}
+
+.wv-panelClose:active {
+  transform: scale(0.95);
 }
 
 .wv-themeDark .wv-panelClose {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.14);
   color: rgba(245, 240, 228, 0.86);
+}
+
+.wv-themeDark .wv-panelClose:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .wv-panelBody {
@@ -1256,7 +1342,59 @@
 }
 
 .wv-settingRow input[type="range"] {
-  accent-color: var(--sable-blue);
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.wv-settingRow input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--sable-blue);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.wv-settingRow input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--sable-blue);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.wv-settingRow input[type="range"]:focus {
+  outline: none;
+}
+
+.wv-settingRow input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(11, 63, 135, 0.3);
+}
+
+.wv-settingRow input[type="range"]:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(11, 63, 135, 0.3);
+}
+
+.wv-themeDark .wv-settingRow input[type="range"] {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.wv-themeDark .wv-settingRow input[type="range"]::-webkit-slider-thumb {
+  border-color: rgba(30, 30, 34, 1);
+}
+
+.wv-themeDark .wv-settingRow input[type="range"]::-moz-range-thumb {
+  border-color: rgba(30, 30, 34, 1);
 }
 
 .wv-chip {

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import "./WorkView.css";
 import "../styles/skins.css";
 
-import { worksApi } from "../api";
+import { worksApi, bookmarksApi, commentsApi } from "../api";
 import { works as libraryWorks } from "../data/libraryWorks";
 
 import musicIcon from "../assets/images/music_icon.png";
@@ -12,11 +12,9 @@ import commentsIcon from "../assets/images/comments_icon.png";
 import bookmarkOffIcon from "../assets/images/bookmark_icon_off.png";
 import bookmarkOnIcon from "../assets/images/bookmark_icon_on.png";
 
-// Keep localStorage for view prefs, audio favs, bookmarks (Phase 2 will move bookmarks to API)
+// Keep localStorage for view prefs and audio favs only - bookmarks use API
 const VIEW_PREFS_KEY = "sable_workview_prefs_v1";
 const AUDIO_FAVS_KEY = "sable_audio_favs_v1";
-const WORK_FAVS_KEY = "sable_work_favs_v1"; // per-user bookmark state
-const BOOKMARKS_KEY = "sable_bookmarks_v1"; // shared bookmarks list for Bookmarks page
 
 function safeParse(json) {
   try {
@@ -191,11 +189,27 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   // Comments
   const [commentsOpen, setCommentsOpen] = React.useState(false);
   const [commentDraft, setCommentDraft] = React.useState("");
-  const [comments, setComments] = React.useState([
-    { user: "jane.doe", text: "The atmosphere here is insane. Love the pacing." },
-    { user: "amira.salem", text: "That last paragraph… brutal (in a good way)." },
-    { user: "xi9283", text: "Are you planning another chapter soon?" },
-  ]);
+  const [comments, setComments] = React.useState([]);
+  const [commentsLoading, setCommentsLoading] = React.useState(false);
+
+  // Load comments when work is loaded
+  React.useEffect(() => {
+    if (!decodedId) return;
+
+    async function loadComments() {
+      setCommentsLoading(true);
+      try {
+        const data = await commentsApi.list(decodedId, null, 1, 50);
+        setComments(data.comments || []);
+      } catch (err) {
+        console.error("Failed to load comments:", err);
+      } finally {
+        setCommentsLoading(false);
+      }
+    }
+
+    loadComments();
+  }, [decodedId]);
 
   // View prefs
   const [prefs, setPrefs] = React.useState(() => {
@@ -216,12 +230,24 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     return perUser;
   });
 
-  // Work bookmarks
-  const [workFavs, setWorkFavs] = React.useState(() => {
-    const all = loadJson(WORK_FAVS_KEY, {});
-    const perUser = all?.[normalizedUser] || {};
-    return perUser;
-  });
+  // Work bookmark state (loaded from API)
+  const [isBookmarked, setIsBookmarked] = React.useState(false);
+
+  // Check bookmark status on load
+  React.useEffect(() => {
+    if (!isAuthed || !decodedId) return;
+
+    async function checkBookmarkStatus() {
+      try {
+        const data = await bookmarksApi.check(decodedId, null, null);
+        setIsBookmarked(Boolean(data.bookmarked));
+      } catch {
+        // Ignore errors - just leave as not bookmarked
+      }
+    }
+
+    checkBookmarkStatus();
+  }, [isAuthed, decodedId]);
 
   // Audio playback
   const audioRef = React.useRef(null);
@@ -260,14 +286,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     next[normalizedUser] = { ...(audioFavs || {}) };
     saveJson(AUDIO_FAVS_KEY, next);
   }, [normalizedUser, audioFavs]);
-
-  // Persist work favs per-user
-  React.useEffect(() => {
-    const all = loadJson(WORK_FAVS_KEY, {});
-    const next = { ...(all || {}) };
-    next[normalizedUser] = { ...(workFavs || {}) };
-    saveJson(WORK_FAVS_KEY, next);
-  }, [normalizedUser, workFavs]);
 
   // Load work from API or fall back to library works
   const [work, setWork] = React.useState(null);
@@ -333,8 +351,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   const currentTrack = audioTracks.find((t) => t.id === nowPlayingId) || null;
 
   const currentTrackFav = currentTrack ? Boolean(audioFavs?.[currentTrack.id]) : false;
-
-  const isBookmarked = Boolean(workFavs?.[decodedId]);
 
   const audioHasDuration = Boolean(audioDurationSec) || Boolean(currentTrack?.duration);
   const audioProgressPct = React.useMemo(() => {
@@ -475,15 +491,34 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     setCommentsOpen((v) => !v);
   }
 
-  function handlePostComment() {
+  async function handlePostComment() {
     if (!isAuthed) {
       openLoginModal();
       return;
     }
     const text = commentDraft.trim();
     if (!text) return;
-    setComments((prev) => [{ user: normalizedUser || "john.doe", text }, ...prev]);
+
     setCommentDraft("");
+
+    try {
+      const data = await commentsApi.create(text, decodedId, null, null);
+      // Add the new comment to the top of the list
+      setComments((prev) => [data.comment, ...prev]);
+    } catch (err) {
+      console.error("Failed to post comment:", err);
+      // Restore the draft if posting failed
+      setCommentDraft(text);
+    }
+  }
+
+  async function handleDeleteComment(commentId) {
+    try {
+      await commentsApi.delete(commentId);
+      setComments((prev) => prev.filter((c) => c._id !== commentId));
+    } catch (err) {
+      console.error("Failed to delete comment:", err);
+    }
   }
 
   function openPanel(name) {
@@ -605,39 +640,26 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     setMusicCurrentSec(sec);
   }
 
-  function toggleBookmark() {
+  async function toggleBookmark() {
     if (!isAuthed) {
       openLoginModal();
       return;
     }
 
-    const wasBookmarked = Boolean(workFavs?.[decodedId]);
+    // Optimistic update
+    const wasBookmarked = isBookmarked;
+    setIsBookmarked(!wasBookmarked);
 
-    setWorkFavs((prev) => {
-      const next = { ...(prev || {}) };
-      next[decodedId] = !next[decodedId];
-      return next;
-    });
-   
     try {
-      const stored = JSON.parse(localStorage.getItem(BOOKMARKS_KEY)) || [];
       if (wasBookmarked) {
-        // Remove from bookmarks
-        const updated = stored.filter((b) => b.id !== decodedId);
-        localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(updated));
+        await bookmarksApi.unbookmarkWork(decodedId);
       } else {
-        // Add to bookmarks
-        const bookmarkData = {
-          id: decodedId,
-          title: title,
-          authorUsername: authorHandle,
-          type: "work",
-          workId: decodedId,
-        };
-        const updated = [bookmarkData, ...stored.filter((b) => b.id !== decodedId)];
-        localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(updated));
+        await bookmarksApi.bookmarkWork(decodedId);
       }
-    } catch {
+    } catch (err) {
+      // Revert on error
+      setIsBookmarked(wasBookmarked);
+      console.error("Failed to toggle bookmark:", err);
     }
   }
 
@@ -912,9 +934,11 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   <button type="button" className="wv-backBtn" onClick={handleBack} aria-label="Go back" title="Back">
                     ← Back
                   </button>
-                  <button type="button" className="wv-editBtn" onClick={handleEdit} aria-label="Edit work" title="Edit">
-                    Edit
-                  </button>
+                  {isAuthed && normalizedUser === authorHandle.toLowerCase() && (
+                    <button type="button" className="wv-editBtn" onClick={handleEdit} aria-label="Edit work" title="Edit">
+                      Edit
+                    </button>
+                  )}
                 </div>
 
                 <div className="wv-headerMid">
@@ -1110,12 +1134,32 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   </div>
 
                   <div className="wv-commentList" aria-label="Comment list">
-                    {comments.map((c, idx) => (
-                      <div key={`${c.user}_${idx}`} className="wv-comment">
-                        <div className="wv-commentUser">@{c.user}</div>
-                        <div className="wv-commentText">{c.text}</div>
-                      </div>
-                    ))}
+                    {commentsLoading ? (
+                      <div className="wv-commentsLoading">Loading comments...</div>
+                    ) : comments.length === 0 ? (
+                      <div className="wv-commentsEmpty">No comments yet. Be the first to share your thoughts!</div>
+                    ) : (
+                      comments.map((c) => (
+                        <div key={c._id} className="wv-comment">
+                          <div className="wv-commentHeader">
+                            <Link to={`/communities/${c.authorUsername}`} className="wv-commentUser">
+                              @{c.authorUsername}
+                            </Link>
+                            {normalizedUser === c.authorUsername?.toLowerCase() && (
+                              <button
+                                type="button"
+                                className="wv-commentDelete"
+                                onClick={() => handleDeleteComment(c._id)}
+                                aria-label="Delete comment"
+                              >
+                                x
+                              </button>
+                            )}
+                          </div>
+                          <div className="wv-commentText">{c.text}</div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               ) : null}
@@ -1135,7 +1179,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   <div className="wv-panelBody">
                     {panel === "settings" ? (
                       <>
-                        <div className="wv-panelHint">These are view preferences stored per user in localStorage.</div>
+                        <div className="wv-panelHint">Customize your reading experience</div>
 
                         <div className="wv-settingRow">
                           <label className="wv-settingLabel" htmlFor="wv-fontsize">

@@ -11,7 +11,7 @@ const {
   requireAuth,
 } = require("../middleware/auth");
 const Session = require("../models/Session");
-const { sendVerificationEmail, sendPasswordResetEmail } = require("../utils/email");
+const { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } = require("../utils/email");
 const { authLimiter, passwordResetLimiter } = require("../middleware/rateLimiter");
 const logger = require("../utils/logger");
 const {
@@ -382,6 +382,11 @@ router.post("/verify-email", async (req, res, next) => {
     user.emailVerificationToken = undefined;
     user.emailVerificationExpires = undefined;
     await user.save();
+
+    // Send welcome email (don't wait for it)
+    sendWelcomeEmail(user).catch((err) => {
+      console.error("Failed to send welcome email:", err);
+    });
 
     res.json({ message: "Email verified successfully" });
   } catch (err) {

@@ -45,6 +45,43 @@
   font-family: var(--skin-body-font);
 }
 
+/* DEFAULT SKIN - DARK THEME OVERRIDE */
+.wv-themeDark.skin-default {
+  --skin-bg: linear-gradient(180deg, rgba(16, 16, 18, 0.96), rgba(10, 10, 12, 0.98));
+  --skin-card-bg: rgba(22, 22, 26, 0.86);
+  --skin-card-border: rgba(255, 255, 255, 0.12);
+  --skin-text: rgba(245, 240, 228, 0.92);
+  --skin-text-muted: rgba(245, 240, 228, 0.65);
+  --skin-accent: rgba(214, 168, 64, 0.95);
+  --skin-accent-light: rgba(214, 168, 64, 0.12);
+  --skin-link: rgba(214, 168, 64, 0.95);
+}
+
+.wv-themeDark.skin-default .wv-shell {
+  background: radial-gradient(900px 420px at 20% 0%, rgba(11, 63, 135, 0.22), rgba(0, 0, 0, 0)),
+    linear-gradient(180deg, rgba(16, 16, 18, 0.96), rgba(10, 10, 12, 0.98));
+}
+
+.wv-themeDark.skin-default .wv-card,
+.wv-themeDark.skin-default .wv-controlsCard {
+  background: rgba(22, 22, 26, 0.86);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.wv-themeDark.skin-default .wv-title {
+  color: rgba(214, 168, 64, 0.98);
+}
+
+.wv-themeDark.skin-default .wv-author,
+.wv-themeDark.skin-default .wv-meta {
+  color: rgba(245, 240, 228, 0.65);
+}
+
+.wv-themeDark.skin-default .wv-chBody {
+  color: rgba(245, 240, 228, 0.92);
+}
+
 /* -------------------------
    PARCHMENT SKIN
    A warmer, more aged look with cream tones and sepia accents
@@ -127,4 +164,61 @@
     transparent
   );
   border-radius: 12px 12px 0 0;
+}
+
+/* PARCHMENT SKIN - DARK THEME OVERRIDE */
+.wv-themeDark.skin-parchment {
+  --skin-bg: linear-gradient(180deg, rgba(16, 16, 18, 0.96), rgba(10, 10, 12, 0.98));
+  --skin-card-bg: rgba(22, 22, 26, 0.86);
+  --skin-card-border: rgba(255, 255, 255, 0.12);
+  --skin-text: rgba(245, 240, 228, 0.92);
+  --skin-text-muted: rgba(245, 240, 228, 0.65);
+  --skin-accent: rgba(214, 168, 64, 0.95);
+  --skin-accent-light: rgba(214, 168, 64, 0.12);
+  --skin-link: rgba(214, 168, 64, 0.95);
+}
+
+.wv-themeDark.skin-parchment .wv-shell {
+  background: radial-gradient(900px 420px at 20% 0%, rgba(11, 63, 135, 0.22), rgba(0, 0, 0, 0)),
+    linear-gradient(180deg, rgba(16, 16, 18, 0.96), rgba(10, 10, 12, 0.98));
+}
+
+.wv-themeDark.skin-parchment .wv-card,
+.wv-themeDark.skin-parchment .wv-controlsCard {
+  background: rgba(22, 22, 26, 0.86);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.wv-themeDark.skin-parchment .wv-card::before {
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(214, 168, 64, 0.25) 20%,
+    rgba(214, 168, 64, 0.25) 80%,
+    transparent
+  );
+}
+
+.wv-themeDark.skin-parchment .wv-title {
+  color: rgba(214, 168, 64, 0.98);
+}
+
+.wv-themeDark.skin-parchment .wv-author,
+.wv-themeDark.skin-parchment .wv-meta {
+  color: rgba(245, 240, 228, 0.65);
+}
+
+.wv-themeDark.skin-parchment .wv-chBody {
+  color: rgba(245, 240, 228, 0.92);
+}
+
+.wv-themeDark.skin-parchment .wv-navBtn,
+.wv-themeDark.skin-parchment .wv-pillBtn {
+  background: rgba(214, 168, 64, 0.12);
+  color: rgba(214, 168, 64, 0.95);
+}
+
+.wv-themeDark.skin-parchment .wv-navBtn:hover,
+.wv-themeDark.skin-parchment .wv-pillBtn:hover {
+  background: rgba(214, 168, 64, 0.20);
 }

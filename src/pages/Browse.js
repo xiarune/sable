@@ -30,9 +30,25 @@ export default function Browse() {
           cover: w.coverImageUrl || defaultCover,
         });
 
-        setTrending((trendingData.works || []).map(transformWork));
-        setFeatured((featuredData.works || []).map(transformWork));
-        setNewest((newestData.works || []).map(transformWork));
+        const trendingWorks = (trendingData.works || []).map(transformWork);
+        const featuredWorks = (featuredData.works || []).map(transformWork);
+        const newestWorks = (newestData.works || []).map(transformWork);
+
+        // Deduplicate: remove works that appear in earlier sections
+        // Convert IDs to strings for proper Set comparison
+        const trendingIds = new Set(trendingWorks.map((w) => String(w.id)));
+        const featuredIds = new Set(featuredWorks.map((w) => String(w.id)));
+
+        // Featured excludes trending
+        const dedupedFeatured = featuredWorks.filter((w) => !trendingIds.has(String(w.id)));
+
+        // Newest excludes both trending and featured
+        const usedIds = new Set([...trendingIds, ...featuredIds]);
+        const dedupedNewest = newestWorks.filter((w) => !usedIds.has(String(w.id)));
+
+        setTrending(trendingWorks);
+        setFeatured(dedupedFeatured);
+        setNewest(dedupedNewest);
       } catch (err) {
         console.error("Failed to load browse data:", err);
       } finally {
@@ -90,7 +106,6 @@ export default function Browse() {
           items={trending}
           ariaLabel="Trending works"
           titleIcon={homeIcon}
-          autoScroll
           onItemClick={openWork}
         />
       )}
@@ -102,7 +117,6 @@ export default function Browse() {
           items={featured}
           ariaLabel="Featured works"
           titleIcon={homeIcon}
-          autoScroll
           onItemClick={openWork}
         />
       )}
@@ -114,7 +128,6 @@ export default function Browse() {
           items={newest}
           ariaLabel="New and noteworthy works"
           titleIcon={homeIcon}
-          autoScroll
           onItemClick={openWork}
         />
       )}

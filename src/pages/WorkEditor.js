@@ -240,6 +240,98 @@ export default function WorkEditor() {
     });
   }
 
+  // Formatting functions for toolbar
+  function wrapSelection(before, after) {
+    const el = bodyRef.current;
+    if (!el) return;
+
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selectedText = body.slice(start, end);
+
+    const beforeText = body.slice(0, start);
+    const afterText = body.slice(end);
+
+    const newText = `${beforeText}${before}${selectedText}${after}${afterText}`;
+    setBody(newText);
+
+    requestAnimationFrame(() => {
+      try {
+        el.focus();
+        el.setSelectionRange(start + before.length, end + before.length);
+      } catch {
+        // ignore
+      }
+    });
+  }
+
+  function formatBold() {
+    wrapSelection("**", "**");
+  }
+
+  function formatItalic() {
+    wrapSelection("*", "*");
+  }
+
+  function formatUnderline() {
+    wrapSelection("<u>", "</u>");
+  }
+
+  function formatStrike() {
+    wrapSelection("~~", "~~");
+  }
+
+  function formatHeading() {
+    const el = bodyRef.current;
+    if (!el) return;
+
+    const start = el.selectionStart;
+    const lineStart = body.lastIndexOf("\n", start - 1) + 1;
+    const beforeLine = body.slice(0, lineStart);
+    const afterLineStart = body.slice(lineStart);
+
+    setBody(`${beforeLine}## ${afterLineStart}`);
+  }
+
+  function formatLink() {
+    const el = bodyRef.current;
+    if (!el) return;
+
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selectedText = body.slice(start, end) || "link text";
+
+    const beforeText = body.slice(0, start);
+    const afterText = body.slice(end);
+
+    const newText = `${beforeText}[${selectedText}](url)${afterText}`;
+    setBody(newText);
+  }
+
+  function formatList() {
+    const el = bodyRef.current;
+    if (!el) return;
+
+    const start = el.selectionStart;
+    const lineStart = body.lastIndexOf("\n", start - 1) + 1;
+    const beforeLine = body.slice(0, lineStart);
+    const afterLineStart = body.slice(lineStart);
+
+    setBody(`${beforeLine}- ${afterLineStart}`);
+  }
+
+  function formatQuote() {
+    const el = bodyRef.current;
+    if (!el) return;
+
+    const start = el.selectionStart;
+    const lineStart = body.lastIndexOf("\n", start - 1) + 1;
+    const beforeLine = body.slice(0, lineStart);
+    const afterLineStart = body.slice(lineStart);
+
+    setBody(`${beforeLine}> ${afterLineStart}`);
+  }
+
   function addTag() {
     const cleaned = tagInput.trim().replace(/^#/, "");
     if (!cleaned) return;
@@ -744,6 +836,36 @@ export default function WorkEditor() {
               <div className="nd-bodyLabel" style={{ marginTop: 8 }}>
                 Chapter Content
               </div>
+
+              {/* Formatting Toolbar */}
+              <div className="nd-formatToolbar">
+                <button type="button" className="nd-formatBtn" onMouseDown={(e) => { e.preventDefault(); formatBold(); }} title="Bold (Ctrl+B)">
+                  <strong>B</strong>
+                </button>
+                <button type="button" className="nd-formatBtn" onMouseDown={(e) => { e.preventDefault(); formatItalic(); }} title="Italic (Ctrl+I)">
+                  <em>I</em>
+                </button>
+                <button type="button" className="nd-formatBtn" onMouseDown={(e) => { e.preventDefault(); formatUnderline(); }} title="Underline">
+                  <u>U</u>
+                </button>
+                <button type="button" className="nd-formatBtn" onMouseDown={(e) => { e.preventDefault(); formatStrike(); }} title="Strikethrough">
+                  <s>S</s>
+                </button>
+                <span className="nd-formatDivider" />
+                <button type="button" className="nd-formatBtn" onMouseDown={(e) => { e.preventDefault(); formatHeading(); }} title="Heading">
+                  H
+                </button>
+                <button type="button" className="nd-formatBtn" onMouseDown={(e) => { e.preventDefault(); formatQuote(); }} title="Quote">
+                  "
+                </button>
+                <button type="button" className="nd-formatBtn" onMouseDown={(e) => { e.preventDefault(); formatList(); }} title="List">
+                  •
+                </button>
+                <button type="button" className="nd-formatBtn" onMouseDown={(e) => { e.preventDefault(); formatLink(); }} title="Link">
+                  🔗
+                </button>
+              </div>
+
               <textarea ref={bodyRef} className="nd-textarea" value={body} onChange={(e) => setBody(e.target.value)} />
             </>
           ) : (
