@@ -89,7 +89,7 @@ const workSchema = new mongoose.Schema(
 );
 
 // Calculate word count before saving
-workSchema.pre("save", function (next) {
+workSchema.pre("save", function () {
   if (this.isModified("chapters")) {
     let totalWords = 0;
     this.chapters.forEach((chapter) => {
@@ -99,7 +99,6 @@ workSchema.pre("save", function (next) {
     });
     this.wordCount = totalWords;
   }
-  next();
 });
 
 // Indexes

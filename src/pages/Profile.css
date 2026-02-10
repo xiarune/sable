@@ -4,12 +4,15 @@
   background: #f4efe6;
   min-height: calc(100vh - 64px);
   padding: 12px 0 30px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .pf-shell {
   max-width: 1260px;
   margin: 0 auto;
   padding: 0 18px;
+  width: 100%;
 }
 
 /* hero */

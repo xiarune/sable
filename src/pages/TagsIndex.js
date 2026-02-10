@@ -1,70 +1,69 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { discoveryApi } from "../api";
 import "./Library.css";
-
-// trending tags
-const TRENDING_TAGS = [
-  "Hurt/Comfort",
-  "Enemies to Lovers",
-  "Slow Burn",
-  "Canon Divergence",
-  "Found Family",
-  "Alternate Universe",
-  "Canon Universe",
-  "Redemption Arc",
-  "Major Character Death",
-  "Mutual Pining",
-  "Forbidden Romance",
-  "Post-Canon Relationship",
-  "Reincarnation",
-  "Violence",
-  "Trauma",
-  "Blood and Injury",
-  "Domestic",
-  "Emotional Healing",
-  "Time Loop",
-  "Amnesia",
-  "Fluff",
-  "One Shot",
-  "Miscommunication",
-  "Friendship",
-];
 
 function groupByFirstLetter(items) {
   const map = new Map();
 
   for (const t of items) {
-    const s = (t || "").trim();
+    const name = t.name || t;
+    const s = (name || "").trim();
     const letter = s ? s[0].toUpperCase() : "#";
     const key = /[A-Z]/.test(letter) ? letter : "#";
     if (!map.has(key)) map.set(key, []);
-    map.get(key).push(s);
+    map.get(key).push(t);
   }
 
   const groups = Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   return groups.map(([letter, list]) => ({
     letter,
-    items: Array.from(new Set(list)).sort((a, b) =>
-      a.localeCompare(b, undefined, { sensitivity: "base" })
-    ),
+    items: list.sort((a, b) => {
+      const nameA = a.name || a;
+      const nameB = b.name || b;
+      return nameA.localeCompare(nameB, undefined, { sensitivity: "base" });
+    }),
   }));
 }
 
 export default function TagsIndex() {
   const navigate = useNavigate();
   const [search, setSearch] = React.useState("");
+  const [tags, setTags] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
 
-  const filteredTags = React.useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return TRENDING_TAGS;
-    return TRENDING_TAGS.filter((t) => t.toLowerCase().includes(q));
+  React.useEffect(() => {
+    async function loadTags() {
+      try {
+        const data = await discoveryApi.tags(search || null);
+        setTags(data.tags || []);
+      } catch (err) {
+        console.error("Failed to load tags:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadTags();
   }, [search]);
 
-  const grouped = React.useMemo(() => groupByFirstLetter(filteredTags), [filteredTags]);
+  const grouped = React.useMemo(() => groupByFirstLetter(tags), [tags]);
 
   function openTag(tag) {
-    // Sends user to Search page and queries the tag
-    navigate(`/search?q=${encodeURIComponent(tag)}`);
+    const slug = tag.slug || tag.name || tag;
+    navigate(`/tags/${encodeURIComponent(slug)}`);
+  }
+
+  if (loading) {
+    return (
+      <div className="shelfPage">
+        <div className="shelfBanner">
+          <h1 className="shelfTitle">Tags</h1>
+        </div>
+        <div className="shelfBody">
+          <p>Loading tags...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -88,57 +87,49 @@ export default function TagsIndex() {
           {/* Visual only filters to match genre/fandom */}
           <label className="filterRow">
             <input type="checkbox" defaultChecked />
-            <span>Trending</span>
+            <span>Most Used</span>
           </label>
           <label className="filterRow">
-            <input type="checkbox" defaultChecked />
+            <input type="checkbox" />
             <span>Newest</span>
-          </label>
-          <label className="filterRow">
-            <input type="checkbox" defaultChecked />
-            <span>Oldest</span>
-          </label>
-          <label className="filterRow">
-            <input type="checkbox" defaultChecked />
-            <span>Text Only</span>
-          </label>
-          <label className="filterRow">
-            <input type="checkbox" defaultChecked />
-            <span>Completed</span>
           </label>
         </aside>
 
         <section className="shelfMain">
-          <h2 className="letterHeading" style={{ marginTop: 0 }}>
-            Trending Tags
-          </h2>
+          {tags.length === 0 ? (
+            <p className="emptyNote">No tags yet. Publish a work with tags to create the first ones.</p>
+          ) : (
+            <>
+              <h2 className="letterHeading" style={{ marginTop: 0 }}>
+                Popular Tags
+              </h2>
 
-          <div className="workPills" style={{ marginBottom: 22 }}>
-            {filteredTags.map((tag) => (
-              <button key={tag} type="button" className="workPill" onClick={() => openTag(tag)}>
-                {tag}
-              </button>
-            ))}
-          </div>
-
-          {/* Optional: letter-group view under the trending block (keeps consistency w/ Romance layout) */}
-          {grouped.map((g) => (
-            <div key={g.letter} className="letterBlock">
-              <div className="letterHeading">{g.letter}</div>
-
-              <div className="workPills">
-                {g.items.map((tag) => (
-                  <button key={tag} type="button" className="workPill" onClick={() => openTag(tag)}>
-                    {tag}
+              <div className="workPills" style={{ marginBottom: 22 }}>
+                {tags.slice(0, 20).map((tag) => (
+                  <button key={tag.slug || tag.name} type="button" className="workPill" onClick={() => openTag(tag)}>
+                    {tag.name} ({tag.usageCount || 0})
                   </button>
                 ))}
               </div>
-            </div>
-          ))}
+
+              {/* Letter-group view */}
+              {grouped.map((g) => (
+                <div key={g.letter} className="letterBlock">
+                  <div className="letterHeading">{g.letter}</div>
+
+                  <div className="workPills">
+                    {g.items.map((tag) => (
+                      <button key={tag.slug || tag.name} type="button" className="workPill" onClick={() => openTag(tag)}>
+                        {tag.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </section>
       </div>
     </div>
   );
 }
-
-

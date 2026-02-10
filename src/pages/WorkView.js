@@ -4,7 +4,6 @@ import "./WorkView.css";
 
 import { worksApi } from "../api";
 import { works as libraryWorks } from "../data/libraryWorks";
-import nightWoodsImg from "../assets/images/night_woods.png";
 
 import musicIcon from "../assets/images/music_icon.png";
 import settingsIcon from "../assets/images/settings_icon.png";
@@ -870,7 +869,32 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                     </span>
                     <span className="wv-dot">•</span>
                     <span className="wv-metaItem">{chapters.length} chapters</span>
+                    {work?.language && (
+                      <>
+                        <span className="wv-dot">•</span>
+                        <span className="wv-metaItem">{work.language}</span>
+                      </>
+                    )}
                   </div>
+                  {/* Genre, Fandom, Tags */}
+                  <div className="wv-workInfo">
+                    {work?.genre && (
+                      <span className="wv-infoPill wv-infoPill--genre">{work.genre}</span>
+                    )}
+                    {work?.fandom && work.fandom !== "Original Work" && (
+                      <span className="wv-infoPill wv-infoPill--fandom">{work.fandom}</span>
+                    )}
+                    {work?.fandom === "Original Work" && (
+                      <span className="wv-infoPill wv-infoPill--original">Original Work</span>
+                    )}
+                  </div>
+                  {work?.tags && work.tags.length > 0 && (
+                    <div className="wv-tags">
+                      {work.tags.map((tag) => (
+                        <span key={tag} className="wv-tag">#{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="wv-headerRight">
@@ -937,10 +961,20 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
               <div className="wv-sep" />
 
-              {/* Cover image */}
-              <div className="wv-cover">
-                <img className="wv-coverImg" src={nightWoodsImg} alt="" />
-              </div>
+              {/* Cover image - only show if user uploaded one */}
+              {work?.coverImageUrl && (
+                <div className="wv-cover">
+                  <img className="wv-coverImg" src={work.coverImageUrl} alt="" />
+                </div>
+              )}
+
+              {/* Audio from author - if work has audioUrl */}
+              {work?.audioUrl && (
+                <div className="wv-authorAudio">
+                  <div className="wv-authorAudioLabel">Author's Audio</div>
+                  <audio controls src={work.audioUrl} style={{ width: "100%" }} />
+                </div>
+              )}
 
               <div className="wv-sep wv-sep--soft" />
 

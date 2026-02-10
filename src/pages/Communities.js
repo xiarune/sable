@@ -174,6 +174,11 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   const [tab, setTab] = React.useState("Explore"); // Explore | Following | Discussions
   const [query, setQuery] = React.useState("");
 
+  // Prevent auto-scroll on mount
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Composer (front-end only)
   const [postType, setPostType] = React.useState("post"); // post | discussion | upload
   const [draft, setDraft] = React.useState("");

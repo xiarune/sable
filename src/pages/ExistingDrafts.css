@@ -65,10 +65,25 @@
 
 .ed-cover {
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 2 / 3;
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.18);
-  border-radius: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ed-cover--default {
+  background: linear-gradient(145deg, #244b2b 0%, #1a3620 100%);
+  border: 2px solid rgba(214, 168, 64, 0.7);
+}
+
+.ed-coverLabel {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 48px;
+  font-weight: 700;
+  color: rgba(214, 168, 64, 0.85);
 }
 
 .ed-cardTitle {
@@ -80,6 +95,63 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.ed-cardWrap {
+  position: relative;
+}
+
+.ed-cardMeta {
+  margin-top: 4px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.ed-deleteBtn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(200, 60, 60, 0.9);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.ed-cardWrap:hover .ed-deleteBtn {
+  opacity: 1;
+}
+
+.ed-deleteBtn:hover {
+  background: rgba(180, 40, 40, 1);
+}
+
+.ed-newBtn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 14px 26px;
+  background: rgba(36, 75, 43, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10);
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #fff;
+  margin-right: 12px;
+}
+
+.ed-newBtn:hover {
+  background: rgba(36, 75, 43, 1);
 }
 
 .ed-empty {

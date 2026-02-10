@@ -13,9 +13,11 @@ const bookmarksRoutes = require("./bookmarks");
 const notificationsRoutes = require("./notifications");
 const messagesRoutes = require("./messages");
 const usersRoutes = require("./users");
+const settingsRoutes = require("./settings");
 const communityRoutes = require("./community");
 const audioRoutes = require("./audio");
 const discoveryRoutes = require("./discovery");
+const importRoutes = require("./import");
 
 const router = express.Router();
 
@@ -32,8 +34,10 @@ router.use("/bookmarks", bookmarksRoutes);
 router.use("/notifications", notificationsRoutes);
 router.use("/messages", messagesRoutes);
 router.use("/users", usersRoutes);
+router.use("/settings", settingsRoutes);
 router.use("/community", communityRoutes);
 router.use("/audio", audioRoutes);
 router.use("/discovery", discoveryRoutes);
+router.use("/import", importRoutes);
 
 module.exports = router;

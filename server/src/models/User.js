@@ -128,6 +128,26 @@ const userSchema = new mongoose.Schema(
     passwordResetToken: { type: String },
     passwordResetExpires: { type: Date },
 
+    // Pending email change
+    pendingEmail: { type: String },
+    pendingEmailToken: { type: String },
+    pendingEmailExpires: { type: Date },
+
+    // Notification settings
+    notificationSettings: {
+      emailOnNewFollower: { type: Boolean, default: true },
+      emailOnNewComment: { type: Boolean, default: true },
+      emailOnNewLike: { type: Boolean, default: false },
+      emailOnNewMessage: { type: Boolean, default: true },
+      emailOnNewChapter: { type: Boolean, default: true },
+      emailDigest: { type: String, enum: ["none", "daily", "weekly"], default: "none" },
+      pushOnNewFollower: { type: Boolean, default: true },
+      pushOnNewComment: { type: Boolean, default: true },
+      pushOnNewLike: { type: Boolean, default: true },
+      pushOnNewMessage: { type: Boolean, default: true },
+      pushOnNewChapter: { type: Boolean, default: true },
+    },
+
     // Stats (denormalized for performance)
     stats: {
       followersCount: { type: Number, default: 0 },

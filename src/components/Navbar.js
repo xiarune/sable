@@ -41,12 +41,14 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   const browseMenuRef = React.useRef(null);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
-  const [authMode, setAuthMode] = React.useState("login"); // "login" | "signup"
+  const [authMode, setAuthMode] = React.useState("login"); // "login" | "signup" | "2fa"
 
   const [formUsername, setFormUsername] = React.useState("");
   const [formEmail, setFormEmail] = React.useState("");
   const [formPassword, setFormPassword] = React.useState("");
   const [formConfirmPassword, setFormConfirmPassword] = React.useState("");
+  const [form2FACode, setForm2FACode] = React.useState("");
+  const [pending2FAUserId, setPending2FAUserId] = React.useState(null);
   const [authError, setAuthError] = React.useState("");
   const [authLoading, setAuthLoading] = React.useState(false);
 
@@ -95,7 +97,10 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     setFormEmail("");
     setFormPassword("");
     setFormConfirmPassword("");
+    setForm2FACode("");
+    setPending2FAUserId(null);
     setAuthError("");
+    setAuthMode("login");
   }
 
   function resetAuthFieldsForMode(nextMode) {
@@ -151,15 +156,57 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
         data = await authApi.login({ username: u, password: p });
       }
 
+      // Check if 2FA is required
+      if (data.requires2FA) {
+        setPending2FAUserId(data.userId);
+        setAuthMode("2fa");
+        setAuthLoading(false);
+        return;
+      }
+
       onLogin(data.user);
       setIsAuthModalOpen(false);
       setFormUsername("");
       setFormEmail("");
       setFormPassword("");
       setFormConfirmPassword("");
+      setForm2FACode("");
+      setPending2FAUserId(null);
       setAuthError("");
     } catch (err) {
       setAuthError(err.message || "Authentication failed. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  async function handle2FASubmit(e) {
+    e.preventDefault();
+
+    const code = form2FACode.replace(/\D/g, "");
+
+    if (!code) {
+      setAuthError("Please enter your 2FA code.");
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError("");
+
+    try {
+      const data = await authApi.validate2FA(pending2FAUserId, code);
+
+      onLogin(data.user);
+      setIsAuthModalOpen(false);
+      setFormUsername("");
+      setFormEmail("");
+      setFormPassword("");
+      setFormConfirmPassword("");
+      setForm2FACode("");
+      setPending2FAUserId(null);
+      setAuthError("");
+    } catch (err) {
+      setAuthError(err.message || "Invalid 2FA code. Please try again.");
     } finally {
       setAuthLoading(false);
     }
@@ -653,44 +700,95 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
             <img className="loginGraphic" src={loginGraphic} alt="" aria-hidden="true" />
 
             <h2 className="loginTitle">
-              {authMode === "login" ? "Log in now and start reading!" : "Sign up and start reading!"}
+              {authMode === "2fa"
+                ? "Two-Factor Authentication"
+                : authMode === "login"
+                ? "Log in now and start reading!"
+                : "Sign up and start reading!"}
             </h2>
 
-            <p className="loginSub">Discover stories and create your own to share with others</p>
+            <p className="loginSub">
+              {authMode === "2fa"
+                ? "Enter the code from your authenticator app"
+                : "Discover stories and create your own to share with others"}
+            </p>
 
-            <button type="button" className="googleBtn" onClick={handleGoogleContinue}>
-              <span className="googleDot" aria-hidden="true">
-                G
-              </span>
-              <span className="googleText">Continue with Google</span>
-            </button>
+            {authMode !== "2fa" && (
+              <>
+                <button type="button" className="googleBtn" onClick={handleGoogleContinue}>
+                  <span className="googleDot" aria-hidden="true">
+                    G
+                  </span>
+                  <span className="googleText">Continue with Google</span>
+                </button>
 
-            <div className="authSwitch">
-              {authMode === "login" ? (
-                <>
-                  <span>Dont have an account ? </span>
-                  <button
-                    type="button"
-                    className="authLink"
-                    onClick={() => resetAuthFieldsForMode("signup")}
-                  >
-                    Sign Up
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span>Already have an account ? </span>
-                  <button
-                    type="button"
-                    className="authLink"
-                    onClick={() => resetAuthFieldsForMode("login")}
-                  >
-                    Log In
-                  </button>
-                </>
-              )}
-            </div>
+                <div className="authSwitch">
+                  {authMode === "login" ? (
+                    <>
+                      <span>Dont have an account ? </span>
+                      <button
+                        type="button"
+                        className="authLink"
+                        onClick={() => resetAuthFieldsForMode("signup")}
+                      >
+                        Sign Up
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span>Already have an account ? </span>
+                      <button
+                        type="button"
+                        className="authLink"
+                        onClick={() => resetAuthFieldsForMode("login")}
+                      >
+                        Log In
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
 
+            {authMode === "2fa" ? (
+              <form className="loginForm" onSubmit={handle2FASubmit}>
+                <label className="loginField">
+                  <span className="loginLabel">Authentication Code</span>
+                  <input
+                    className="loginInput"
+                    value={form2FACode}
+                    onChange={(e) => setForm2FACode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                    placeholder="Enter 6-digit code or backup code"
+                    autoFocus
+                    style={{ textAlign: "center", letterSpacing: 4 }}
+                  />
+                </label>
+
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: -4, marginBottom: 8 }}>
+                  You can also use a backup code (format: XXXX-XXXX)
+                </p>
+
+                {authError ? <div className="authError">{authError}</div> : null}
+
+                <button type="submit" className="loginPrimary" disabled={authLoading}>
+                  {authLoading ? "Verifying..." : "Verify"}
+                </button>
+
+                <button
+                  type="button"
+                  className="authLink"
+                  style={{ marginTop: 12, display: "block", width: "100%", textAlign: "center" }}
+                  onClick={() => {
+                    setAuthMode("login");
+                    setPending2FAUserId(null);
+                    setForm2FACode("");
+                    setAuthError("");
+                  }}
+                >
+                  Back to Login
+                </button>
+              </form>
+            ) : (
             <form className="loginForm" onSubmit={handleAuthSubmit}>
               <label className="loginField">
                 <span className="loginLabel">Username</span>
@@ -761,6 +859,7 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
                 {authLoading ? "Please wait..." : authMode === "login" ? "Log In" : "Create Account"}
               </button>
             </form>
+            )}
           </div>
         </div>
       ) : null}

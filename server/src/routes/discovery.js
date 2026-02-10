@@ -35,8 +35,8 @@ router.get("/genres/:slug", optionalAuth, async (req, res, next) => {
     const query = { genre: genre.name, privacy: "Public", status: "published" };
 
     let sortOption = { publishedAt: -1 };
-    if (sort === "popular") sortOption = { "stats.views": -1 };
-    if (sort === "rating") sortOption = { "stats.avgRating": -1 };
+    if (sort === "popular") sortOption = { views: -1 };
+    if (sort === "rating") sortOption = { likesCount: -1 };
 
     const [works, total] = await Promise.all([
       Work.find(query)
@@ -110,8 +110,8 @@ router.get("/fandoms/:slug", optionalAuth, async (req, res, next) => {
     const query = { fandom: fandom.name, privacy: "Public", status: "published" };
 
     let sortOption = { publishedAt: -1 };
-    if (sort === "popular") sortOption = { "stats.views": -1 };
-    if (sort === "rating") sortOption = { "stats.avgRating": -1 };
+    if (sort === "popular") sortOption = { views: -1 };
+    if (sort === "rating") sortOption = { likesCount: -1 };
 
     const [works, total] = await Promise.all([
       Work.find(query)
@@ -183,18 +183,13 @@ router.get("/tags/:slug", optionalAuth, async (req, res, next) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const query = {
-      $or: [
-        { "tags.genre": tag.name },
-        { "tags.tropes": tag.name },
-        { "tags.custom": tag.name },
-        { "tags.content": tag.name },
-      ],
+      tags: tag.name,
       privacy: "Public",
       status: "published",
     };
 
     let sortOption = { publishedAt: -1 };
-    if (sort === "popular") sortOption = { "stats.views": -1 };
+    if (sort === "popular") sortOption = { views: -1 };
 
     const [works, total] = await Promise.all([
       Work.find(query)
@@ -250,7 +245,7 @@ router.get("/search", optionalAuth, async (req, res, next) => {
 
       const [works, workCount] = await Promise.all([
         Work.find(workQuery)
-          .sort({ "stats.views": -1 })
+          .sort({ views: -1 })
           .skip(type === "works" ? skip : 0)
           .limit(type === "works" ? parseInt(limit) : 5)
           .select("-chapters"),
@@ -348,7 +343,7 @@ router.get("/trending", async (req, res, next) => {
       status: "published",
       publishedAt: { $gte: dateThreshold },
     })
-      .sort({ "stats.views": -1 })
+      .sort({ views: -1 })
       .limit(parseInt(limit))
       .select("-chapters");
 

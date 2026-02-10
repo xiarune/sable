@@ -4,14 +4,51 @@
   background: #f4efe6;
   min-height: calc(100vh - 64px);
   padding: 28px 28px 60px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.bookmarksHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 18px;
 }
 
 .bookmarksTitle {
-  margin: 0 0 18px;
+  margin: 0;
   font-family: "Cinzel Decorative", serif;
   font-size: 34px;
   color: #244b2b;
   letter-spacing: 0.5px;
+}
+
+.bookmarksFilters {
+  display: flex;
+  gap: 8px;
+}
+
+.bookmarksFilterBtn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: #244b2b;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.bookmarksFilterBtn:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.bookmarksFilterBtn.active {
+  background: #244b2b;
+  color: #fff;
 }
 
 .bookmarksGrid {

@@ -30,6 +30,8 @@
 
 .wv-page {
   width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   color: rgba(27, 27, 27, 0.92);
   font-family: "Libre Baskerville", serif;
 }
@@ -683,6 +685,102 @@
   opacity: 0.6;
 }
 
+/* Work info pills (genre, fandom) */
+.wv-workInfo {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wv-infoPill {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.wv-infoPill--genre {
+  background: rgba(36, 75, 43, 0.15);
+  color: rgba(36, 75, 43, 0.92);
+}
+
+.wv-infoPill--fandom {
+  background: rgba(11, 63, 135, 0.12);
+  color: rgba(11, 63, 135, 0.92);
+}
+
+.wv-infoPill--original {
+  background: rgba(214, 168, 64, 0.18);
+  color: rgba(140, 100, 20, 0.92);
+}
+
+.wv-themeDark .wv-infoPill--genre {
+  background: rgba(100, 180, 100, 0.18);
+  color: rgba(150, 220, 150, 0.92);
+}
+
+.wv-themeDark .wv-infoPill--fandom {
+  background: rgba(100, 150, 220, 0.18);
+  color: rgba(150, 190, 250, 0.92);
+}
+
+.wv-themeDark .wv-infoPill--original {
+  background: rgba(214, 168, 64, 0.22);
+  color: rgba(240, 200, 100, 0.92);
+}
+
+/* Tags */
+.wv-tags {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.wv-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(60, 55, 52, 0.75);
+}
+
+.wv-themeDark .wv-tag {
+  background: rgba(255, 255, 255, 0.10);
+  color: rgba(245, 240, 228, 0.70);
+}
+
+/* Author's audio */
+.wv-authorAudio {
+  margin: 14px 0;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: var(--radius-md);
+}
+
+.wv-authorAudioLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(36, 75, 43, 0.85);
+  margin-bottom: 8px;
+}
+
+.wv-themeDark .wv-authorAudio {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.wv-themeDark .wv-authorAudioLabel {
+  color: rgba(150, 220, 150, 0.85);
+}
+
 .wv-sep {
   height: 1px;
   background: rgba(0, 0, 0, 0.10);
@@ -714,6 +812,29 @@
   object-fit: cover;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-1);
+}
+
+.wv-coverDefault {
+  width: 200px;
+  height: 300px;
+  background: linear-gradient(145deg, #244b2b 0%, #1a3620 100%);
+  border: 2px solid rgba(214, 168, 64, 0.7);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wv-coverDefaultLabel {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 64px;
+  font-weight: 700;
+  color: rgba(214, 168, 64, 0.85);
+}
+
+.wv-themeDark .wv-coverDefault {
+  background: linear-gradient(145deg, #1a3620 0%, #0f200f 100%);
+  border-color: rgba(214, 168, 64, 0.5);
 }
 
 .wv-body {

@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { worksApi } from "../api";
 import "./YourWorks.css";
+import defaultCover from "../assets/images/sable_default_cover.png";
 
 export default function YourWorks() {
   const navigate = useNavigate();
@@ -28,6 +29,18 @@ export default function YourWorks() {
 
   function handleEdit(workId) {
     navigate(`/works/edit/${encodeURIComponent(workId)}`);
+  }
+
+  async function handleDelete(workId, title) {
+    if (!window.confirm(`Are you sure you want to delete "${title || 'this work'}"? This cannot be undone.`)) {
+      return;
+    }
+    try {
+      await worksApi.delete(workId);
+      setWorks((prev) => prev.filter((w) => w._id !== workId));
+    } catch (err) {
+      alert(err.message || "Failed to delete work");
+    }
   }
 
   if (loading) {
@@ -68,7 +81,15 @@ export default function YourWorks() {
             ) : (
               works.map((w) => (
                 <article key={String(w._id)} className="yw-card">
-                  <div className="yw-poster" aria-hidden="true" />
+                  <div
+                    className="yw-poster"
+                    aria-hidden="true"
+                    style={{
+                      backgroundImage: `url(${w.coverImageUrl || defaultCover})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  />
 
                   <h2 className="yw-cardTitle">
                     <Link
@@ -84,9 +105,18 @@ export default function YourWorks() {
                     {w.wordCount || 0} words &middot; {w.views || 0} views
                   </div>
 
-                  <button type="button" className="yw-cardBtn" onClick={() => handleEdit(w._id)}>
-                    Edit
-                  </button>
+                  <div className="yw-cardActions">
+                    <button type="button" className="yw-cardBtn" onClick={() => handleEdit(w._id)}>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="yw-cardBtn yw-cardBtn--delete"
+                      onClick={() => handleDelete(w._id, w.title)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </article>
               ))
             )}

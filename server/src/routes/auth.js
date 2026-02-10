@@ -5,13 +5,23 @@ const { z } = require("zod");
 const User = require("../models/User");
 const {
   generateToken,
+  createSession,
   setTokenCookie,
   clearTokenCookie,
   requireAuth,
 } = require("../middleware/auth");
+const Session = require("../models/Session");
 const { sendVerificationEmail, sendPasswordResetEmail } = require("../utils/email");
 const { authLimiter, passwordResetLimiter } = require("../middleware/rateLimiter");
 const logger = require("../utils/logger");
+const {
+  generateSecret,
+  generateQRCode,
+  verifyToken,
+  generateBackupCodes,
+  hashBackupCode,
+  verifyBackupCode,
+} = require("../utils/twoFactor");
 
 const router = express.Router();
 
@@ -58,7 +68,7 @@ router.post("/register", authLimiter, async (req, res, next) => {
   try {
     const result = registerSchema.safeParse(req.body);
     if (!result.success) {
-      const errors = result.error.errors.map((e) => e.message);
+      const errors = result.error?.issues?.map((e) => e.message) || result.error?.errors?.map((e) => e.message) || ["Invalid input"];
       return res.status(400).json({ error: errors[0], errors });
     }
 
@@ -99,7 +109,9 @@ router.post("/register", authLimiter, async (req, res, next) => {
       console.error("Failed to send verification email:", err);
     });
 
-    const token = generateToken(user._id);
+    // Create session and generate token
+    const session = await createSession(user._id, req);
+    const token = generateToken(user._id, session._id);
     setTokenCookie(res, token);
 
     logger.logAuth("register", user._id, true, req.ip);
@@ -119,7 +131,7 @@ router.post("/login", authLimiter, async (req, res, next) => {
   try {
     const result = loginSchema.safeParse(req.body);
     if (!result.success) {
-      const errors = result.error.errors.map((e) => e.message);
+      const errors = result.error?.issues?.map((e) => e.message) || result.error?.errors?.map((e) => e.message) || ["Invalid input"];
       return res.status(400).json({ error: errors[0], errors });
     }
 
@@ -137,7 +149,19 @@ router.post("/login", authLimiter, async (req, res, next) => {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
-    const token = generateToken(user._id);
+    // Check if 2FA is enabled
+    if (user.twoFactor?.enabled) {
+      logger.logAuth("login_2fa_required", user._id, true, req.ip);
+      return res.json({
+        requires2FA: true,
+        userId: user._id,
+        message: "Please enter your 2FA code",
+      });
+    }
+
+    // Create session and generate token
+    const session = await createSession(user._id, req);
+    const token = generateToken(user._id, session._id);
     setTokenCookie(res, token);
 
     logger.logAuth("login", user._id, true, req.ip);
@@ -170,9 +194,10 @@ router.get(
     session: false,
     failureRedirect: `${process.env.CLIENT_ORIGIN || "http://localhost:3000"}/login?error=google_auth_failed`,
   }),
-  (req, res) => {
+  async (req, res) => {
     const user = req.user;
-    const token = generateToken(user._id);
+    const session = await createSession(user._id, req);
+    const token = generateToken(user._id, session._id);
     setTokenCookie(res, token);
 
     const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
@@ -218,7 +243,7 @@ router.post("/username", requireAuth, async (req, res, next) => {
   try {
     const result = setUsernameSchema.safeParse(req.body);
     if (!result.success) {
-      const errors = result.error.errors.map((e) => e.message);
+      const errors = result.error?.issues?.map((e) => e.message) || result.error?.errors?.map((e) => e.message) || ["Invalid input"];
       return res.status(400).json({ error: errors[0], errors });
     }
 
@@ -250,7 +275,20 @@ router.post("/username", requireAuth, async (req, res, next) => {
 });
 
 // POST /auth/logout
-router.post("/logout", (req, res) => {
+router.post("/logout", async (req, res) => {
+  try {
+    // Delete session if token exists
+    const token = req.cookies.token;
+    if (token) {
+      const jwt = require("jsonwebtoken");
+      const decoded = jwt.decode(token);
+      if (decoded?.sessionId) {
+        await Session.findByIdAndDelete(decoded.sessionId);
+      }
+    }
+  } catch {
+    // Ignore errors during logout cleanup
+  }
   clearTokenCookie(res);
   res.json({ message: "Logged out successfully" });
 });
@@ -291,7 +329,7 @@ router.post("/set-username", requireAuth, async (req, res, next) => {
   try {
     const result = setUsernameSchema.safeParse(req.body);
     if (!result.success) {
-      const errors = result.error.errors.map((e) => e.message);
+      const errors = result.error?.issues?.map((e) => e.message) || result.error?.errors?.map((e) => e.message) || ["Invalid input"];
       return res.status(400).json({ error: errors[0], errors });
     }
 
@@ -450,6 +488,231 @@ router.post("/validate-reset-token", async (req, res, next) => {
     });
 
     res.json({ valid: !!user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ============================================
+// Two-Factor Authentication (2FA) Routes
+// ============================================
+
+// GET /auth/2fa/status - Get 2FA status
+router.get("/2fa/status", requireAuth, (req, res) => {
+  res.json({
+    enabled: req.user.twoFactor?.enabled || false,
+    method: req.user.twoFactor?.method || null,
+    hasBackupCodes: (req.user.twoFactor?.backupCodes?.length || 0) > 0,
+  });
+});
+
+// POST /auth/2fa/setup - Start 2FA setup
+router.post("/2fa/setup", requireAuth, async (req, res, next) => {
+  try {
+    // Generate new secret
+    const { secret, otpauthUrl } = generateSecret(req.user.username);
+
+    // Generate QR code
+    const qrCodeDataUrl = await generateQRCode(otpauthUrl);
+
+    // Store secret temporarily (not enabled yet)
+    req.user.twoFactor = {
+      ...req.user.twoFactor,
+      enabled: false,
+      method: "authenticator",
+      secret,
+    };
+    await req.user.save();
+
+    res.json({
+      message: "Scan the QR code with your authenticator app",
+      qrCode: qrCodeDataUrl,
+      secret, // Manual entry option
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/2fa/verify - Verify token and enable 2FA
+router.post("/2fa/verify", requireAuth, async (req, res, next) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ error: "Verification token is required" });
+    }
+
+    if (!req.user.twoFactor?.secret) {
+      return res.status(400).json({ error: "2FA setup not started. Please start setup first." });
+    }
+
+    // Verify the token
+    const isValid = verifyToken(token, req.user.twoFactor.secret);
+
+    if (!isValid) {
+      return res.status(400).json({ error: "Invalid verification code. Please try again." });
+    }
+
+    // Generate backup codes
+    const backupCodes = generateBackupCodes(10);
+    const hashedBackupCodes = backupCodes.map(hashBackupCode);
+
+    // Enable 2FA
+    req.user.twoFactor.enabled = true;
+    req.user.twoFactor.backupCodes = hashedBackupCodes;
+    await req.user.save();
+
+    logger.logAuth("2fa_enabled", req.user._id, true, req.ip);
+
+    res.json({
+      message: "Two-factor authentication enabled successfully",
+      backupCodes, // Show once, user must save these
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/2fa/disable - Disable 2FA
+router.post("/2fa/disable", requireAuth, async (req, res, next) => {
+  try {
+    const { password, token } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
+
+    // Verify password
+    const isPasswordValid = await req.user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    // If 2FA is enabled, require token or backup code
+    if (req.user.twoFactor?.enabled) {
+      if (!token) {
+        return res.status(400).json({ error: "2FA token or backup code is required" });
+      }
+
+      // Try TOTP first
+      let isTokenValid = verifyToken(token, req.user.twoFactor.secret);
+
+      // If TOTP fails, try backup code
+      if (!isTokenValid) {
+        const backupResult = verifyBackupCode(token, req.user.twoFactor.backupCodes || []);
+        isTokenValid = backupResult.valid;
+      }
+
+      if (!isTokenValid) {
+        return res.status(401).json({ error: "Invalid 2FA token or backup code" });
+      }
+    }
+
+    // Disable 2FA
+    req.user.twoFactor = {
+      enabled: false,
+      method: undefined,
+      secret: undefined,
+      backupCodes: [],
+    };
+    await req.user.save();
+
+    logger.logAuth("2fa_disabled", req.user._id, true, req.ip);
+
+    res.json({ message: "Two-factor authentication disabled" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/2fa/backup-codes - Regenerate backup codes
+router.post("/2fa/backup-codes", requireAuth, async (req, res, next) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
+
+    // Verify password
+    const isPasswordValid = await req.user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    if (!req.user.twoFactor?.enabled) {
+      return res.status(400).json({ error: "2FA is not enabled" });
+    }
+
+    // Generate new backup codes
+    const backupCodes = generateBackupCodes(10);
+    const hashedBackupCodes = backupCodes.map(hashBackupCode);
+
+    req.user.twoFactor.backupCodes = hashedBackupCodes;
+    await req.user.save();
+
+    logger.info("Backup codes regenerated", { userId: req.user._id });
+
+    res.json({
+      message: "New backup codes generated",
+      backupCodes,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/2fa/validate - Validate 2FA token (for login)
+router.post("/2fa/validate", authLimiter, async (req, res, next) => {
+  try {
+    const { userId, token } = req.body;
+
+    if (!userId || !token) {
+      return res.status(400).json({ error: "User ID and token are required" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user || !user.twoFactor?.enabled) {
+      return res.status(400).json({ error: "Invalid request" });
+    }
+
+    // Try TOTP first
+    let isValid = verifyToken(token, user.twoFactor.secret);
+    let usedBackupCode = false;
+
+    // If TOTP fails, try backup code
+    if (!isValid) {
+      const backupResult = verifyBackupCode(token, user.twoFactor.backupCodes || []);
+      if (backupResult.valid) {
+        isValid = true;
+        usedBackupCode = true;
+
+        // Remove used backup code
+        user.twoFactor.backupCodes.splice(backupResult.index, 1);
+        await user.save();
+      }
+    }
+
+    if (!isValid) {
+      logger.logAuth("2fa_validate", user._id, false, req.ip);
+      return res.status(401).json({ error: "Invalid 2FA code" });
+    }
+
+    // Create session and generate auth token
+    const session = await createSession(user._id, req);
+    const authToken = generateToken(user._id, session._id);
+    setTokenCookie(res, authToken);
+
+    logger.logAuth("2fa_validate", user._id, true, req.ip);
+
+    res.json({
+      message: "2FA verification successful",
+      user: user.toPublicJSON(),
+      usedBackupCode,
+      remainingBackupCodes: user.twoFactor.backupCodes.length,
+    });
   } catch (err) {
     next(err);
   }

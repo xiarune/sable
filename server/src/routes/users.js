@@ -88,7 +88,8 @@ router.put("/profile", requireAuth, async (req, res, next) => {
   try {
     const result = updateProfileSchema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: result.error.errors[0].message });
+      const errors = result.error?.issues?.map((e) => e.message) || ["Invalid input"];
+      return res.status(400).json({ error: errors[0], errors });
     }
 
     Object.assign(req.user, result.data);
@@ -105,7 +106,8 @@ router.put("/preferences", requireAuth, async (req, res, next) => {
   try {
     const result = updatePreferencesSchema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({ error: result.error.errors[0].message });
+      const errors = result.error?.issues?.map((e) => e.message) || ["Invalid input"];
+      return res.status(400).json({ error: errors[0], errors });
     }
 
     // Merge preferences

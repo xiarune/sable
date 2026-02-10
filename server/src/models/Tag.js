@@ -2,11 +2,16 @@ const mongoose = require("mongoose");
 
 const tagSchema = new mongoose.Schema(
   {
-    name: {
+    slug: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
+      trim: true,
+    },
+    name: {
+      type: String,
+      required: true,
       trim: true,
     },
     usageCount: {
@@ -19,6 +24,7 @@ const tagSchema = new mongoose.Schema(
   }
 );
 
+tagSchema.index({ slug: 1 });
 tagSchema.index({ name: 1 });
 tagSchema.index({ usageCount: -1 });
 

@@ -3,6 +3,12 @@
   box-sizing: border-box;
 }
 
+html {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
 html,
 body {
   height: 100%;
@@ -14,6 +20,15 @@ body {
     "Apple Color Emoji", "Segoe UI Emoji";
   background: #f3efe6; /* light parchment-ish */
   color: #1b1b1b;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+#root {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 a {
@@ -28,5 +43,19 @@ input {
 
 main {
   padding: 24px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  main {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 12px;
+  }
 }
 

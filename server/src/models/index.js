@@ -3,6 +3,7 @@ const User = require("./User");
 const Draft = require("./Draft");
 const Work = require("./Work");
 const Upload = require("./Upload");
+const Session = require("./Session");
 
 // Community & Social
 const Post = require("./Post");
@@ -36,6 +37,7 @@ module.exports = {
   Draft,
   Work,
   Upload,
+  Session,
 
   // Community & Social
   Post,

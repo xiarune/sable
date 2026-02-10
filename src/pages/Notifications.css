@@ -3,12 +3,15 @@
 .no-page {
   background: transparent;
   padding: 10px 0 24px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .no-shell {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 18px;
+  width: 100%;
 }
 
 /* Header */

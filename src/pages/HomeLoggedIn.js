@@ -1,74 +1,120 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import WorkCarousel from "../components/WorkCarousel";
+import { discoveryApi } from "../api";
 import homeIcon from "../assets/images/home_icon.png";
-
-const FOR_YOU = [
-  { id: "fy1", title: "For You", author: "Based on your likes" },
-  { id: "fy2", title: "For You", author: "Based on your likes" },
-  { id: "fy3", title: "For You", author: "Based on your likes" },
-  { id: "fy4", title: "For You", author: "Based on your likes" },
-  { id: "fy5", title: "For You", author: "Based on your likes" },
-  { id: "fy6", title: "For You", author: "Based on your likes" },
-];
-
-const POPULAR_WORKS = [
-  { id: "p1", title: "Space", author: "Olivia Wilson" },
-  { id: "p2", title: "The Girl of Ink & Stars", author: "Kiran Millwood Hargrave" },
-  { id: "p3", title: "Timeless", author: "Alexandra Emerson" },
-  { id: "p4", title: "Prince of Slytherin", author: "The Sinister Man" },
-  { id: "p5", title: "The Ocean’s Daughters", author: "Author Name" },
-  { id: "p6", title: "Title", author: "Author" },
-];
-
-const FEATURED_WORKS = [
-  { id: "f1", title: "Featured Work", author: "Author" },
-  { id: "f2", title: "Featured Work", author: "Author" },
-  { id: "f3", title: "Featured Work", author: "Author" },
-  { id: "f4", title: "Featured Work", author: "Author" },
-  { id: "f5", title: "Featured Work", author: "Author" },
-];
 
 export default function HomeLoggedIn() {
   const navigate = useNavigate();
+
+  const [trending, setTrending] = React.useState([]);
+  const [featured, setFeatured] = React.useState([]);
+  const [newest, setNewest] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function loadData() {
+      try {
+        const [trendingData, featuredData, newestData] = await Promise.all([
+          discoveryApi.trending("week", 12).catch(() => ({ works: [] })),
+          discoveryApi.featured().catch(() => ({ works: [] })),
+          discoveryApi.newest(1, 12).catch(() => ({ works: [] })),
+        ]);
+
+        // Transform works to carousel format
+        const transformWork = (w) => ({
+          id: w._id,
+          title: w.title || "Untitled",
+          author: w.authorName || "Unknown Author",
+          coverUrl: w.coverUrl,
+        });
+
+        setTrending((trendingData.works || []).map(transformWork));
+        setFeatured((featuredData.works || []).map(transformWork));
+        setNewest((newestData.works || []).map(transformWork));
+      } catch (err) {
+        console.error("Failed to load home data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
 
   function openWork(item) {
     if (!item?.id) return;
     navigate(`/works/${encodeURIComponent(item.id)}`);
   }
 
+  if (loading) {
+    return (
+      <div style={{ padding: 40, textAlign: "center" }}>
+        Loading...
+      </div>
+    );
+  }
+
+  // Show placeholder message if no works exist yet
+  const hasContent = trending.length > 0 || featured.length > 0 || newest.length > 0;
+
+  if (!hasContent) {
+    return (
+      <div style={{ padding: 40, textAlign: "center" }}>
+        <h2>Welcome to Sable</h2>
+        <p>No published works yet. Be the first to publish something!</p>
+        <button
+          onClick={() => navigate("/new-draft")}
+          style={{
+            padding: "12px 24px",
+            background: "#1f4a29",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "16px",
+          }}
+        >
+          Create a Draft
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <WorkCarousel
-        title="For You"
-        subtitle="Recommendations based on your reading & bookmarks"
-        items={FOR_YOU}
-        ariaLabel="For you works"
-        titleIcon={homeIcon}
-        onItemClick={openWork}
-      />
+      {trending.length > 0 && (
+        <WorkCarousel
+          title="Trending"
+          subtitle="Popular across Sable this week"
+          items={trending}
+          ariaLabel="Trending works"
+          titleIcon={homeIcon}
+          onItemClick={openWork}
+        />
+      )}
 
-      <WorkCarousel
-        title="Popular"
-        subtitle="Trending across Sable this week"
-        items={POPULAR_WORKS}
-        ariaLabel="Popular works"
-        titleIcon={homeIcon}
-        onItemClick={openWork}
-      />
+      {featured.length > 0 && (
+        <WorkCarousel
+          title="Featured"
+          subtitle="Curated picks from the Sable team"
+          items={featured}
+          ariaLabel="Featured works"
+          titleIcon={homeIcon}
+          onItemClick={openWork}
+        />
+      )}
 
-      <WorkCarousel
-        title="Featured"
-        subtitle="Curated picks from the front page"
-        items={FEATURED_WORKS}
-        ariaLabel="Featured works"
-        titleIcon={homeIcon}
-        onItemClick={openWork}
-      />
+      {newest.length > 0 && (
+        <WorkCarousel
+          title="New & Noteworthy"
+          subtitle="Fresh stories just published"
+          items={newest}
+          ariaLabel="New works"
+          titleIcon={homeIcon}
+          onItemClick={openWork}
+        />
+      )}
     </div>
   );
 }
-
-
-
-
