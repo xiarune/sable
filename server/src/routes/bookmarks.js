@@ -142,14 +142,61 @@ router.delete("/post/:postId", async (req, res, next) => {
   }
 });
 
+// POST /bookmarks/audio/:audioId - Bookmark an audio track
+router.post("/audio/:audioId", async (req, res, next) => {
+  try {
+    const { audioId } = req.params;
+    const { workId, title, authorUsername } = req.body;
+
+    const existing = await Bookmark.findOne({ userId: req.user._id, audioId });
+    if (existing) {
+      return res.status(400).json({ error: "Already bookmarked" });
+    }
+
+    const bookmark = await Bookmark.create({
+      userId: req.user._id,
+      type: "audio",
+      audioId,
+      workId,
+      title: title || "Audio Track",
+      authorUsername: authorUsername || "Unknown",
+    });
+
+    res.status(201).json({ message: "Audio bookmarked", bookmark });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /bookmarks/audio/:audioId - Remove audio bookmark
+router.delete("/audio/:audioId", async (req, res, next) => {
+  try {
+    const { audioId } = req.params;
+
+    const bookmark = await Bookmark.findOneAndDelete({
+      userId: req.user._id,
+      audioId,
+    });
+
+    if (!bookmark) {
+      return res.status(404).json({ error: "Bookmark not found" });
+    }
+
+    res.json({ message: "Bookmark removed" });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /bookmarks/check - Check if bookmarked
 router.get("/check", async (req, res, next) => {
   try {
-    const { workId, postId } = req.query;
+    const { workId, postId, audioId } = req.query;
 
     const query = { userId: req.user._id };
     if (workId) query.workId = workId;
     if (postId) query.postId = postId;
+    if (audioId) query.audioId = audioId;
 
     const bookmark = await Bookmark.findOne(query);
 

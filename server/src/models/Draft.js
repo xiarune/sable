@@ -6,6 +6,7 @@ const chapterSchema = new mongoose.Schema(
     title: { type: String, default: "Untitled Chapter" },
     body: { type: String, default: "" },
     order: { type: Number, required: true },
+    audioUrl: { type: String, default: "" },
   },
   { _id: false }
 );
@@ -33,7 +34,7 @@ const draftSchema = new mongoose.Schema(
     },
     skin: {
       type: String,
-      enum: ["Default", "Emerald", "Ivory", "Midnight"],
+      enum: ["Default", "Parchment"],
       default: "Default",
     },
     privacy: {

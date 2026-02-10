@@ -355,6 +355,15 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
             >
               About Us
             </NavLink>
+
+            <span className="divider" aria-hidden="true" />
+
+            <NavLink
+              to="/faq"
+              className={({ isActive }) => (isActive ? "navlink active" : "navlink")}
+            >
+              FAQ
+            </NavLink>
           </nav>
         </div>
 
@@ -397,6 +406,13 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
                   onClick={closeMobileMenu}
                 >
                   About Us
+                </NavLink>
+                <NavLink
+                  to="/faq"
+                  className={({ isActive }) => (isActive ? "mobile-navlink active" : "mobile-navlink")}
+                  onClick={closeMobileMenu}
+                >
+                  FAQ
                 </NavLink>
               </nav>
 

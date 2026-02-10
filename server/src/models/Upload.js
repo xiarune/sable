@@ -24,6 +24,24 @@ const uploadSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    // Audio-specific fields
+    title: {
+      type: String,
+      default: "",
+    },
+    duration: {
+      type: Number, // duration in seconds
+      default: 0,
+    },
+    workId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Work",
+      default: null,
+    },
+    plays: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

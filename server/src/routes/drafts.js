@@ -95,6 +95,7 @@ const chapterSchema = z.object({
   title: z.string().max(MAX_TITLE_LENGTH).default("Untitled Chapter"),
   body: z.string().max(MAX_BODY_LENGTH).default(""),
   order: z.number().int().min(0),
+  audioUrl: z.string().optional(),
 });
 
 const createDraftSchema = z.object({
@@ -111,7 +112,7 @@ const updateDraftSchema = z.object({
     .array(z.string().max(MAX_TAG_LENGTH))
     .max(MAX_TAGS, `Maximum ${MAX_TAGS} tags allowed`)
     .optional(),
-  skin: z.enum(["Default", "Emerald", "Ivory", "Midnight"]).optional(),
+  skin: z.enum(["Default", "Parchment"]).optional(),
   privacy: z.enum(["Public", "Following", "Private"]).optional(),
   language: z.enum(["English", "Vietnamese", "Japanese", "French", "Spanish"]).optional(),
   genre: z.string().max(100).optional(),
@@ -331,6 +332,7 @@ router.post("/:id/publish", async (req, res, next) => {
       title: ch.title || "Untitled Chapter",
       body: ch.body || "",
       order: ch.order || 0,
+      audioUrl: ch.audioUrl || "",
     }));
     work.tags = Array.isArray(draft.tags) ? [...draft.tags] : [];
     work.skin = draft.skin || "Default";

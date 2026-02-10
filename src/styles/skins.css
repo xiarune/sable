@@ -1,0 +1,130 @@
+/* =========================
+   SABLE WORK SKINS
+   These styles apply to the WorkView page based on the work's skin setting
+   ========================= */
+
+/* -------------------------
+   DEFAULT SKIN
+   The classic Sable reading experience - warm, inviting, forest-inspired
+   ------------------------- */
+.skin-default {
+  --skin-bg: #f4efe6;
+  --skin-card-bg: rgba(255, 255, 255, 0.92);
+  --skin-card-border: rgba(0, 0, 0, 0.08);
+  --skin-text: rgba(40, 38, 35, 0.92);
+  --skin-text-muted: rgba(60, 55, 52, 0.65);
+  --skin-accent: rgba(36, 75, 43, 0.92);
+  --skin-accent-light: rgba(36, 75, 43, 0.12);
+  --skin-link: #244b2b;
+  --skin-heading-font: "Cinzel Decorative", serif;
+  --skin-body-font: "Libre Baskerville", serif;
+}
+
+.skin-default .wv-shell {
+  background: var(--skin-bg);
+}
+
+.skin-default .wv-card,
+.skin-default .wv-controlsCard {
+  background: var(--skin-card-bg);
+  box-shadow: inset 0 0 0 1px var(--skin-card-border);
+}
+
+.skin-default .wv-title {
+  color: var(--skin-accent);
+  font-family: var(--skin-heading-font);
+}
+
+.skin-default .wv-author,
+.skin-default .wv-meta {
+  color: var(--skin-text-muted);
+}
+
+.skin-default .wv-chBody {
+  color: var(--skin-text);
+  font-family: var(--skin-body-font);
+}
+
+/* -------------------------
+   PARCHMENT SKIN
+   A warmer, more aged look with cream tones and sepia accents
+   ------------------------- */
+.skin-parchment {
+  --skin-bg: #f5f0e1;
+  --skin-card-bg: #faf6eb;
+  --skin-card-border: rgba(139, 119, 85, 0.18);
+  --skin-text: #3d3527;
+  --skin-text-muted: #7a6e5a;
+  --skin-accent: #6b4423;
+  --skin-accent-light: rgba(107, 68, 35, 0.12);
+  --skin-link: #6b4423;
+  --skin-heading-font: "Cinzel Decorative", serif;
+  --skin-body-font: "Libre Baskerville", serif;
+}
+
+.skin-parchment .wv-shell {
+  background: var(--skin-bg);
+}
+
+.skin-parchment .wv-card,
+.skin-parchment .wv-controlsCard {
+  background: var(--skin-card-bg);
+  box-shadow: inset 0 0 0 1px var(--skin-card-border);
+  border: 1px solid rgba(139, 119, 85, 0.12);
+}
+
+.skin-parchment .wv-title {
+  color: var(--skin-accent);
+  font-family: var(--skin-heading-font);
+}
+
+.skin-parchment .wv-author,
+.skin-parchment .wv-meta {
+  color: var(--skin-text-muted);
+}
+
+.skin-parchment .wv-chBody {
+  color: var(--skin-text);
+  font-family: var(--skin-body-font);
+  line-height: 1.85;
+}
+
+.skin-parchment .wv-chapterTitle {
+  color: var(--skin-accent);
+  border-bottom-color: rgba(139, 119, 85, 0.25);
+}
+
+.skin-parchment .wv-navBtn {
+  background: rgba(107, 68, 35, 0.08);
+  color: var(--skin-accent);
+}
+
+.skin-parchment .wv-navBtn:hover {
+  background: rgba(107, 68, 35, 0.15);
+}
+
+.skin-parchment .wv-pillBtn {
+  background: rgba(107, 68, 35, 0.10);
+  color: var(--skin-accent);
+}
+
+.skin-parchment .wv-pillBtn:hover {
+  background: rgba(107, 68, 35, 0.18);
+}
+
+/* Parchment decorative touches */
+.skin-parchment .wv-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(139, 119, 85, 0.3) 20%,
+    rgba(139, 119, 85, 0.3) 80%,
+    transparent
+  );
+  border-radius: 12px 12px 0 0;
+}

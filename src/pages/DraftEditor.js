@@ -13,9 +13,16 @@ import langIcon from "../assets/images/lang_icon.png";
 import imageIcon from "../assets/images/image_icon.png";
 import previewIcon from "../assets/images/preview_icon.png";
 
-const SKIN_OPTIONS = ["Default", "Emerald", "Ivory", "Midnight"];
+const SKIN_OPTIONS = ["Default", "Parchment"];
 const PRIVACY_OPTIONS = ["Public", "Following", "Private"];
 const LANGUAGE_OPTIONS = ["English", "Vietnamese", "Japanese", "French", "Spanish"];
+
+// Common genres for creative writing
+const GENRE_SUGGESTIONS = [
+  "Romance", "Fantasy", "Science Fiction", "Mystery", "Thriller", "Horror",
+  "Drama", "Comedy", "Action", "Adventure", "Slice of Life", "Angst",
+  "Fluff", "Hurt/Comfort", "Historical", "Supernatural", "Dystopian"
+];
 
 function makeId(prefix = "ch") {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -179,6 +186,9 @@ export default function DraftEditor() {
   const [skin, setSkin] = React.useState("Default");
   const [privacy, setPrivacy] = React.useState("Public");
   const [language, setLanguage] = React.useState("English");
+  const [genre, setGenre] = React.useState("");
+  const [fandom, setFandom] = React.useState("");
+  const [coverImageUrl, setCoverImageUrl] = React.useState("");
 
   const [audioUrl, setAudioUrl] = React.useState("");
   const [imageUrls, setImageUrls] = React.useState([]);
@@ -256,6 +266,9 @@ export default function DraftEditor() {
         setSkin(draft.skin || "Default");
         setPrivacy(draft.privacy || "Public");
         setLanguage(draft.language || "English");
+        setGenre(draft.genre || "");
+        setFandom(draft.fandom || "");
+        setCoverImageUrl(draft.coverImageUrl || "");
         setAudioUrl(draft.audioUrl || "");
         setImageUrls(Array.isArray(draft.imageUrls) ? draft.imageUrls : []);
       } catch (err) {
@@ -287,6 +300,9 @@ export default function DraftEditor() {
         skin,
         privacy,
         language,
+        genre: genre.trim() || "",
+        fandom: fandom.trim() || "Original Work",
+        coverImageUrl,
         audioUrl,
         imageUrls,
       };
@@ -303,6 +319,12 @@ export default function DraftEditor() {
 
   // Publish draft via API
   async function handlePost() {
+    if (!genre.trim()) {
+      setStatus("Genre is required before publishing.");
+      setTimeout(() => setStatus(""), 3000);
+      return;
+    }
+
     try {
       setPublishing(true);
       setStatus("Publishing...");
@@ -320,6 +342,9 @@ export default function DraftEditor() {
         skin,
         privacy,
         language,
+        genre: genre.trim() || "",
+        fandom: fandom.trim() || "Original Work",
+        coverImageUrl,
         audioUrl,
         imageUrls,
       };
@@ -338,6 +363,24 @@ export default function DraftEditor() {
     }
   }
 
+  // Upload cover image
+  async function handleCoverUpload(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    try {
+      setStatus("Uploading cover...");
+      const data = await uploadsApi.image(file);
+      setCoverImageUrl(data.url);
+      setStatus("Cover uploaded.");
+    } catch (err) {
+      setStatus(err.message || "Cover upload failed.");
+    } finally {
+      e.target.value = "";
+      setTimeout(() => setStatus(""), 1500);
+    }
+  }
+
   // Upload audio to S3
   async function handleAudioUpload(e) {
     const file = e.target.files && e.target.files[0];
@@ -346,7 +389,7 @@ export default function DraftEditor() {
     try {
       setStatus("Uploading audio...");
       const data = await uploadsApi.audio(file);
-      setAudioUrl(data.upload.url);
+      setAudioUrl(data.url);
       setStatus("Audio attached.");
     } catch (err) {
       setStatus(err.message || "Audio upload failed.");
@@ -364,7 +407,7 @@ export default function DraftEditor() {
     try {
       setStatus("Uploading image...");
       const data = await uploadsApi.image(file);
-      const url = data.upload.url;
+      const url = data.url;
 
       setImageUrls((prev) => [url, ...prev]);
 
@@ -431,6 +474,20 @@ export default function DraftEditor() {
               active={activeTool === "tags"}
             />
             <ActionPill
+              icon="📚"
+              label="Genre"
+              subLabel={genre || "Required"}
+              onClick={() => toggleTool("genre")}
+              active={activeTool === "genre"}
+            />
+            <ActionPill
+              icon="🌍"
+              label="Fandom"
+              subLabel={fandom || "Original"}
+              onClick={() => toggleTool("fandom")}
+              active={activeTool === "fandom"}
+            />
+            <ActionPill
               icon={<IconImg src={skinsIcon} alt="Skin" />}
               label="Skin"
               subLabel={skin}
@@ -450,6 +507,13 @@ export default function DraftEditor() {
               subLabel={language}
               onClick={() => toggleTool("language")}
               active={activeTool === "language"}
+            />
+            <ActionPill
+              icon="🖼️"
+              label="Cover"
+              subLabel={coverImageUrl ? "Set" : "None"}
+              onClick={() => toggleTool("cover")}
+              active={activeTool === "cover"}
             />
             <ActionPill
               icon="🎧"
@@ -541,6 +605,49 @@ export default function DraftEditor() {
             </div>
           )}
 
+          {activeTool === "genre" && (
+            <div className="nd-toolPanel">
+              <div className="nd-toolTitle">Genre <span style={{ color: "#c44", fontWeight: "normal" }}>(Required)</span></div>
+              <input
+                className="nd-toolInput"
+                placeholder="Enter genre (e.g., Romance, Fantasy)"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+              />
+              <div className="nd-toolHint" style={{ marginTop: 8 }}>
+                Suggestions:
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                  {GENRE_SUGGESTIONS.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      className="nd-tag"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => setGenre(g)}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTool === "fandom" && (
+            <div className="nd-toolPanel">
+              <div className="nd-toolTitle">Fandom</div>
+              <input
+                className="nd-toolInput"
+                placeholder="Enter fandom (leave empty for Original Work)"
+                value={fandom}
+                onChange={(e) => setFandom(e.target.value)}
+              />
+              <div className="nd-toolHint">
+                If your work is not based on an existing property, leave empty or enter "Original Work".
+              </div>
+            </div>
+          )}
+
           {activeTool === "skin" && (
             <div className="nd-toolPanel">
               <div className="nd-toolTitle">Skin</div>
@@ -551,6 +658,9 @@ export default function DraftEditor() {
                     <span>{opt}</span>
                   </label>
                 ))}
+              </div>
+              <div className="nd-toolHint">
+                Choose a reading skin for your work. Readers will see this theme when viewing.
               </div>
             </div>
           )}
@@ -577,6 +687,29 @@ export default function DraftEditor() {
                   <option key={opt}>{opt}</option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {activeTool === "cover" && (
+            <div className="nd-toolPanel">
+              <div className="nd-toolTitle">Cover Image / Thumbnail</div>
+              <input className="nd-toolInput" type="file" accept="image/*" onChange={handleCoverUpload} />
+              <div className="nd-toolHint">
+                Upload a cover image for your work. If not set, a default Sable cover will be used.
+              </div>
+              {coverImageUrl && (
+                <div style={{ marginTop: 12 }}>
+                  <img src={coverImageUrl} alt="Cover preview" style={{ maxWidth: 200, borderRadius: 8 }} />
+                  <button
+                    type="button"
+                    className="nd-ornateBtn nd-ornateBtn--small"
+                    style={{ marginTop: 8, display: "block" }}
+                    onClick={() => setCoverImageUrl("")}
+                  >
+                    Remove Cover
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

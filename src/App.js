@@ -41,6 +41,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import TwoFactorSetup from "./pages/TwoFactorSetup";
+import FAQ from "./pages/FAQ";
 
 export default function App() {
   const [isAuthed, setIsAuthed] = React.useState(false);
@@ -108,6 +109,7 @@ export default function App() {
           <Route path="/browse" element={<Browse />} />
           <Route path="/communities" element={<Communities isAuthed={isAuthed} username={effectiveUsername} />} />
           <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<FAQ />} />
 
           {/* Support / payments */}
           <Route path="/support" element={<SupportSable />} />

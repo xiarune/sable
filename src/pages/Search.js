@@ -163,7 +163,7 @@ export default function Search() {
                           {w.title || "Untitled"}
                         </Link>
                         <div className="searchResultAuthor">
-                          by {w.authorName || "Unknown"}
+                          by <Link to={`/communities/${encodeURIComponent(w.authorUsername || "unknown")}`} className="searchAuthorLink">{w.authorUsername || "Unknown"}</Link>
                         </div>
                       </div>
                       <div className="searchResultRight">

@@ -1294,33 +1294,47 @@ export default function Settings({ username, onLogout }) {
                 </div>
 
                 <p className="st-subtitle">
-                  Create custom CSS skins for your community page and works.
+                  Choose reading skins for works. When you select a skin in the editor, readers will see that theme when viewing.
                 </p>
 
                 <div className="st-skinsBlock">
-                  <h2 className="st-skinsHeader">Community Page Skins</h2>
+                  <h2 className="st-skinsHeader">Built-in Work Skins</h2>
+                  <p className="st-mutedNote" style={{ marginBottom: 12 }}>
+                    These skins are available in the work editor under the "Skin" option.
+                  </p>
 
-                  <div className="st-skinTray" aria-label="Community page skins">
-                    <button type="button" className="st-skinTile">
-                      <div className="st-skinPreview" />
-                      <div className="st-skinName">Classic Sable</div>
-                    </button>
+                  <div className="st-skinTray" aria-label="Work skins">
+                    <div className="st-skinTile st-skinTile--builtin">
+                      <div className="st-skinPreview st-skinPreview--default">
+                        <div className="st-skinPreviewText">Aa</div>
+                      </div>
+                      <div className="st-skinName">Default</div>
+                      <div className="st-skinDesc">Classic Sable - warm, forest-inspired reading</div>
+                    </div>
 
-                    <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />
+                    <div className="st-skinTile st-skinTile--builtin">
+                      <div className="st-skinPreview st-skinPreview--parchment">
+                        <div className="st-skinPreviewText">Aa</div>
+                      </div>
+                      <div className="st-skinName">Parchment</div>
+                      <div className="st-skinDesc">Warm cream tones with sepia accents</div>
+                    </div>
+
                     <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />
                     <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />
                   </div>
                 </div>
 
-                <div className="st-skinsBlock" style={{ marginTop: 18 }}>
-                  <h2 className="st-skinsHeader">Work Skins</h2>
+                <div className="st-skinsBlock" style={{ marginTop: 24 }}>
+                  <h2 className="st-skinsHeader">Custom Skins</h2>
+                  <p className="st-mutedNote" style={{ marginBottom: 12 }}>
+                    Create your own CSS skins. See the <a href="/faq#skins" style={{ color: "#244b2b" }}>FAQ</a> for a tutorial.
+                  </p>
 
-                  <div className="st-skinTray" aria-label="Work skins">
-                    <button type="button" className="st-skinTile">
-                      <div className="st-skinPreview" />
-                      <div className="st-skinName">Parchment Noir</div>
-                    </button>
-
+                  <div className="st-skinTray" aria-label="Custom skins">
+                    <div className="st-skinTile st-skinTile--empty">
+                      <div className="st-skinEmptyText">No custom skins yet</div>
+                    </div>
                     <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />
                     <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />
                     <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />

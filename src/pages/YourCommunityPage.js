@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./YourCommunityPage.css";
+import { uploadsApi, worksApi } from "../api";
 
 import bannerImg from "../assets/images/community_banner.png";
 import profileImg from "../assets/images/profile_picture.png";
@@ -49,12 +50,6 @@ const MOCK_SKINS = [
   { id: "s1", name: "Dark Academia", downloads: 234, likes: 89 },
   { id: "s2", name: "Cottagecore Dreams", downloads: 156, likes: 67 },
   { id: "s3", name: "Midnight Blue", downloads: 312, likes: 124 },
-];
-
-const MOCK_AUDIOS = [
-  { id: "a1", title: "Chapter 1 Reading", duration: "12:34", plays: 567 },
-  { id: "a2", title: "Character Voice: Luna", duration: "3:45", plays: 234 },
-  { id: "a3", title: "Ambient Writing Music", duration: "45:00", plays: 1289 },
 ];
 
 const INITIAL_CHAT_MESSAGES = [
@@ -106,6 +101,33 @@ export default function YourCommunityPage({ username }) {
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
 
+  // Real data state
+  const [userWorks, setUserWorks] = React.useState([]);
+  const [userAudios, setUserAudios] = React.useState([]);
+
+  // Fetch user's works and audios
+  React.useEffect(() => {
+    async function loadUserData() {
+      try {
+        // Fetch user's works
+        const worksData = await worksApi.mine();
+        setUserWorks(worksData.works || []);
+      } catch (err) {
+        console.error("Failed to load works:", err);
+      }
+
+      try {
+        // Fetch user's audios
+        const audiosData = await uploadsApi.list("audio");
+        setUserAudios(audiosData.uploads || []);
+      } catch (err) {
+        console.error("Failed to load audios:", err);
+      }
+    }
+
+    loadUserData();
+  }, []);
+
   // Widget settings state
   const [widgets, setWidgets] = React.useState(() => getWidgetSettings());
 
@@ -113,6 +135,7 @@ export default function YourCommunityPage({ username }) {
   const [chatMessages, setChatMessages] = React.useState(INITIAL_CHAT_MESSAGES);
   const [chatInput, setChatInput] = React.useState("");
   const chatEndRef = React.useRef(null);
+  const isInitialChatMount = React.useRef(true);
 
   function handleSendMessage() {
     const text = chatInput.trim();
@@ -134,7 +157,12 @@ export default function YourCommunityPage({ username }) {
     }
   }
 
+  // Only scroll chat to bottom when new messages are added, not on initial load
   React.useEffect(() => {
+    if (isInitialChatMount.current) {
+      isInitialChatMount.current = false;
+      return;
+    }
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
@@ -335,25 +363,33 @@ export default function YourCommunityPage({ username }) {
               {/* Tab Content */}
               {activeTab === "works" && (
                 <div className="ycp-tabContent" aria-label="Works">
-                  <div className="ycp-worksRow">
-                    {MOCK_WORKS.map((work) => (
-                      <div
-                        key={work.id}
-                        className="ycp-workCard"
-                        role="button"
-                        tabIndex={0}
-                        aria-label={work.title}
-                        onClick={() => handleWorkClick(work.id)}
-                        onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work.id)}
-                      >
-                        <div className="ycp-workCover ycp-workCover--placeholder" />
-                        <div className="ycp-workInfo">
-                          <div className="ycp-workTitle">{work.title}</div>
-                          <div className="ycp-workMeta">{work.genre} · {work.wordCount} words</div>
+                  {userWorks.length === 0 ? (
+                    <div className="ycp-emptyState">No published works yet.</div>
+                  ) : (
+                    <div className="ycp-worksRow">
+                      {userWorks.map((work) => (
+                        <div
+                          key={work._id}
+                          className="ycp-workCard"
+                          role="button"
+                          tabIndex={0}
+                          aria-label={work.title}
+                          onClick={() => handleWorkClick(work._id)}
+                          onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work._id)}
+                        >
+                          {work.coverImageUrl ? (
+                            <img className="ycp-workCover" src={work.coverImageUrl} alt="" />
+                          ) : (
+                            <div className="ycp-workCover ycp-workCover--placeholder" />
+                          )}
+                          <div className="ycp-workInfo">
+                            <div className="ycp-workTitle">{work.title}</div>
+                            <div className="ycp-workMeta">{work.genre || "—"} · {work.wordCount?.toLocaleString() || 0} words</div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -391,17 +427,23 @@ export default function YourCommunityPage({ username }) {
 
               {activeTab === "audios" && (
                 <div className="ycp-tabContent" aria-label="Audios">
-                  <div className="ycp-listItems">
-                    {MOCK_AUDIOS.map((audio) => (
-                      <div key={audio.id} className="ycp-listItem">
-                        <div className="ycp-listItemMain">
-                          <div className="ycp-listItemTitle">{audio.title}</div>
-                          <div className="ycp-listItemMeta">{audio.duration} · {audio.plays} plays</div>
+                  {userAudios.length === 0 ? (
+                    <div className="ycp-emptyState">No audio uploads yet.</div>
+                  ) : (
+                    <div className="ycp-listItems">
+                      {userAudios.map((audio) => (
+                        <div key={audio._id} className="ycp-listItem ycp-audioItem">
+                          <div className="ycp-listItemMain">
+                            <div className="ycp-listItemTitle">{audio.title || "Audio Track"}</div>
+                            <div className="ycp-listItemMeta">
+                              {audio.plays || 0} plays · {new Date(audio.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <audio controls src={audio.url} className="ycp-audioPlayer" />
                         </div>
-                        <button type="button" className="ycp-listItemBtn">▶ Play</button>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -457,22 +499,30 @@ export default function YourCommunityPage({ username }) {
                   <div className="ycp-panel ycp-panel--recentWorks">
                     <div className="ycp-panelTitle">Recent Works</div>
                     <div className="ycp-recentWorksBox">
-                      {MOCK_WORKS.slice(0, 3).map((work) => (
-                        <div
-                          key={work.id}
-                          className="ycp-recentWorkItem"
-                          onClick={() => handleWorkClick(work.id)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work.id)}
-                        >
-                          <div className="ycp-recentWorkCover" />
-                          <div className="ycp-recentWorkInfo">
-                            <div className="ycp-recentWorkTitle">{work.title}</div>
-                            <div className="ycp-recentWorkMeta">{work.genre} · {work.wordCount}</div>
+                      {userWorks.length === 0 ? (
+                        <div className="ycp-emptyState ycp-emptyState--small">No works yet</div>
+                      ) : (
+                        userWorks.slice(0, 3).map((work) => (
+                          <div
+                            key={work._id}
+                            className="ycp-recentWorkItem"
+                            onClick={() => handleWorkClick(work._id)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work._id)}
+                          >
+                            {work.coverImageUrl ? (
+                              <img className="ycp-recentWorkCover" src={work.coverImageUrl} alt="" />
+                            ) : (
+                              <div className="ycp-recentWorkCover" />
+                            )}
+                            <div className="ycp-recentWorkInfo">
+                              <div className="ycp-recentWorkTitle">{work.title}</div>
+                              <div className="ycp-recentWorkMeta">{work.genre || "—"} · {work.wordCount?.toLocaleString() || 0}</div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </div>
                 )}
