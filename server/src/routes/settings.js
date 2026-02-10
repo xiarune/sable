@@ -8,7 +8,7 @@ const Work = require("../models/Work");
 const Follow = require("../models/Follow");
 const Session = require("../models/Session");
 const { requireAuth } = require("../middleware/auth");
-const { sendEmail } = require("../utils/email");
+const { sendEmailChangeEmail } = require("../utils/email");
 const logger = require("../utils/logger");
 
 const router = express.Router();
@@ -89,22 +89,11 @@ router.put("/account/email", requireAuth, async (req, res, next) => {
     // Store pending email change
     req.user.pendingEmail = newEmail.toLowerCase();
     req.user.pendingEmailToken = verificationToken;
-    req.user.pendingEmailExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    req.user.pendingEmailExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await req.user.save();
 
     // Send verification email to new address
-    const verifyUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/verify-email-change/${verificationToken}`;
-    await sendEmail({
-      to: newEmail,
-      subject: "Verify your new email address - Sable",
-      html: `
-        <h1>Verify Your New Email</h1>
-        <p>Click the link below to verify your new email address:</p>
-        <a href="${verifyUrl}">${verifyUrl}</a>
-        <p>This link expires in 24 hours.</p>
-        <p>If you didn't request this change, you can ignore this email.</p>
-      `,
-    });
+    await sendEmailChangeEmail(req.user, newEmail.toLowerCase(), verificationToken);
 
     res.json({ message: "Verification email sent to your new address" });
   } catch (err) {

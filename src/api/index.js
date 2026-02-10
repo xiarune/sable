@@ -9,5 +9,6 @@ export { default as settingsApi } from "./settings";
 export { default as usersApi } from "./users";
 export { default as discoveryApi } from "./discovery";
 export { default as bookmarksApi } from "./bookmarks";
+export { default as commentsApi } from "./comments";
 export { default as importApi } from "./import";
 export { default as API_BASE_URL } from "./config";

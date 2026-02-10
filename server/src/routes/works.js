@@ -224,6 +224,9 @@ router.post("/publish/:draftId", requireAuth, async (req, res, next) => {
 
     await work.save();
 
+    // Delete the draft after successful publish
+    await Draft.findByIdAndDelete(draft._id);
+
     res.status(201).json({ message: "Work published", work });
   } catch (err) {
     next(err);

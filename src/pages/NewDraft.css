@@ -452,6 +452,55 @@ textarea.nd-textarea {
   white-space: nowrap;
 }
 
+/* Formatting Toolbar */
+.nd-formatToolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  margin-top: 6px;
+}
 
+.nd-formatBtn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
 
+.nd-formatBtn:hover {
+  background: rgba(36, 75, 43, 0.1);
+  border-color: rgba(36, 75, 43, 0.3);
+}
+
+.nd-formatBtn:active {
+  background: rgba(36, 75, 43, 0.2);
+}
+
+.nd-formatDivider {
+  width: 1px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.15);
+  margin: 0 6px;
+}
+
+/* Adjust textarea when toolbar is present */
+.nd-formatToolbar + .nd-textarea {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  margin-top: 0;
+}
 

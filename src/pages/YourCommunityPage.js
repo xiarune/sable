@@ -75,6 +75,11 @@ export default function YourCommunityPage({ username }) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Scroll to top on mount
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const initialDisplayName = (username || "john.doe").toUpperCase();
 
   const [isEditing, setIsEditing] = React.useState(false);

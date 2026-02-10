@@ -351,6 +351,9 @@ router.post("/:id/publish", async (req, res, next) => {
     // 6. Update taxonomy indexes (genres, fandoms, tags)
     await updateTaxonomyIndexes(draft, true);
 
+    // 7. Delete the draft after successful publish
+    await Draft.findByIdAndDelete(draft._id);
+
     res.status(201).json({
       message: "Work published",
       work,
