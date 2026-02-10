@@ -2,7 +2,79 @@ const express = require("express");
 const { z } = require("zod");
 const Draft = require("../models/Draft");
 const Work = require("../models/Work");
+const Genre = require("../models/Genre");
+const Fandom = require("../models/Fandom");
+const Tag = require("../models/Tag");
 const { requireAuth } = require("../middleware/auth");
+
+// Helper to create slug from name
+function createSlug(name) {
+  return (name || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Update genre/fandom/tag indexes when publishing
+async function updateTaxonomyIndexes(draft, isFirstPublish) {
+  const updates = [];
+
+  // Update genre index
+  if (draft.genre && draft.genre.trim()) {
+    const genreSlug = createSlug(draft.genre);
+    if (genreSlug) {
+      updates.push(
+        Genre.findOneAndUpdate(
+          { slug: genreSlug },
+          {
+            $setOnInsert: { slug: genreSlug, name: draft.genre.trim(), description: "" },
+            $inc: { worksCount: isFirstPublish ? 1 : 0 },
+          },
+          { upsert: true, new: true }
+        ).catch((err) => console.error("Genre update error:", err))
+      );
+    }
+  }
+
+  // Update fandom index
+  if (draft.fandom && draft.fandom.trim() && draft.fandom !== "Original Work") {
+    const fandomSlug = createSlug(draft.fandom);
+    if (fandomSlug) {
+      updates.push(
+        Fandom.findOneAndUpdate(
+          { slug: fandomSlug },
+          {
+            $setOnInsert: { slug: fandomSlug, name: draft.fandom.trim(), description: "" },
+            $inc: { worksCount: isFirstPublish ? 1 : 0 },
+          },
+          { upsert: true, new: true }
+        ).catch((err) => console.error("Fandom update error:", err))
+      );
+    }
+  }
+
+  // Update tag indexes
+  if (Array.isArray(draft.tags) && draft.tags.length > 0) {
+    for (const tagName of draft.tags) {
+      const tagSlug = createSlug(tagName);
+      if (tagSlug) {
+        updates.push(
+          Tag.findOneAndUpdate(
+            { slug: tagSlug },
+            {
+              $setOnInsert: { slug: tagSlug, name: tagName },
+              $inc: { usageCount: isFirstPublish ? 1 : 0 },
+            },
+            { upsert: true, new: true }
+          )
+        );
+      }
+    }
+  }
+
+  await Promise.all(updates);
+}
 
 const router = express.Router();
 
@@ -42,8 +114,11 @@ const updateDraftSchema = z.object({
   skin: z.enum(["Default", "Emerald", "Ivory", "Midnight"]).optional(),
   privacy: z.enum(["Public", "Following", "Private"]).optional(),
   language: z.enum(["English", "Vietnamese", "Japanese", "French", "Spanish"]).optional(),
-  audioUrl: z.string().url().optional().or(z.literal("")),
-  imageUrls: z.array(z.string().url()).optional(),
+  genre: z.string().max(100).optional(),
+  fandom: z.string().max(200).optional(),
+  coverImageUrl: z.string().optional(),
+  audioUrl: z.string().optional(),
+  imageUrls: z.array(z.string()).optional(),
 });
 
 // Helper: Check if user owns the draft
@@ -63,7 +138,7 @@ router.get("/", async (req, res, next) => {
   try {
     const drafts = await Draft.find({ authorId: req.user._id })
       .sort({ updatedAt: -1 })
-      .select("title chapters tags skin privacy language updatedAt createdAt");
+      .select("title chapters tags skin privacy language genre fandom coverImageUrl updatedAt createdAt");
 
     // Return with chapter count and word count for list view
     const draftsWithMeta = drafts.map((draft) => {
@@ -80,6 +155,9 @@ router.get("/", async (req, res, next) => {
         skin: draft.skin,
         privacy: draft.privacy,
         language: draft.language,
+        genre: draft.genre,
+        fandom: draft.fandom,
+        coverImageUrl: draft.coverImageUrl,
         updatedAt: draft.updatedAt,
         createdAt: draft.createdAt,
       };
@@ -188,6 +266,9 @@ router.put("/:id", async (req, res, next) => {
     if (updates.skin !== undefined) draft.skin = updates.skin;
     if (updates.privacy !== undefined) draft.privacy = updates.privacy;
     if (updates.language !== undefined) draft.language = updates.language;
+    if (updates.genre !== undefined) draft.genre = updates.genre;
+    if (updates.fandom !== undefined) draft.fandom = updates.fandom;
+    if (updates.coverImageUrl !== undefined) draft.coverImageUrl = updates.coverImageUrl;
     if (updates.audioUrl !== undefined) draft.audioUrl = updates.audioUrl;
     if (updates.imageUrls !== undefined) draft.imageUrls = updates.imageUrls;
 
@@ -227,47 +308,49 @@ router.post("/:id/publish", async (req, res, next) => {
       return res.status(status).json({ error });
     }
 
-    // 2. Find existing Work from this draft (upsert behavior)
-    let work = await Work.findOne({ sourceDraftId: draft._id });
-    const isFirstPublish = !work;
-
-    if (!work) {
-      // Create new Work
-      work = new Work({
-        authorId: req.user._id,
-        authorUsername: req.user.username,
-        sourceDraftId: draft._id,
+    // 2. Check if already published - prevent duplicate publishing
+    const existingWork = await Work.findOne({ sourceDraftId: draft._id });
+    if (existingWork) {
+      return res.status(400).json({
+        error: "This draft has already been published",
+        workId: existingWork._id
       });
     }
 
-    // 3. Copy all content fields from draft to work
-    work.title = draft.title;
-    work.chapters = draft.chapters.map((ch) => ({
-      id: ch.id,
-      title: ch.title,
-      body: ch.body,
-      order: ch.order,
-    }));
-    work.tags = [...draft.tags];
-    work.skin = draft.skin;
-    work.privacy = draft.privacy;
-    work.language = draft.language;
-    work.genre = draft.genre;
-    work.fandom = draft.fandom;
-    work.coverImageUrl = draft.coverImageUrl;
-    work.audioUrl = draft.audioUrl;
-    work.imageUrls = [...draft.imageUrls];
+    // 3. Create new Work
+    const work = new Work({
+      authorId: req.user._id,
+      authorUsername: req.user.username,
+      sourceDraftId: draft._id,
+    });
 
-    // 4. Set publishedAt only on first publish
-    if (isFirstPublish) {
-      work.publishedAt = new Date();
-    }
+    // 4. Copy all content fields from draft to work
+    work.title = draft.title || "Untitled";
+    work.chapters = (draft.chapters || []).map((ch) => ({
+      id: ch.id,
+      title: ch.title || "Untitled Chapter",
+      body: ch.body || "",
+      order: ch.order || 0,
+    }));
+    work.tags = Array.isArray(draft.tags) ? [...draft.tags] : [];
+    work.skin = draft.skin || "Default";
+    work.privacy = draft.privacy || "Public";
+    work.language = draft.language || "English";
+    work.genre = draft.genre || "";
+    work.fandom = draft.fandom || "";
+    work.coverImageUrl = draft.coverImageUrl || "";
+    work.audioUrl = draft.audioUrl || "";
+    work.imageUrls = Array.isArray(draft.imageUrls) ? [...draft.imageUrls] : [];
+    work.publishedAt = new Date();
 
     // 5. Save (updatedAt is automatic, wordCount computed by pre-save hook)
     await work.save();
 
-    res.status(isFirstPublish ? 201 : 200).json({
-      message: isFirstPublish ? "Work published" : "Work updated",
+    // 6. Update taxonomy indexes (genres, fandoms, tags)
+    await updateTaxonomyIndexes(draft, true);
+
+    res.status(201).json({
+      message: "Work published",
       work,
     });
   } catch (err) {

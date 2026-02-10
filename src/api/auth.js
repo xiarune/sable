@@ -30,6 +30,14 @@ export const authApi = {
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
   validateResetToken: (token) => api.post("/auth/validate-reset-token", { token }),
   resetPassword: (token, password) => api.post("/auth/reset-password", { token, password }),
+
+  // Two-Factor Authentication
+  get2FAStatus: () => api.get("/auth/2fa/status"),
+  setup2FA: () => api.post("/auth/2fa/setup"),
+  verify2FA: (token) => api.post("/auth/2fa/verify", { token }),
+  disable2FA: (password, token) => api.post("/auth/2fa/disable", { password, token }),
+  regenerateBackupCodes: (password) => api.post("/auth/2fa/backup-codes", { password }),
+  validate2FA: (userId, token) => api.post("/auth/2fa/validate", { userId, token }),
 };
 
 export default authApi;

@@ -40,6 +40,7 @@ import OnboardingUsername from "./pages/OnboardingUsername";
 import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import TwoFactorSetup from "./pages/TwoFactorSetup";
 
 export default function App() {
   const [isAuthed, setIsAuthed] = React.useState(false);
@@ -118,6 +119,9 @@ export default function App() {
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+          {/* Two-Factor Authentication */}
+          <Route path="/settings/2fa" element={isAuthed ? <TwoFactorSetup /> : <Navigate to="/" replace />} />
 
           {/* Search */}
           <Route path="/search" element={<Search />} />

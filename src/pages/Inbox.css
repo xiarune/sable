@@ -2,6 +2,8 @@
 
 .in-page {
   background: transparent;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* Overall layout */

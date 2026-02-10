@@ -2,6 +2,9 @@
 import React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./NewDraft.css";
+import { draftsApi } from "../api/drafts";
+import { uploadsApi } from "../api/uploads";
+import importApi from "../api/import";
 
 import chapterIcon from "../assets/images/chapter_icon.png";
 import importIcon from "../assets/images/import_icon.png";
@@ -12,50 +15,23 @@ import langIcon from "../assets/images/lang_icon.png";
 import imageIcon from "../assets/images/image_icon.png";
 import previewIcon from "../assets/images/preview_icon.png";
 
-const STORAGE_KEY = "sable_drafts_v1";
-const WORKS_KEY = "sable_published_v1";
-
-const SKIN_OPTIONS = ["Default", "Emerald", "Ivory", "Midnight"];
+const SKIN_OPTIONS = ["Default"];
 const PRIVACY_OPTIONS = ["Public", "Following", "Private"];
 const LANGUAGE_OPTIONS = ["English", "Vietnamese", "Japanese", "French", "Spanish"];
 
-function safeParse(json) {
-  try {
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
+// Common genres for creative writing
+const GENRE_SUGGESTIONS = [
+  "Romance", "Fantasy", "Science Fiction", "Mystery", "Thriller", "Horror",
+  "Drama", "Comedy", "Action", "Adventure", "Slice of Life", "Angst",
+  "Fluff", "Hurt/Comfort", "Historical", "Supernatural", "Dystopian"
+];
 
-function loadAll(key) {
-  const raw = localStorage.getItem(key);
-  const parsed = safeParse(raw);
-  return Array.isArray(parsed) ? parsed : [];
-}
-
-function saveAll(key, next) {
-  localStorage.setItem(key, JSON.stringify(next));
-}
-
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function makeId(prefix = "d") {
+function makeId(prefix = "ch") {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
 function makeDefaultChapter() {
-  return { id: makeId("ch"), title: "Chapter 1", body: "" };
-}
-
-function readFileAsDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("File read failed."));
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.readAsDataURL(file);
-  });
+  return { id: makeId("ch"), title: "Chapter 1", body: "", order: 0 };
 }
 
 function ActionPill({ icon, label, subLabel, active, onClick }) {
@@ -176,7 +152,7 @@ export default function NewDraft() {
   }
 
   function addChapter() {
-    const newCh = { id: makeId("ch"), title: `Chapter ${chapters.length + 1}`, body: "" };
+    const newCh = { id: makeId("ch"), title: `Chapter ${chapters.length + 1}`, body: "", order: chapters.length };
     setChapters((prev) => [...prev, newCh]);
     setActiveChapterId(newCh.id);
   }
@@ -192,7 +168,7 @@ export default function NewDraft() {
       if (activeChapterId === chId && next.length > 0) {
         setActiveChapterId(next[0].id);
       }
-      return next;
+      return next.map((ch, idx) => ({ ...ch, order: idx }));
     });
   }
 
@@ -204,7 +180,7 @@ export default function NewDraft() {
       if (newIdx < 0 || newIdx >= prev.length) return prev;
       const next = [...prev];
       [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
-      return next;
+      return next.map((ch, i) => ({ ...ch, order: i }));
     });
   }
 
@@ -212,14 +188,23 @@ export default function NewDraft() {
   const [skin, setSkin] = React.useState("Default");
   const [privacy, setPrivacy] = React.useState("Public");
   const [language, setLanguage] = React.useState("English");
+  const [genre, setGenre] = React.useState("");
+  const [fandom, setFandom] = React.useState("");
+  const [coverImageUrl, setCoverImageUrl] = React.useState("");
 
-  const [audio, setAudio] = React.useState(null);
-  const [images, setImages] = React.useState([]);
+  const [audioUrl, setAudioUrl] = React.useState("");
+  const [imageUrls, setImageUrls] = React.useState([]);
 
   const [activeTool, setActiveTool] = React.useState("");
   const [tagInput, setTagInput] = React.useState("");
+  const [genreInput, setGenreInput] = React.useState("");
+  const [fandomInput, setFandomInput] = React.useState("");
+  const [importUrl, setImportUrl] = React.useState("");
+  const [importLoading, setImportLoading] = React.useState(false);
   const [status, setStatus] = React.useState("");
   const [previewOn, setPreviewOn] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [loadingDraft, setLoadingDraft] = React.useState(false);
 
   const bodyRef = React.useRef(null);
 
@@ -267,108 +252,131 @@ export default function NewDraft() {
     setTags((prev) => prev.filter((t) => t !== tag));
   }
 
+  // Load existing draft from backend
   React.useEffect(() => {
     if (!draftId) return;
 
-    const drafts = loadAll(STORAGE_KEY);
-    const found = drafts.find((d) => d.id === draftId);
-    if (!found) return;
+    async function loadDraft() {
+      setLoadingDraft(true);
+      try {
+        const response = await draftsApi.get(draftId);
+        const draft = response.draft;
 
-    setTitle(found.title || "");
-    if (Array.isArray(found.chapters) && found.chapters.length > 0) {
-      setChapters(found.chapters);
-      setActiveChapterId(found.chapters[0].id);
-    } else if (found.body) {
-      const migratedCh = { id: makeId("ch"), title: "Chapter 1", body: found.body };
-      setChapters([migratedCh]);
-      setActiveChapterId(migratedCh.id);
+        setTitle(draft.title || "");
+        if (Array.isArray(draft.chapters) && draft.chapters.length > 0) {
+          setChapters(draft.chapters);
+          setActiveChapterId(draft.chapters[0].id);
+        }
+        setTags(Array.isArray(draft.tags) ? draft.tags : []);
+        setSkin(draft.skin || "Default");
+        setPrivacy(draft.privacy || "Public");
+        setLanguage(draft.language || "English");
+        setGenre(draft.genre || "");
+        setFandom(draft.fandom || "");
+        setCoverImageUrl(draft.coverImageUrl || "");
+        setAudioUrl(draft.audioUrl || "");
+        setImageUrls(Array.isArray(draft.imageUrls) ? draft.imageUrls : []);
+      } catch (err) {
+        console.error("Failed to load draft:", err);
+        setStatus("Failed to load draft. It may have been deleted.");
+      } finally {
+        setLoadingDraft(false);
+      }
     }
-    setTags(Array.isArray(found.tags) ? found.tags : []);
-    setSkin(found.skin || "Default");
-    setPrivacy(found.privacy || "Public");
-    setLanguage(found.language || "English");
-    setAudio(found.audio || null);
-    setImages(Array.isArray(found.images) ? found.images : []);
+
+    loadDraft();
   }, [draftId]);
 
-  function upsertDraft() {
-    const drafts = loadAll(STORAGE_KEY);
-    const now = nowIso();
-
+  async function saveDraft() {
     const payload = {
       title: title.trim() || "Untitled",
-      chapters,
+      chapters: chapters.map((ch, idx) => ({ ...ch, order: idx })),
       tags,
       skin,
       privacy,
       language,
-      audio,
-      images,
-      updatedAt: now,
+      genre: genre.trim() || "",
+      fandom: fandom.trim() || "Original Work",
+      coverImageUrl,
+      audioUrl,
+      imageUrls,
     };
 
     if (draftId) {
-      const idx = drafts.findIndex((d) => d.id === draftId);
-      if (idx >= 0) {
-        const next = [...drafts];
-        next[idx] = { ...next[idx], ...payload };
-        saveAll(STORAGE_KEY, next);
-        return draftId;
-      }
+      // Update existing draft
+      const response = await draftsApi.update(draftId, payload);
+      return response.draft._id;
+    } else {
+      // Create new draft
+      const response = await draftsApi.create({ title: payload.title });
+      const newId = response.draft._id;
+      // Update with full data
+      await draftsApi.update(newId, payload);
+      return newId;
+    }
+  }
+
+  async function handleSaveDraft() {
+    if (!genre.trim()) {
+      setStatus("Genre is required.");
+      setTimeout(() => setStatus(""), 3000);
+      return;
     }
 
-    const id = makeId("d");
-    saveAll(STORAGE_KEY, [{ id, createdAt: now, ...payload }, ...drafts]);
-    return id;
+    setLoading(true);
+    setStatus("Saving draft...");
+    try {
+      await saveDraft();
+      setStatus("Draft saved!");
+      setTimeout(() => navigate("/drafts"), 500);
+    } catch (err) {
+      console.error("Failed to save draft:", err);
+      setStatus(err.message || "Failed to save draft.");
+    } finally {
+      setLoading(false);
+      setTimeout(() => setStatus(""), 3000);
+    }
   }
 
-  function upsertPublishedFromDraft(savedDraftId) {
-    const drafts = loadAll(STORAGE_KEY);
-    const found = drafts.find((d) => String(d.id) === String(savedDraftId));
-    if (!found) return null;
-
-    const works = loadAll(WORKS_KEY);
-    const now = nowIso();
-    const workId = `w_${found.id}`;
-
-    const payload = {
-      id: workId,
-      title: found.title || "Untitled",
-      chapters: found.chapters || [],
-      tags: found.tags || [],
-      skin: found.skin || "Default",
-      privacy: found.privacy || "Public",
-      language: found.language || "English",
-      audio: found.audio || null,
-      images: found.images || [],
-      sourceDraftId: found.id,
-      updatedAt: now,
-    };
-
-    const idx = works.findIndex((w) => String(w.id) === String(workId));
-    if (idx >= 0) {
-      const next = [...works];
-      next[idx] = { ...next[idx], ...payload };
-      saveAll(WORKS_KEY, next);
-    } else {
-      saveAll(WORKS_KEY, [{ ...payload, createdAt: now }, ...works]);
+  async function handlePost() {
+    if (!genre.trim()) {
+      setStatus("Genre is required before publishing.");
+      setTimeout(() => setStatus(""), 3000);
+      return;
     }
 
-    return workId;
+    setLoading(true);
+    setStatus("Publishing...");
+    try {
+      const savedDraftId = await saveDraft();
+      const response = await draftsApi.publish(savedDraftId);
+      const workId = response.work._id;
+      setStatus("Published!");
+      setTimeout(() => navigate(`/works/${encodeURIComponent(workId)}`), 500);
+    } catch (err) {
+      console.error("Failed to publish:", err);
+      setStatus(err.message || "Failed to publish.");
+    } finally {
+      setLoading(false);
+      setTimeout(() => setStatus(""), 3000);
+    }
   }
 
-  function handleSaveDraft() {
-    upsertDraft();
-    navigate("/drafts");
-  }
+  async function handleCoverUpload(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
 
-  function handlePost() {
-    const savedDraftId = upsertDraft();
-    const workId = upsertPublishedFromDraft(savedDraftId);
-    if (workId) {
-      navigate(`/works/edit/${encodeURIComponent(workId)}`);
-    } else {
-      navigate("/works");
+    try {
+      setStatus("Uploading cover image...");
+      const response = await uploadsApi.upload(file, "covers");
+      setCoverImageUrl(response.url);
+      setStatus("Cover image uploaded.");
+    } catch (err) {
+      console.error("Cover upload failed:", err);
+      setStatus("Cover upload failed.");
+    } finally {
+      e.target.value = "";
+      setTimeout(() => setStatus(""), 2000);
     }
   }
 
@@ -377,20 +385,16 @@ export default function NewDraft() {
     if (!file) return;
 
     try {
-      setStatus("Uploading audio…");
-      const dataUrl = await readFileAsDataURL(file);
-      setAudio({
-        name: file.name,
-        type: file.type || "audio/*",
-        size: file.size || 0,
-        dataUrl,
-      });
-      setStatus("Audio attached.");
-    } catch {
+      setStatus("Uploading audio...");
+      const response = await uploadsApi.upload(file, "audio");
+      setAudioUrl(response.url);
+      setStatus("Audio uploaded.");
+    } catch (err) {
+      console.error("Audio upload failed:", err);
       setStatus("Audio upload failed.");
     } finally {
       e.target.value = "";
-      setTimeout(() => setStatus(""), 1200);
+      setTimeout(() => setStatus(""), 2000);
     }
   }
 
@@ -399,29 +403,56 @@ export default function NewDraft() {
     if (!file) return;
 
     try {
-      setStatus("Uploading image…");
-      const dataUrl = await readFileAsDataURL(file);
+      setStatus("Uploading image...");
+      const response = await uploadsApi.upload(file, "images");
+      const url = response.url;
 
-      const img = {
-        id: makeId("img"),
-        name: file.name,
-        type: file.type || "image/*",
-        size: file.size || 0,
-        dataUrl,
-      };
-
-      setImages((prev) => [img, ...prev]);
+      setImageUrls((prev) => [url, ...prev]);
 
       const safeAlt = (file.name || "image").replace(/\.[^/.]+$/, "");
-      const snippet = `\n\n![${safeAlt}](${dataUrl})\n\n`;
+      const snippet = `\n\n![${safeAlt}](${url})\n\n`;
       insertIntoBody(snippet);
 
       setStatus("Image inserted into body.");
-    } catch {
+    } catch (err) {
+      console.error("Image upload failed:", err);
       setStatus("Image upload failed.");
     } finally {
       e.target.value = "";
-      setTimeout(() => setStatus(""), 1200);
+      setTimeout(() => setStatus(""), 2000);
+    }
+  }
+
+  async function handleImportUrl() {
+    if (!importUrl.trim()) {
+      setStatus("Please enter a URL to import");
+      setTimeout(() => setStatus(""), 3000);
+      return;
+    }
+
+    setImportLoading(true);
+    setStatus("Importing content...");
+    try {
+      const response = await importApi.fromUrl(importUrl.trim());
+
+      // Set the imported content as the body of the current chapter
+      if (response.content) {
+        setBody(response.content);
+      }
+
+      // Set title if we got one and current title is empty
+      if (response.title && !title.trim()) {
+        setTitle(response.title);
+      }
+
+      setStatus(`Imported ${response.wordCount || 0} words successfully!`);
+      setImportUrl("");
+    } catch (err) {
+      console.error("Import failed:", err);
+      setStatus(err.message || "Failed to import content.");
+    } finally {
+      setImportLoading(false);
+      setTimeout(() => setStatus(""), 3000);
     }
   }
 
@@ -435,6 +466,16 @@ export default function NewDraft() {
       draggable={false}
     />
   );
+
+  if (loadingDraft) {
+    return (
+      <div className="nd-page">
+        <div className="nd-shell">
+          <h1 className="nd-title">Loading Draft...</h1>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="nd-page">
@@ -465,6 +506,20 @@ export default function NewDraft() {
               active={activeTool === "tags"}
             />
             <ActionPill
+              icon="📚"
+              label="Genre"
+              subLabel={genre || "Required"}
+              onClick={() => toggleTool("genre")}
+              active={activeTool === "genre"}
+            />
+            <ActionPill
+              icon="🌍"
+              label="Fandom"
+              subLabel={fandom || "Original"}
+              onClick={() => toggleTool("fandom")}
+              active={activeTool === "fandom"}
+            />
+            <ActionPill
               icon={<IconImg src={skinsIcon} alt="Skin" />}
               label="Skin"
               subLabel={skin}
@@ -486,16 +541,23 @@ export default function NewDraft() {
               active={activeTool === "language"}
             />
             <ActionPill
+              icon="🖼️"
+              label="Cover"
+              subLabel={coverImageUrl ? "Set" : "None"}
+              onClick={() => toggleTool("cover")}
+              active={activeTool === "cover"}
+            />
+            <ActionPill
               icon="🎧"
               label="Audio"
-              subLabel={audio?.name ? "Attached" : "None"}
+              subLabel={audioUrl ? "Attached" : "None"}
               onClick={() => toggleTool("audio")}
               active={activeTool === "audio"}
             />
             <ActionPill
               icon={<IconImg src={imageIcon} alt="Images" />}
               label="Images"
-              subLabel={images.length ? `${images.length}` : "0"}
+              subLabel={imageUrls.length ? `${imageUrls.length}` : "0"}
               onClick={() => toggleTool("images")}
               active={activeTool === "images"}
             />
@@ -577,6 +639,49 @@ export default function NewDraft() {
             </div>
           )}
 
+          {activeTool === "genre" && (
+            <div className="nd-toolPanel">
+              <div className="nd-toolTitle">Genre <span style={{ color: "#c44", fontWeight: "normal" }}>(Required)</span></div>
+              <input
+                className="nd-toolInput"
+                placeholder="Enter genre (e.g., Romance, Fantasy)"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+              />
+              <div className="nd-toolHint" style={{ marginTop: 8 }}>
+                Suggestions:
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                  {GENRE_SUGGESTIONS.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      className="nd-tag"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => setGenre(g)}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTool === "fandom" && (
+            <div className="nd-toolPanel">
+              <div className="nd-toolTitle">Fandom</div>
+              <input
+                className="nd-toolInput"
+                placeholder="Enter fandom (leave empty for Original Work)"
+                value={fandom}
+                onChange={(e) => setFandom(e.target.value)}
+              />
+              <div className="nd-toolHint">
+                If your work is not based on an existing property, leave empty or enter "Original Work".
+              </div>
+            </div>
+          )}
+
           {activeTool === "skin" && (
             <div className="nd-toolPanel">
               <div className="nd-toolTitle">Skin</div>
@@ -587,6 +692,9 @@ export default function NewDraft() {
                     <span>{opt}</span>
                   </label>
                 ))}
+              </div>
+              <div className="nd-toolHint">
+                Only the Default Sable skin is available. Custom skins you create will appear here.
               </div>
             </div>
           )}
@@ -602,6 +710,9 @@ export default function NewDraft() {
                   </label>
                 ))}
               </div>
+              <div className="nd-toolHint">
+                Public: Anyone can view. Following: Only your followers. Private: Only you.
+              </div>
             </div>
           )}
 
@@ -616,13 +727,49 @@ export default function NewDraft() {
             </div>
           )}
 
+          {activeTool === "cover" && (
+            <div className="nd-toolPanel">
+              <div className="nd-toolTitle">Cover Image / Thumbnail</div>
+              <input className="nd-toolInput" type="file" accept="image/*" onChange={handleCoverUpload} />
+              <div className="nd-toolHint">
+                Upload a cover image for your work. If not set, a default Sable cover will be used.
+              </div>
+              {coverImageUrl && (
+                <div style={{ marginTop: 12 }}>
+                  <img src={coverImageUrl} alt="Cover preview" style={{ maxWidth: 200, borderRadius: 8 }} />
+                  <button
+                    type="button"
+                    className="nd-ornateBtn nd-ornateBtn--small"
+                    style={{ marginTop: 8, display: "block" }}
+                    onClick={() => setCoverImageUrl("")}
+                  >
+                    Remove Cover
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTool === "audio" && (
             <div className="nd-toolPanel">
               <div className="nd-toolTitle">Audio Upload</div>
               <input className="nd-toolInput" type="file" accept="audio/*" onChange={handleAudioUpload} />
               <div className="nd-toolHint">
-                {audio?.name ? `Attached: ${audio.name}` : "Upload an audio file to attach it to this draft."}
+                {audioUrl ? `Audio attached` : "Upload an audio file to attach it to this draft."}
               </div>
+              {audioUrl && (
+                <div style={{ marginTop: 8 }}>
+                  <audio controls src={audioUrl} style={{ width: "100%" }} />
+                  <button
+                    type="button"
+                    className="nd-ornateBtn nd-ornateBtn--small"
+                    style={{ marginTop: 8 }}
+                    onClick={() => setAudioUrl("")}
+                  >
+                    Remove Audio
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -631,6 +778,48 @@ export default function NewDraft() {
               <div className="nd-toolTitle">Insert Image Into Body</div>
               <input className="nd-toolInput" type="file" accept="image/*" onChange={handleImageUpload} />
               <div className="nd-toolHint">Upload an image and it will be inserted into the work body at your cursor position.</div>
+            </div>
+          )}
+
+          {activeTool === "import" && (
+            <div className="nd-toolPanel">
+              <div className="nd-toolTitle">Import Content</div>
+
+              <div style={{ marginBottom: 12 }}>
+                <div className="nd-toolHint" style={{ marginBottom: 8 }}>
+                  Import from URL (Google Docs, web pages, etc.)
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    className="nd-toolInput"
+                    placeholder="Paste URL here (e.g., Google Docs link)"
+                    value={importUrl}
+                    onChange={(e) => setImportUrl(e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="nd-ornateBtn nd-ornateBtn--small"
+                    onClick={handleImportUrl}
+                    disabled={importLoading}
+                  >
+                    {importLoading ? "Importing..." : "Import"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="nd-toolHint" style={{ marginTop: 16 }}>
+                <strong>Supported sources:</strong>
+                <ul style={{ margin: "8px 0", paddingLeft: 20 }}>
+                  <li>Google Docs (public or "anyone with link")</li>
+                  <li>Any public web page</li>
+                  <li>Plain text URLs</li>
+                </ul>
+                <p style={{ fontSize: 12, opacity: 0.8 }}>
+                  For Word docs, copy-paste the text directly into the editor.
+                  For Obsidian/local files, copy-paste or use File {'>'} Export to HTML first.
+                </p>
+              </div>
             </div>
           )}
 
@@ -684,12 +873,12 @@ export default function NewDraft() {
                 {title?.trim() ? title : "Untitled"}
               </div>
 
-              {audio?.dataUrl ? (
+              {audioUrl ? (
                 <>
                   <div className="nd-bodyLabel" style={{ marginTop: 14 }}>
                     Audio
                   </div>
-                  <audio controls src={audio.dataUrl} style={{ width: "100%" }} />
+                  <audio controls src={audioUrl} style={{ width: "100%" }} />
                 </>
               ) : null}
 
@@ -717,11 +906,11 @@ export default function NewDraft() {
           {status && <div className="nd-status">{status}</div>}
 
           <div className="nd-actions">
-            <button className="nd-ornateBtn nd-ornateBtn--primary" onClick={handlePost}>
-              Post
+            <button className="nd-ornateBtn nd-ornateBtn--primary" onClick={handlePost} disabled={loading}>
+              {loading ? "Publishing..." : "Post"}
             </button>
-            <button className="nd-ornateBtn" onClick={handleSaveDraft}>
-              Save Draft
+            <button className="nd-ornateBtn" onClick={handleSaveDraft} disabled={loading}>
+              {loading ? "Saving..." : "Save Draft"}
             </button>
           </div>
         </section>
@@ -729,14 +918,3 @@ export default function NewDraft() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-

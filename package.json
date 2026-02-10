@@ -46,6 +46,7 @@
   "devDependencies": {
     "ajv": "^7.2.4",
     "ajv-keywords": "^5.1.0",
+    "concurrently": "^9.2.1",
     "gh-pages": "^6.3.0"
   }
 }

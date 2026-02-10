@@ -1,25 +1,39 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { works } from "../data/libraryWorks";
+import { discoveryApi } from "../api";
 import "./Library.css";
-
-function slugify(s) {
-  return String(s || "")
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
 
 export default function GenreIndex() {
   const navigate = useNavigate();
+  const [genres, setGenres] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
 
-  const genres = React.useMemo(() => {
-    const set = new Set();
-    for (const w of works) set.add((w.genre || "Other").trim() || "Other");
-    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  React.useEffect(() => {
+    async function loadGenres() {
+      try {
+        const data = await discoveryApi.genres();
+        setGenres(data.genres || []);
+      } catch (err) {
+        console.error("Failed to load genres:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadGenres();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="shelfPage">
+        <div className="shelfBanner">
+          <h1 className="shelfTitle">Genre</h1>
+        </div>
+        <div className="shelfBody">
+          <p>Loading genres...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="shelfPage">
@@ -28,20 +42,24 @@ export default function GenreIndex() {
       </div>
 
       <div className="shelfBody">
-        <div className="cardGrid">
-          {genres.map((g) => (
-            <button
-              key={g}
-              type="button"
-              className="topicCard"
-              onClick={() => navigate(`/genres/${slugify(g)}`)}
-            >
-              <div className="topicCardText">{g}</div>
-            </button>
-          ))}
-        </div>
+        {genres.length === 0 ? (
+          <p>No genres yet. Publish a work to create the first genre.</p>
+        ) : (
+          <div className="cardGrid">
+            {genres.map((g) => (
+              <button
+                key={g.slug}
+                type="button"
+                className="topicCard"
+                onClick={() => navigate(`/genres/${g.slug}`)}
+              >
+                <div className="topicCardText">{g.name}</div>
+                <div className="topicCardCount">{g.worksCount || 0} works</div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

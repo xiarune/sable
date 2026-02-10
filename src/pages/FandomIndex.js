@@ -1,26 +1,39 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { works } from "../data/libraryWorks";
+import { discoveryApi } from "../api";
 import "./Library.css";
 
-function slugify(s) {
-  return String(s || "")
-    .toLowerCase()
-    .trim()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
 export default function FandomIndex() {
-  const fandoms = React.useMemo(() => {
-    const set = new Set();
-    works.forEach((w) => {
-      const f = (w.fandom || "").trim();
-      if (f) set.add(f);
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-  }, []);
+  const [fandoms, setFandoms] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [search, setSearch] = React.useState("");
+
+  React.useEffect(() => {
+    async function loadFandoms() {
+      try {
+        const data = await discoveryApi.fandoms(null, search || null);
+        setFandoms(data.fandoms || []);
+      } catch (err) {
+        console.error("Failed to load fandoms:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadFandoms();
+  }, [search]);
+
+  if (loading) {
+    return (
+      <div className="shelfPage">
+        <div className="shelfBanner">
+          <h1 className="shelfTitle">Fandom</h1>
+        </div>
+        <div className="shelfBody">
+          <p>Loading fandoms...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="shelfPage">
@@ -29,16 +42,29 @@ export default function FandomIndex() {
       </div>
 
       <div className="shelfBody">
-        <div className="cardGrid">
-          {fandoms.map((f) => (
-            <Link key={f} className="topicCard" to={`/fandoms/${slugify(f)}`}>
-              <div className="topicCardText">{f}</div>
-            </Link>
-          ))}
+        <div className="shelfSearch">
+          <input
+            type="text"
+            className="shelfSearchInput"
+            placeholder="Search fandoms..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
+
+        {fandoms.length === 0 ? (
+          <p>No fandoms yet. Publish a work to create the first fandom.</p>
+        ) : (
+          <div className="cardGrid">
+            {fandoms.map((f) => (
+              <Link key={f.slug} className="topicCard" to={`/fandoms/${f.slug}`}>
+                <div className="topicCardText">{f.name}</div>
+                <div className="topicCardCount">{f.worksCount || 0} works</div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-
