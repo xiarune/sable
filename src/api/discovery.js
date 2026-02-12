@@ -43,6 +43,9 @@ const discoveryApi = {
   },
   tag: (slug, page = 1, limit = 20, sort = "recent") =>
     api.get(`/discovery/tags/${slug}?page=${page}&limit=${limit}&sort=${sort}`),
+
+  // Sync genres, fandoms, and tags from existing works
+  sync: () => api.post("/discovery/sync"),
 };
 
 export default discoveryApi;

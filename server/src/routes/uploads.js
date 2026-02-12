@@ -84,6 +84,35 @@ const upload = multer({
   },
 });
 
+// Configure multer for generic files (chat attachments)
+const uploadFile = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 25 * 1024 * 1024, // 25 MB max for files
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow common file types for chat attachments
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "application/pdf",
+      "text/plain",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/zip",
+      "application/x-zip-compressed",
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`File type ${file.mimetype} not allowed`), false);
+    }
+  },
+});
+
 // All upload routes require authentication and rate limiting
 router.use(requireAuth);
 router.use(uploadLimiter);
@@ -232,6 +261,60 @@ router.post("/audio", uploadAudio.single("file"), async (req, res, next) => {
     });
   } catch (err) {
     logger.error("Audio upload failed", {
+      userId: req.user?._id,
+      error: err.message,
+    });
+    next(err);
+  }
+});
+
+// POST /uploads/file - Upload generic file (for chat attachments)
+router.post("/file", uploadFile.single("file"), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file provided" });
+    }
+
+    logger.info("File upload started", {
+      userId: req.user._id,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      originalname: req.file.originalname,
+    });
+
+    const { key, url } = await uploadToS3(req.file, "files");
+
+    // Save upload record
+    const uploadRecord = new Upload({
+      ownerId: req.user._id,
+      type: "file",
+      url,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      title: req.file.originalname,
+    });
+    await uploadRecord.save();
+
+    logger.info("File upload completed", {
+      userId: req.user._id,
+      uploadId: uploadRecord._id,
+      url,
+    });
+
+    res.status(201).json({
+      message: "File uploaded",
+      url,
+      upload: {
+        _id: uploadRecord._id,
+        url,
+        type: "file",
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        name: req.file.originalname,
+      },
+    });
+  } catch (err) {
+    logger.error("File upload failed", {
       userId: req.user?._id,
       error: err.message,
     });

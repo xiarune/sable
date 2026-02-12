@@ -28,6 +28,7 @@ import FandomIndex from "./pages/FandomIndex";
 import FandomDetail from "./pages/FandomDetail";
 
 import TagsIndex from "./pages/TagsIndex";
+import TagDetail from "./pages/TagDetail";
 
 import YourWorks from "./pages/YourWorks";
 import WorkEditor from "./pages/WorkEditor";
@@ -135,6 +136,7 @@ export default function App() {
           <Route path="/fandoms" element={<FandomIndex />} />
           <Route path="/fandoms/:fandomSlug" element={<FandomDetail />} />
           <Route path="/tags" element={<TagsIndex />} />
+          <Route path="/tags/:tagSlug" element={<TagDetail />} />
 
           {/* Communities profiles */}
           <Route

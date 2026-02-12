@@ -9,6 +9,11 @@ const { optionalAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
+// Escape special regex characters
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 // === GENRES ===
 
 // GET /discovery/genres - List all genres
@@ -32,7 +37,8 @@ router.get("/genres/:slug", optionalAuth, async (req, res, next) => {
     const { page = 1, limit = 20, sort = "popular" } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const query = { genre: genre.name, privacy: "Public", status: "published" };
+    // Case-insensitive genre matching
+    const query = { genre: { $regex: new RegExp(`^${escapeRegex(genre.name)}$`, "i") }, privacy: "Public", status: "published" };
 
     let sortOption = { publishedAt: -1 };
     if (sort === "popular") sortOption = { views: -1 };
@@ -107,7 +113,8 @@ router.get("/fandoms/:slug", optionalAuth, async (req, res, next) => {
     const { page = 1, limit = 20, sort = "recent" } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const query = { fandom: fandom.name, privacy: "Public", status: "published" };
+    // Case-insensitive fandom matching
+    const query = { fandom: { $regex: new RegExp(`^${escapeRegex(fandom.name)}$`, "i") }, privacy: "Public", status: "published" };
 
     let sortOption = { publishedAt: -1 };
     if (sort === "popular") sortOption = { views: -1 };
@@ -182,8 +189,9 @@ router.get("/tags/:slug", optionalAuth, async (req, res, next) => {
     const { page = 1, limit = 20, sort = "recent" } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    // Case-insensitive tag matching
     const query = {
-      tags: tag.name,
+      tags: { $regex: new RegExp(`^${escapeRegex(tag.name)}$`, "i") },
       privacy: "Public",
       status: "published",
     };
@@ -237,7 +245,9 @@ router.get("/search", optionalAuth, async (req, res, next) => {
         $or: [
           { title: searchRegex },
           { description: searchRegex },
-          { "tags.custom": searchRegex },
+          { tags: searchRegex },
+          { genre: searchRegex },
+          { fandom: searchRegex },
         ],
         privacy: "Public",
         status: "published",
@@ -394,6 +404,107 @@ router.get("/new", async (req, res, next) => {
         total,
         pages: Math.ceil(total / parseInt(limit)),
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// === SYNC / ADMIN ===
+
+// Helper to create slug from name
+function slugify(name) {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+// POST /discovery/sync - Sync genres, fandoms, and tags from existing works
+router.post("/sync", async (req, res, next) => {
+  try {
+    // Get all works (not just public/published for debugging)
+    const allWorks = await Work.find({});
+
+    // Filter to public, published works
+    const works = allWorks.filter(w => {
+      // Default status is "published" if not set
+      const status = w.status || "published";
+      const privacy = w.privacy || "Public";
+      return privacy === "Public" && status === "published";
+    });
+
+    // Track unique genres, fandoms, and tags
+    const genreCounts = {};
+    const fandomCounts = {};
+    const tagCounts = {};
+    const genreList = [];
+    const fandomList = [];
+
+    for (const work of works) {
+      if (work.genre && work.genre.trim()) {
+        const genre = work.genre.trim();
+        genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+        if (!genreList.includes(genre)) genreList.push(genre);
+      }
+      if (work.fandom && work.fandom.trim()) {
+        const fandom = work.fandom.trim();
+        fandomCounts[fandom] = (fandomCounts[fandom] || 0) + 1;
+        if (!fandomList.includes(fandom)) fandomList.push(fandom);
+      }
+      if (work.tags && work.tags.length > 0) {
+        for (const tag of work.tags) {
+          if (tag && tag.trim()) {
+            tagCounts[tag.trim()] = (tagCounts[tag.trim()] || 0) + 1;
+          }
+        }
+      }
+    }
+
+    // Upsert genres
+    for (const [name, count] of Object.entries(genreCounts)) {
+      const slug = slugify(name);
+      if (!slug) continue;
+      await Genre.findOneAndUpdate(
+        { slug },
+        { $set: { slug, name, worksCount: count } },
+        { upsert: true }
+      );
+    }
+
+    // Upsert fandoms
+    for (const [name, count] of Object.entries(fandomCounts)) {
+      const slug = slugify(name);
+      if (!slug) continue;
+      await Fandom.findOneAndUpdate(
+        { slug },
+        { $set: { slug, name, worksCount: count } },
+        { upsert: true }
+      );
+    }
+
+    // Upsert tags
+    for (const [name, count] of Object.entries(tagCounts)) {
+      const slug = slugify(name);
+      if (!slug) continue;
+      await Tag.findOneAndUpdate(
+        { slug },
+        { $set: { slug, name, usageCount: count } },
+        { upsert: true }
+      );
+    }
+
+    res.json({
+      message: "Sync complete",
+      totalWorks: allWorks.length,
+      publicPublishedWorks: works.length,
+      genres: genreList,
+      genreCount: Object.keys(genreCounts).length,
+      fandoms: fandomList,
+      fandomCount: Object.keys(fandomCounts).length,
+      tagCount: Object.keys(tagCounts).length,
     });
   } catch (err) {
     next(err);

@@ -18,6 +18,7 @@ const communityRoutes = require("./community");
 const audioRoutes = require("./audio");
 const discoveryRoutes = require("./discovery");
 const importRoutes = require("./import");
+const contactRoutes = require("./contact");
 
 const router = express.Router();
 
@@ -39,5 +40,6 @@ router.use("/community", communityRoutes);
 router.use("/audio", audioRoutes);
 router.use("/discovery", discoveryRoutes);
 router.use("/import", importRoutes);
+router.use("/contact", contactRoutes);
 
 module.exports = router;

@@ -264,12 +264,48 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   const [audioSeeking, setAudioSeeking] = React.useState(false);
 
   // Music provider state
-  const [musicProvider, setMusicProvider] = React.useState("spotify");
+  const [musicProvider, setMusicProvider] = React.useState("youtube");
   const [musicQuery, setMusicQuery] = React.useState("");
-  const [musicIsPlaying, setMusicIsPlaying] = React.useState(false);
-  const [musicCurrentSec, setMusicCurrentSec] = React.useState(0);
-  const [musicDurationSec, setMusicDurationSec] = React.useState(210); // 3:30 mock
-  const [musicSeeking, setMusicSeeking] = React.useState(false);
+  const [youtubeVideoId, setYoutubeVideoId] = React.useState(null);
+  const [spotifyConnected, setSpotifyConnected] = React.useState(false);
+
+  // Parse YouTube URL to extract video ID
+  function parseYoutubeUrl(url) {
+    if (!url) return null;
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+      /^([a-zA-Z0-9_-]{11})$/, // Just the video ID
+    ];
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) return match[1];
+    }
+    return null;
+  }
+
+  // Handle music query input (paste YouTube link)
+  function handleMusicQuerySubmit() {
+    if (musicProvider === "youtube") {
+      const videoId = parseYoutubeUrl(musicQuery.trim());
+      if (videoId) {
+        setYoutubeVideoId(videoId);
+      }
+    }
+  }
+
+  // Handle Enter key in music input
+  function handleMusicKeyDown(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleMusicQuerySubmit();
+    }
+  }
+
+  // Clear YouTube video
+  function clearYoutubeVideo() {
+    setYoutubeVideoId(null);
+    setMusicQuery("");
+  }
 
   // Persist view prefs per-user
   React.useEffect(() => {
@@ -359,13 +395,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     return Math.max(0, Math.min(100, (audioCurrentSec / dur) * 100));
   }, [audioCurrentSec, audioDurationSec, currentTrack]);
 
-  const musicHasDuration = Boolean(musicDurationSec);
-  const musicProgressPct = React.useMemo(() => {
-    const dur = musicDurationSec || 0;
-    if (!dur) return 0;
-    return Math.max(0, Math.min(100, (musicCurrentSec / dur) * 100));
-  }, [musicCurrentSec, musicDurationSec]);
-
   // Audio element events - re-run when audioBarOpen changes so listeners attach when element renders
   React.useEffect(() => {
     const el = audioRef.current;
@@ -452,29 +481,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
     return () => window.clearInterval(t);
   }, [audioBarOpen, currentTrack, isPlaying, audioDurationSec]);
-
-  // Music ticker
-  React.useEffect(() => {
-    if (!musicBarOpen) return;
-    if (!musicIsPlaying) return;
-
-    const dur = musicDurationSec || 0;
-    if (!dur) return;
-
-    const t = window.setInterval(() => {
-      setMusicCurrentSec((prev) => {
-        if (musicSeeking) return prev;
-        const next = prev + 1;
-        if (next >= dur) {
-          setMusicIsPlaying(false);
-          return dur;
-        }
-        return next;
-      });
-    }, 1000);
-
-    return () => window.clearInterval(t);
-  }, [musicBarOpen, musicIsPlaying, musicDurationSec, musicSeeking]);
 
   function handleBack() {
     navigate(-1);
@@ -628,16 +634,8 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
   function closeMusicBar() {
     setMusicBarOpen(false);
-    setMusicIsPlaying(false);
-    setMusicCurrentSec(0);
-  }
-
-  function toggleMusicPlayPause() {
-    setMusicIsPlaying((p) => !p);
-  }
-
-  function seekMusicTo(sec) {
-    setMusicCurrentSec(sec);
+    setYoutubeVideoId(null);
+    setMusicQuery("");
   }
 
   async function toggleBookmark() {
@@ -830,9 +828,9 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                 </div>
               ) : null}
 
-              {/* Stickyyy music barrr*/}
+              {/* Music player */}
               {musicBarOpen ? (
-                <div className="wv-miniPlayer" aria-label="Music player">
+                <div className="wv-miniPlayer wv-musicPlayer" aria-label="Music player">
                   <div className="wv-miniHead">
                     <div className="wv-miniTitle">Music</div>
                     <button
@@ -847,58 +845,10 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   </div>
 
                   <div className="wv-miniBody">
-                    <div className="wv-playerRow">
-                      <button
-                        type="button"
-                        className="wv-iconPlay"
-                        onClick={toggleMusicPlayPause}
-                        aria-label={musicIsPlaying ? "Pause music" : "Play music"}
-                        title={musicIsPlaying ? "Pause" : "Play"}
-                      >
-                        {musicIsPlaying ? "⏸" : "▶"}
-                      </button>
-
-                      <div className="wv-scrubWrap" aria-label="Music scrubber (mock)">
-                        <input
-                          type="range"
-                          className="wv-scrub"
-                          min={0}
-                          max={musicDurationSec || 0}
-                          step={1}
-                          value={musicCurrentSec}
-                          onMouseDown={() => setMusicSeeking(true)}
-                          onMouseUp={() => setMusicSeeking(false)}
-                          onTouchStart={() => setMusicSeeking(true)}
-                          onTouchEnd={() => setMusicSeeking(false)}
-                          onChange={(e) => seekMusicTo(Number(e.target.value))}
-                          disabled={!musicHasDuration}
-                          aria-label="Seek music"
-                          style={{ "--wv-progress": `${musicProgressPct}%` }}
-                        />
-                        <div className="wv-timeRow">
-                          <span className="wv-time">{formatSeconds(musicCurrentSec)}</span>
-                          <span className="wv-time">{formatSeconds(musicDurationSec)}</span>
-                        </div>
-                      </div>
-                    </div>
-
+                    {/* Provider selection */}
                     <div className="wv-miniRow">
                       <div className="wv-miniLabel">Provider</div>
                       <div className="wv-miniPills">
-                        <button
-                          type="button"
-                          className={`wv-miniPill ${musicProvider === "spotify" ? "wv-miniPill--active" : ""}`}
-                          onClick={() => setMusicProvider("spotify")}
-                        >
-                          Spotify
-                        </button>
-                        <button
-                          type="button"
-                          className={`wv-miniPill ${musicProvider === "apple" ? "wv-miniPill--active" : ""}`}
-                          onClick={() => setMusicProvider("apple")}
-                        >
-                          Apple
-                        </button>
                         <button
                           type="button"
                           className={`wv-miniPill ${musicProvider === "youtube" ? "wv-miniPill--active" : ""}`}
@@ -906,19 +856,116 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                         >
                           YouTube
                         </button>
+                        <button
+                          type="button"
+                          className={`wv-miniPill ${musicProvider === "spotify" ? "wv-miniPill--active" : ""}`}
+                          onClick={() => setMusicProvider("spotify")}
+                        >
+                          Spotify
+                        </button>
                       </div>
                     </div>
 
-                    <div className="wv-miniRow">
-                      <div className="wv-miniLabel">Search</div>
-                      <input
-                        className="wv-miniInput"
-                        value={musicQuery}
-                        onChange={(e) => setMusicQuery(e.target.value)}
-                        placeholder="Paste a track link or search…"
-                        aria-label="Music search"
-                      />
-                    </div>
+                    {/* YouTube provider */}
+                    {musicProvider === "youtube" && (
+                      <>
+                        {youtubeVideoId ? (
+                          <div className="wv-youtubeEmbed">
+                            <iframe
+                              src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&enablejsapi=1`}
+                              title="YouTube music player"
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            />
+                            <button
+                              type="button"
+                              className="wv-miniBtn"
+                              onClick={clearYoutubeVideo}
+                              style={{ marginTop: 8 }}
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="wv-miniRow">
+                            <div className="wv-miniLabel">Paste YouTube Link</div>
+                            <div className="wv-musicInputRow">
+                              <input
+                                className="wv-miniInput"
+                                value={musicQuery}
+                                onChange={(e) => setMusicQuery(e.target.value)}
+                                onKeyDown={handleMusicKeyDown}
+                                placeholder="https://youtube.com/watch?v=..."
+                                aria-label="YouTube link"
+                              />
+                              <button
+                                type="button"
+                                className="wv-miniBtn wv-miniBtn--play"
+                                onClick={handleMusicQuerySubmit}
+                                disabled={!musicQuery.trim()}
+                              >
+                                Play
+                              </button>
+                            </div>
+                            <div className="wv-miniHint">
+                              Paste a YouTube video or music link and press Play
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Spotify provider */}
+                    {musicProvider === "spotify" && (
+                      <div className="wv-providerConnect">
+                        {spotifyConnected ? (
+                          <div className="wv-connectedState">
+                            <div className="wv-connectedBadge">
+                              <span className="wv-connectedDot" />
+                              Connected to Spotify
+                            </div>
+                            <div className="wv-miniRow">
+                              <div className="wv-miniLabel">Search or paste link</div>
+                              <input
+                                className="wv-miniInput"
+                                placeholder="Search tracks, albums, playlists..."
+                                aria-label="Spotify search"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              className="wv-disconnectBtn"
+                              onClick={() => setSpotifyConnected(false)}
+                            >
+                              Disconnect
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="wv-connectPrompt">
+                            <div className="wv-providerLogo wv-providerLogo--spotify">
+                              <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
+                                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                              </svg>
+                            </div>
+                            <div className="wv-connectText">
+                              Connect your Spotify account to play music while you read
+                            </div>
+                            <button
+                              type="button"
+                              className="wv-connectBtn wv-connectBtn--spotify"
+                              onClick={() => setSpotifyConnected(true)}
+                            >
+                              Connect Spotify
+                            </button>
+                            <div className="wv-connectNote">
+                              Requires Spotify Premium for full playback
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                   </div>
                 </div>
               ) : null}
@@ -970,9 +1017,18 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   </div>
                   {work?.tags && work.tags.length > 0 && (
                     <div className="wv-tags">
-                      {work.tags.map((tag) => (
-                        <span key={tag} className="wv-tag">#{tag}</span>
-                      ))}
+                      {work.tags.map((tag) => {
+                        const tagSlug = tag.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+                        return (
+                          <Link
+                            key={tag}
+                            to={`/tags/${encodeURIComponent(tagSlug)}`}
+                            className="wv-tag"
+                          >
+                            #{tag}
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

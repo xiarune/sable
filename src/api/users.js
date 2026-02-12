@@ -5,6 +5,15 @@ import api from "./client";
  */
 const usersApi = {
   // ============================================
+  // DISCOVERY
+  // ============================================
+
+  /**
+   * Get discoverable users (for community page suggestions)
+   */
+  getDiscoverable: (limit = 10) => api.get(`/users?limit=${limit}`),
+
+  // ============================================
   // PROFILE
   // ============================================
 

@@ -124,4 +124,44 @@ router.get("/check/:userId", requireAuth, async (req, res, next) => {
   }
 });
 
+// GET /follows/user/:username/followers - Get a user's followers (public)
+router.get("/user/:username/followers", async (req, res, next) => {
+  try {
+    const user = await User.findOne({ username: req.params.username.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const follows = await Follow.find({ followeeId: user._id })
+      .populate("followerId", "username displayName avatarUrl")
+      .sort({ createdAt: -1 });
+
+    const followers = follows.map((f) => f.followerId);
+
+    res.json({ followers });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /follows/user/:username/following - Get who a user is following (public)
+router.get("/user/:username/following", async (req, res, next) => {
+  try {
+    const user = await User.findOne({ username: req.params.username.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const follows = await Follow.find({ followerId: user._id })
+      .populate("followeeId", "username displayName avatarUrl")
+      .sort({ createdAt: -1 });
+
+    const following = follows.map((f) => f.followeeId);
+
+    res.json({ following });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

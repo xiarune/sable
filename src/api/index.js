@@ -11,4 +11,8 @@ export { default as discoveryApi } from "./discovery";
 export { default as bookmarksApi } from "./bookmarks";
 export { default as commentsApi } from "./comments";
 export { default as importApi } from "./import";
+export { default as contactApi } from "./contact";
+export { default as communityApi } from "./community";
+export { default as followsApi } from "./follows";
+export { default as messagesApi } from "./messages";
 export { default as API_BASE_URL } from "./config";

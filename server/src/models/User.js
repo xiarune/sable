@@ -49,6 +49,17 @@ const userSchema = new mongoose.Schema(
       },
     },
 
+    // Online presence
+    presence: {
+      status: {
+        type: String,
+        enum: ["online", "away", "offline"],
+        default: "offline",
+      },
+      lastSeenAt: { type: Date, default: Date.now },
+      lastActiveAt: { type: Date, default: Date.now },
+    },
+
     // Profile
     avatarUrl: { type: String, default: "" },
     bannerUrl: { type: String, default: "" },
@@ -153,6 +164,12 @@ const userSchema = new mongoose.Schema(
       followersCount: { type: Number, default: 0 },
       followingCount: { type: Number, default: 0 },
       worksCount: { type: Number, default: 0 },
+    },
+
+    // Inbox settings
+    inboxSettings: {
+      readReceipts: { type: Boolean, default: true },
+      showSeenIndicators: { type: Boolean, default: true },
     },
   },
   {
