@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
+import { contactApi } from "../api";
 import "./FAQ.css";
 
 const FAQ_SECTIONS = [
@@ -81,6 +82,15 @@ export default function FAQ() {
   const location = useLocation();
   const [openItems, setOpenItems] = React.useState({});
 
+  // Contact form state
+  const [contactName, setContactName] = React.useState("");
+  const [contactEmail, setContactEmail] = React.useState("");
+  const [contactSubject, setContactSubject] = React.useState("");
+  const [contactMessage, setContactMessage] = React.useState("");
+  const [contactLoading, setContactLoading] = React.useState(false);
+  const [contactSuccess, setContactSuccess] = React.useState(false);
+  const [contactError, setContactError] = React.useState("");
+
   // Scroll to section if hash is present
   React.useEffect(() => {
     if (location.hash) {
@@ -102,6 +112,26 @@ export default function FAQ() {
     }));
   }
 
+  async function handleContactSubmit(e) {
+    e.preventDefault();
+    setContactError("");
+    setContactSuccess(false);
+    setContactLoading(true);
+
+    try {
+      await contactApi.send(contactName, contactEmail, contactSubject, contactMessage);
+      setContactSuccess(true);
+      setContactName("");
+      setContactEmail("");
+      setContactSubject("");
+      setContactMessage("");
+    } catch (err) {
+      setContactError(err.message || "Failed to send message. Please try again.");
+    } finally {
+      setContactLoading(false);
+    }
+  }
+
   return (
     <div className="faq-page">
       <div className="faq-shell">
@@ -109,7 +139,7 @@ export default function FAQ() {
           <h1 className="faq-title">Frequently Asked Questions</h1>
           <p className="faq-subtitle">
             Find answers to common questions about Sable. Can't find what you're looking for?{" "}
-            <a href="mailto:support@sable.app" className="faq-contactLink">Contact us</a>.
+            <a href="#contact" className="faq-contactLink">Contact us</a>.
           </p>
         </header>
 
@@ -119,6 +149,7 @@ export default function FAQ() {
               {section.title}
             </a>
           ))}
+          <a href="#contact" className="faq-tocLink">Contact Us</a>
         </nav>
 
         <div className="faq-content">
@@ -217,6 +248,108 @@ export default function FAQ() {
                 <li>Use CSS variables from built-in skins as a starting point</li>
                 <li>Keep accessibility in mind - maintain good color contrast</li>
               </ul>
+            </div>
+          </section>
+
+          {/* Contact Form */}
+          <section id="contact" className="faq-section faq-section--contact">
+            <h2 className="faq-sectionTitle">Contact Us</h2>
+
+            <div className="faq-contactForm">
+              <p className="faq-contactIntro">
+                Have a question, suggestion, or need help? Send us a message and we'll get back to you as soon as possible.
+              </p>
+
+              {contactSuccess ? (
+                <div className="faq-contactSuccess">
+                  <div className="faq-contactSuccessIcon">✓</div>
+                  <div className="faq-contactSuccessText">
+                    Your message has been sent! We'll get back to you soon.
+                  </div>
+                  <button
+                    type="button"
+                    className="faq-contactNewBtn"
+                    onClick={() => setContactSuccess(false)}
+                  >
+                    Send Another Message
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleContactSubmit} className="faq-form">
+                  {contactError && (
+                    <div className="faq-contactError">{contactError}</div>
+                  )}
+
+                  <div className="faq-formRow">
+                    <label className="faq-formLabel" htmlFor="contact-name">
+                      Name
+                    </label>
+                    <input
+                      id="contact-name"
+                      type="text"
+                      className="faq-formInput"
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      placeholder="Your name"
+                      required
+                    />
+                  </div>
+
+                  <div className="faq-formRow">
+                    <label className="faq-formLabel" htmlFor="contact-email">
+                      Email
+                    </label>
+                    <input
+                      id="contact-email"
+                      type="email"
+                      className="faq-formInput"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      required
+                    />
+                  </div>
+
+                  <div className="faq-formRow">
+                    <label className="faq-formLabel" htmlFor="contact-subject">
+                      Subject
+                    </label>
+                    <input
+                      id="contact-subject"
+                      type="text"
+                      className="faq-formInput"
+                      value={contactSubject}
+                      onChange={(e) => setContactSubject(e.target.value)}
+                      placeholder="What is this about?"
+                      required
+                    />
+                  </div>
+
+                  <div className="faq-formRow">
+                    <label className="faq-formLabel" htmlFor="contact-message">
+                      Message
+                    </label>
+                    <textarea
+                      id="contact-message"
+                      className="faq-formTextarea"
+                      value={contactMessage}
+                      onChange={(e) => setContactMessage(e.target.value)}
+                      placeholder="Tell us more..."
+                      rows={5}
+                      required
+                      minLength={10}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="faq-formSubmit"
+                    disabled={contactLoading}
+                  >
+                    {contactLoading ? "Sending..." : "Send Message"}
+                  </button>
+                </form>
+              )}
             </div>
           </section>
         </div>

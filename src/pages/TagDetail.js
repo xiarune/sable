@@ -4,11 +4,11 @@ import { discoveryApi } from "../api";
 import "./Library.css";
 import defaultCover from "../assets/images/sable_default_cover.png";
 
-export default function FandomDetail() {
+export default function TagDetail() {
   const navigate = useNavigate();
-  const { fandomSlug } = useParams();
+  const { tagSlug } = useParams();
 
-  const [fandom, setFandom] = React.useState(null);
+  const [tag, setTag] = React.useState(null);
   const [works, setWorks] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
@@ -16,22 +16,22 @@ export default function FandomDetail() {
   const [search, setSearch] = React.useState("");
 
   React.useEffect(() => {
-    async function loadFandom() {
+    async function loadTag() {
       setLoading(true);
       setError(null);
       try {
-        const data = await discoveryApi.fandom(fandomSlug, 1, 100, sort);
-        setFandom(data.fandom);
+        const data = await discoveryApi.tag(tagSlug, 1, 100, sort);
+        setTag(data.tag);
         setWorks(data.works || []);
       } catch (err) {
-        console.error("Failed to load fandom:", err);
-        setError(err.message || "Failed to load fandom");
+        console.error("Failed to load tag:", err);
+        setError(err.message || "Failed to load tag");
       } finally {
         setLoading(false);
       }
     }
-    loadFandom();
-  }, [fandomSlug, sort]);
+    loadTag();
+  }, [tagSlug, sort]);
 
   // Filter works by search
   const filteredWorks = React.useMemo(() => {
@@ -51,26 +51,26 @@ export default function FandomDetail() {
           <h1 className="shelfTitle">Loading...</h1>
         </div>
         <div className="shelfBody">
-          <p>Loading fandom...</p>
+          <p>Loading tag...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !fandom) {
+  if (error || !tag) {
     return (
       <div className="shelfPage">
         <div className="shelfBanner">
-          <h1 className="shelfTitle">Fandom Not Found</h1>
+          <h1 className="shelfTitle">Tag Not Found</h1>
         </div>
         <div className="shelfBody">
-          <p>{error || "This fandom doesn't exist."}</p>
+          <p>{error || "This tag doesn't exist."}</p>
           <button
             type="button"
             className="workPill"
-            onClick={() => navigate("/fandoms")}
+            onClick={() => navigate("/tags")}
           >
-            ← Back to Fandoms
+            ← Back to Tags
           </button>
         </div>
       </div>
@@ -80,10 +80,8 @@ export default function FandomDetail() {
   return (
     <div className="shelfPage">
       <div className="shelfBanner">
-        <h1 className="shelfTitle">{fandom.name}</h1>
-        {fandom.description && (
-          <p className="shelfSubtitle">{fandom.description}</p>
-        )}
+        <h1 className="shelfTitle">#{tag.name}</h1>
+        <p className="shelfSubtitle">{tag.usageCount || 0} works with this tag</p>
       </div>
 
       <div className="shelfBody shelfBody--withSidebar">
@@ -91,7 +89,7 @@ export default function FandomDetail() {
           <div className="filterSearchWrap">
             <input
               className="filterSearch"
-              placeholder={`Search ${fandom.name}...`}
+              placeholder="Search works..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -117,15 +115,6 @@ export default function FandomDetail() {
               />
               <span>Most Popular</span>
             </label>
-            <label className="filterRow">
-              <input
-                type="radio"
-                name="sort"
-                checked={sort === "rating"}
-                onChange={() => setSort("rating")}
-              />
-              <span>Highest Rated</span>
-            </label>
           </div>
         </aside>
 
@@ -134,7 +123,7 @@ export default function FandomDetail() {
             <div className="emptyNote">
               {search
                 ? `No works found matching "${search}"`
-                : "No works found in this fandom yet."}
+                : "No works found with this tag yet."}
             </div>
           ) : (
             <div className="worksGrid">

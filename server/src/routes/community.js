@@ -1,6 +1,7 @@
 const express = require("express");
 const { z } = require("zod");
 const CommunityPage = require("../models/CommunityPage");
+const Follow = require("../models/Follow");
 const { requireAuth, optionalAuth } = require("../middleware/auth");
 
 const router = express.Router();
@@ -39,10 +40,28 @@ router.get("/:handle", optionalAuth, async (req, res, next) => {
       return res.status(404).json({ error: "Community page not found" });
     }
 
+    const pageOwnerId = page.userId._id || page.userId;
+    const isOwner = req.user && pageOwnerId.toString() === req.user._id.toString();
+
     // Check visibility
     if (page.visibility === "private") {
-      if (!req.user || page.userId._id.toString() !== req.user._id.toString()) {
+      if (!isOwner) {
         return res.status(403).json({ error: "This page is private" });
+      }
+    } else if (page.visibility === "following") {
+      // Only owner or followers can see
+      if (!isOwner) {
+        if (!req.user) {
+          return res.status(403).json({ error: "This page is only visible to followers" });
+        }
+        // Check if the requesting user follows the page owner
+        const isFollowing = await Follow.findOne({
+          followerId: req.user._id,
+          followeeId: pageOwnerId,
+        });
+        if (!isFollowing) {
+          return res.status(403).json({ error: "This page is only visible to followers" });
+        }
       }
     }
 

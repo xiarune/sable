@@ -387,6 +387,15 @@
   color: rgba(60, 55, 52, 0.75);
 }
 
+.co-suggestEmpty,
+.co-liveEmpty {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.45);
+  text-align: center;
+  padding: 16px 12px;
+}
+
 /* Post card */
 .co-post {
   background: rgba(255, 255, 255, 0.84);
@@ -475,8 +484,9 @@
   place-items: center;
   font-family: "Libre Baskerville", serif;
   font-weight: 700;
-  color: rgba(60, 55, 52, 0.72);
-  background: rgba(0, 0, 0, 0.10);
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, #2a4d38 0%, #1f3a2a 100%);
 }
 
 .co-postRight {
@@ -715,6 +725,13 @@
   font-weight: 700;
   font-size: 13px;
   color: rgba(60, 55, 52, 0.82);
+  overflow-wrap: anywhere;
+}
+
+.co-suggestDisplayName {
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
   overflow-wrap: anywhere;
 }
 

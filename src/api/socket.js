@@ -150,22 +150,43 @@ export function leaveCommunity(communityId) {
 }
 
 /**
- * Send typing indicator start
- * @param {string} conversationId - Conversation ID
+ * Join a message thread room
+ * @param {string} threadId - Thread ID to join
  */
-export function startTyping(conversationId) {
+export function joinThread(threadId) {
+  if (!socket) {
+    initSocket();
+  }
+  socket.emit("join:thread", threadId);
+}
+
+/**
+ * Leave a message thread room
+ * @param {string} threadId - Thread ID to leave
+ */
+export function leaveThread(threadId) {
   if (socket) {
-    socket.emit("typing:start", { conversationId });
+    socket.emit("leave:thread", threadId);
+  }
+}
+
+/**
+ * Send typing indicator start
+ * @param {string} threadId - Thread ID
+ */
+export function startTyping(threadId) {
+  if (socket) {
+    socket.emit("typing:start", { threadId });
   }
 }
 
 /**
  * Send typing indicator stop
- * @param {string} conversationId - Conversation ID
+ * @param {string} threadId - Thread ID
  */
-export function stopTyping(conversationId) {
+export function stopTyping(threadId) {
   if (socket) {
-    socket.emit("typing:stop", { conversationId });
+    socket.emit("typing:stop", { threadId });
   }
 }
 
@@ -191,6 +212,57 @@ export function onTyping(callback) {
   };
 }
 
+/**
+ * Subscribe to new messages
+ * @param {Function} callback - Called when a new message is received
+ * @returns {Function} Unsubscribe function
+ */
+export function onNewMessage(callback) {
+  if (!socket) {
+    initSocket();
+  }
+
+  socket.on("new_message", callback);
+
+  return () => {
+    socket?.off("new_message", callback);
+  };
+}
+
+/**
+ * Subscribe to message seen events
+ * @param {Function} callback - Called when messages are marked as seen
+ * @returns {Function} Unsubscribe function
+ */
+export function onMessageSeen(callback) {
+  if (!socket) {
+    initSocket();
+  }
+
+  socket.on("message:seen", callback);
+
+  return () => {
+    socket?.off("message:seen", callback);
+  };
+}
+
+/**
+ * Subscribe to message reaction events
+ * @param {Function} callback - Called when a reaction is added/removed
+ * @returns {Function} Unsubscribe function
+ */
+export function onMessageReaction(callback) {
+  if (!socket) {
+    initSocket();
+  }
+
+  socket.on("message:reaction", callback);
+
+  return () => {
+    socket?.off("message:reaction", callback);
+  };
+}
+
 export default {
   initSocket,
   getSocket,
@@ -202,7 +274,12 @@ export default {
   onNewComment,
   joinCommunity,
   leaveCommunity,
+  joinThread,
+  leaveThread,
   startTyping,
   stopTyping,
   onTyping,
+  onNewMessage,
+  onMessageSeen,
+  onMessageReaction,
 };

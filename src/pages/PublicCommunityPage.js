@@ -1,33 +1,7 @@
 import React from "react";
 import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import "./PublicCommunityPage.css";
-import { uploadsApi, worksApi } from "../api";
-
-// John assets
-import johnBanner from "../assets/images/community_banner.png";
-import johnAvatar from "../assets/images/profile_picture.png";
-
-// Jane assets
-import janeBanner from "../assets/images/other_profile_banner.jpg";
-import janeAvatar from "../assets/images/other_profile.png";
-
-// Amira
-import genericBanner from "../assets/images/amira_profile.jpg";
-
-// localstorage key for following data
-const FOLLOWING_KEY = "sable_following_v1";
-
-function getFollowing() {
-  try {
-    return JSON.parse(localStorage.getItem(FOLLOWING_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
-function setFollowing(list) {
-  localStorage.setItem(FOLLOWING_KEY, JSON.stringify(list));
-}
+import { uploadsApi, worksApi, communityApi, followsApi, usersApi } from "../api";
 
 function initials(name) {
   const s = (name || "U").trim();
@@ -44,65 +18,16 @@ function Avatar({ avatar, name }) {
   );
 }
 
-// Mock data for tabs
-const MOCK_WORKS = [
-  { id: "w1", title: "The Midnight Garden", genre: "Fantasy", wordCount: "45,200" },
-  { id: "w2", title: "Echoes of Yesterday", genre: "Romance", wordCount: "32,100" },
-  { id: "w3", title: "Starbound", genre: "Sci-Fi", wordCount: "67,800" },
-];
-
-const MOCK_READING_LIST = [
-  { id: "r1", title: "When Stars Collide", author: "amira.salem", progress: "75%" },
-  { id: "r2", title: "The Last Summer", author: "hadassah", progress: "30%" },
-  { id: "r3", title: "Whispers in the Dark", author: "zoey", progress: "100%" },
-];
-
-const MOCK_SKINS = [
-  { id: "s1", name: "Dark Academia", downloads: 234, likes: 89 },
-  { id: "s2", name: "Cottagecore Dreams", downloads: 156, likes: 67 },
-  { id: "s3", name: "Midnight Blue", downloads: 312, likes: 124 },
-];
-
-const INITIAL_CHAT_MESSAGES = [
-  { id: "m1", user: "reader42", text: "Anyone here read the latest chapter?", time: "1:15 PM" },
-  { id: "m2", user: "bookworm", text: "Yes! It was amazing!", time: "1:18 PM" },
-  { id: "m3", user: "storyfan", text: "Can't wait for the next update!", time: "1:22 PM" },
-];
+// Avatar component for followers/following list
+function ListAvatar({ avatarUrl, name }) {
+  const initial = (name || "U").charAt(0).toUpperCase();
+  if (avatarUrl) {
+    return <img className="pcp-listAvatar" src={avatarUrl} alt="" />;
+  }
+  return <div className="pcp-listAvatar pcp-listAvatar--fallback">{initial}</div>;
+}
 
 const DONATION_PRESETS = [5, 10, 25];
-
-const MOCK_ANNOUNCEMENTS = [
-  { id: "a1", text: "New chapter coming this weekend!", date: "2 hours ago", pinned: true },
-  { id: "a2", text: "Thank you for 1000 followers!", date: "3 days ago", pinned: false },
-];
-
-const MOCK_PUBLIC_PROFILES = {
-  "john.doe": {
-    displayName: "JOHN.DOE",
-    handle: "john.doe",
-    banner: johnBanner,
-    avatar: johnAvatar,
-    bio:
-      "Front-end placeholder for public community profiles. Later this will show the user’s banner, bio, works, skins, audios, and widgets.",
-    link: "sable.app",
-  },
-  "jane.doe": {
-    displayName: "JANE.DOE",
-    handle: "jane.doe",
-    banner: janeBanner, // <-- THIS is where your other_profile_banner.jpg is used
-    avatar: janeAvatar,
-    bio: "writes fantasy + character studies",
-    link: "sable.app/jane",
-  },
-  "amira.salem": {
-    displayName: "AMIRA.SALEM",
-    handle: "amira.salem",
-    banner: genericBanner,
-    avatar: "", // fallback circle with initial
-    bio: "romance, fluff, and comfort reads",
-    link: "sable.app/amira",
-  },
-};
 
 export default function PublicCommunityPage({ isAuthed = false, username = "john.doe" }) {
   const { handle } = useParams();
@@ -116,9 +41,23 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   const normalizedHandle = (handle || "").trim().toLowerCase();
   const normalizedUsername = (username || "").trim().toLowerCase();
 
+  // Loading and profile state
+  const [loading, setLoading] = React.useState(true);
+  const [profile, setProfile] = React.useState(null);
+  const [userId, setUserId] = React.useState(null);
+  const [announcements, setAnnouncements] = React.useState([]);
+  const [accessDenied, setAccessDenied] = React.useState(null); // null | "private" | "following"
+
   // Following state
-  const [followingList, setFollowingList] = React.useState(() => getFollowing());
-  const isFollowing = followingList.includes(normalizedHandle);
+  const [isFollowing, setIsFollowing] = React.useState(false);
+  const [followLoading, setFollowLoading] = React.useState(false);
+
+  // Followers/following list state
+  const [followers, setFollowers] = React.useState([]);
+  const [following, setFollowing] = React.useState([]);
+  const [followModalOpen, setFollowModalOpen] = React.useState(false);
+  const [followModalTab, setFollowModalTab] = React.useState("followers");
+  const [loadingFollows, setLoadingFollows] = React.useState(false);
 
   // Search state
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
@@ -131,33 +70,169 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   const [userWorks, setUserWorks] = React.useState([]);
   const [userAudios, setUserAudios] = React.useState([]);
 
-  // Fetch user's works and audios
+  // Load community page and user data
   React.useEffect(() => {
-    async function loadUserData() {
+    async function loadData() {
       if (!normalizedHandle) return;
+      setLoading(true);
 
+      // Try to load community page
       try {
-        // Fetch user's audios
+        const communityData = await communityApi.getByHandle(normalizedHandle);
+        if (communityData.error) {
+          // Check for visibility-related errors
+          if (communityData.error.includes("private")) {
+            setAccessDenied("private");
+            setLoading(false);
+            return;
+          } else if (communityData.error.includes("followers")) {
+            setAccessDenied("following");
+            setLoading(false);
+            return;
+          }
+          throw new Error(communityData.error);
+        }
+        if (communityData.page) {
+          setAccessDenied(null);
+          // Prefer user's avatarUrl (source of truth) over communityPage.profileImageUrl
+          const userAvatar = communityData.page.userId?.avatarUrl || "";
+          const pageAvatar = communityData.page.profileImageUrl || "";
+          setProfile({
+            displayName: communityData.page.displayName || normalizedHandle.toUpperCase(),
+            handle: communityData.page.handle || normalizedHandle,
+            banner: communityData.page.bannerImageUrl || "",
+            avatar: userAvatar || pageAvatar,
+            bio: communityData.page.bio || "",
+            link: communityData.page.link || "",
+            widgets: communityData.page.widgets || {},
+          });
+          setAnnouncements(communityData.page.announcements || []);
+          if (communityData.page.userId) {
+            setUserId(communityData.page.userId._id || communityData.page.userId);
+          }
+        }
+      } catch (err) {
+        // Check if this is a visibility error from the API response
+        const errorMsg = err?.message || "";
+        if (errorMsg.includes("private")) {
+          setAccessDenied("private");
+          setLoading(false);
+          return;
+        } else if (errorMsg.includes("followers")) {
+          setAccessDenied("following");
+          setLoading(false);
+          return;
+        }
+
+        // Community page doesn't exist, try to get user profile
+        try {
+          const userData = await usersApi.getProfile(normalizedHandle);
+          if (userData.user) {
+            setAccessDenied(null);
+            setProfile({
+              displayName: userData.user.displayName || normalizedHandle.toUpperCase(),
+              handle: normalizedHandle,
+              banner: "",
+              avatar: userData.user.avatarUrl || "",
+              bio: userData.user.bio || "",
+              link: "",
+            });
+            setUserId(userData.user._id);
+          }
+        } catch {
+          // User not found, use fallback
+          setAccessDenied(null);
+          setProfile({
+            displayName: normalizedHandle.toUpperCase(),
+            handle: normalizedHandle,
+            banner: "",
+            avatar: "",
+            bio: "This user hasn't set up their community page yet.",
+            link: "",
+          });
+        }
+      }
+
+      // Load works
+      try {
+        const worksData = await worksApi.list({ author: normalizedHandle, limit: 20 });
+        setUserWorks(worksData.works || []);
+      } catch (err) {
+        console.error("Failed to load works:", err);
+      }
+
+      // Load audios
+      try {
         const audiosData = await uploadsApi.getUserAudios(normalizedHandle);
         setUserAudios(audiosData.audios || []);
       } catch (err) {
         console.error("Failed to load audios:", err);
       }
 
-      try {
-        // Fetch user's public works
-        const worksData = await worksApi.list({ author: normalizedHandle, limit: 20 });
-        setUserWorks(worksData.works || []);
-      } catch (err) {
-        console.error("Failed to load works:", err);
-      }
+      setLoading(false);
     }
 
-    loadUserData();
+    loadData();
   }, [normalizedHandle]);
 
-  // Chatroom state
-  const [chatMessages, setChatMessages] = React.useState(INITIAL_CHAT_MESSAGES);
+  // Check if following this user
+  React.useEffect(() => {
+    async function checkFollowing() {
+      if (!isAuthed || !userId) return;
+      try {
+        const data = await followsApi.checkFollowing(userId);
+        setIsFollowing(data.following);
+      } catch (err) {
+        console.error("Failed to check following status:", err);
+      }
+    }
+    checkFollowing();
+  }, [isAuthed, userId]);
+
+  // Load followers/following counts
+  React.useEffect(() => {
+    async function loadFollowCounts() {
+      if (!normalizedHandle) return;
+      try {
+        const [followersData, followingData] = await Promise.all([
+          followsApi.getUserFollowers(normalizedHandle),
+          followsApi.getUserFollowing(normalizedHandle),
+        ]);
+        setFollowers(followersData.followers || []);
+        setFollowing(followingData.following || []);
+      } catch (err) {
+        console.error("Failed to load follow counts:", err);
+      }
+    }
+    loadFollowCounts();
+  }, [normalizedHandle]);
+
+  // Open followers/following modal
+  async function openFollowModal(tab) {
+    setFollowModalTab(tab);
+    setFollowModalOpen(true);
+    setLoadingFollows(true);
+
+    try {
+      const [followersData, followingData] = await Promise.all([
+        followsApi.getUserFollowers(normalizedHandle),
+        followsApi.getUserFollowing(normalizedHandle),
+      ]);
+      setFollowers(followersData.followers || []);
+      setFollowing(followingData.following || []);
+    } catch (err) {
+      console.error("Failed to load follows:", err);
+    } finally {
+      setLoadingFollows(false);
+    }
+  }
+
+  function closeFollowModal() {
+    setFollowModalOpen(false);
+  }
+
+  // Chatroom state (starts empty - real-time chat not yet implemented)
+  const [chatMessages, setChatMessages] = React.useState([]);
   const [chatInput, setChatInput] = React.useState("");
   const chatEndRef = React.useRef(null);
   const isInitialChatMount = React.useRef(true);
@@ -219,23 +294,37 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   }
 
   function handleWorkClick(workId) {
-    navigate(`/works/view/${encodeURIComponent(workId)}`);
+    navigate(`/works/${encodeURIComponent(workId)}`);
   }
 
-  function handleFollow() {
+  async function handleFollow() {
     if (!isAuthed) {
       window.dispatchEvent(new Event("sable:open-auth"));
       return;
     }
-    const updated = [...followingList, normalizedHandle];
-    setFollowingList(updated);
-    setFollowing(updated);
+    if (!userId || followLoading) return;
+    setFollowLoading(true);
+    try {
+      await followsApi.follow(userId);
+      setIsFollowing(true);
+    } catch (err) {
+      console.error("Failed to follow:", err);
+    } finally {
+      setFollowLoading(false);
+    }
   }
 
-  function handleUnfollow() {
-    const updated = followingList.filter((h) => h !== normalizedHandle);
-    setFollowingList(updated);
-    setFollowing(updated);
+  async function handleUnfollow() {
+    if (!userId || followLoading) return;
+    setFollowLoading(true);
+    try {
+      await followsApi.unfollow(userId);
+      setIsFollowing(false);
+    } catch (err) {
+      console.error("Failed to unfollow:", err);
+    } finally {
+      setFollowLoading(false);
+    }
   }
 
   function handleShare() {
@@ -255,28 +344,62 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   }
 
   // If you're logged in and you navigate to your own handle, show the editable "me" page instead.
-  // (Keeps behavior consistent even if you click yourself in the feed.)
   if (isAuthed && normalizedHandle && normalizedHandle === normalizedUsername) {
     return <Navigate to="/communities/me" replace />;
   }
 
-  const profile =
-    MOCK_PUBLIC_PROFILES[normalizedHandle] ||
-    {
-      displayName: (normalizedHandle || "user").toUpperCase(),
-      handle: normalizedHandle || "user",
-      banner: genericBanner,
-      avatar: "",
-      bio: "Public community profile placeholder.",
-      link: "sable.app",
-    };
+  if (loading) {
+    return (
+      <div className="pcp">
+        <div className="pcp-loading">Loading community page...</div>
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="pcp">
+        <div className="pcp-accessDenied">
+          <div className="pcp-accessDeniedIcon">🔒</div>
+          <h2 className="pcp-accessDeniedTitle">
+            {accessDenied === "private" ? "This page is private" : "Followers only"}
+          </h2>
+          <p className="pcp-accessDeniedText">
+            {accessDenied === "private"
+              ? "This user has set their community page to private."
+              : "This user's community page is only visible to their followers."}
+          </p>
+          {!isAuthed && (
+            <button
+              type="button"
+              className="pcp-accessDeniedBtn"
+              onClick={() => window.dispatchEvent(new Event("sable:open-auth"))}
+            >
+              Log in
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="pcp">
+        <div className="pcp-notFound">
+          <h2>User not found</h2>
+          <Link to="/communities">Back to Communities</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pcp">
       {/* Banner */}
       <section
-        className="pcp-banner"
-        style={{ backgroundImage: `url(${profile.banner})` }}
+        className={`pcp-banner ${!profile.banner ? "pcp-banner--empty" : ""}`}
+        style={profile.banner ? { backgroundImage: `url(${profile.banner})` } : undefined}
         aria-label="Community banner"
       />
 
@@ -298,18 +421,20 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
                     type="button"
                     className="pcp-actionBtn pcp-followBtn pcp-followBtn--following"
                     onClick={handleUnfollow}
+                    disabled={followLoading}
                     aria-label="Unfollow"
                   >
-                    Following
+                    {followLoading ? "..." : "Following"}
                   </button>
                 ) : (
                   <button
                     type="button"
                     className="pcp-actionBtn pcp-followBtn"
                     onClick={handleFollow}
+                    disabled={followLoading}
                     aria-label="Follow"
                   >
-                    Follow
+                    {followLoading ? "..." : "Follow"}
                   </button>
                 )}
                 <button type="button" className="pcp-actionBtn" aria-label="Search" onClick={handleSearch}>
@@ -322,6 +447,25 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
             </div>
 
             <div className="pcp-handle">@{profile.handle}</div>
+
+            <div className="pcp-followStats">
+              <button
+                type="button"
+                className="pcp-followStat"
+                onClick={() => openFollowModal("followers")}
+              >
+                <span className="pcp-followStatCount">{followers.length}</span>
+                <span className="pcp-followStatLabel">Followers</span>
+              </button>
+              <button
+                type="button"
+                className="pcp-followStat"
+                onClick={() => openFollowModal("following")}
+              >
+                <span className="pcp-followStatCount">{following.length}</span>
+                <span className="pcp-followStatLabel">Following</span>
+              </button>
+            </div>
 
             {isSearchOpen && (
               <div className="pcp-searchBar" aria-label="Search user content">
@@ -426,32 +570,16 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
 
             {activeTab === "reading" && (
               <div className="pcp-tabContent" aria-label="Reading List">
-                <div className="pcp-listItems">
-                  {MOCK_READING_LIST.map((item) => (
-                    <div key={item.id} className="pcp-listItem">
-                      <div className="pcp-listItemMain">
-                        <div className="pcp-listItemTitle">{item.title}</div>
-                        <div className="pcp-listItemMeta">by @{item.author}</div>
-                      </div>
-                      <div className="pcp-listItemProgress">{item.progress}</div>
-                    </div>
-                  ))}
+                <div className="pcp-emptyState">
+                  Reading lists are private. Only the user can see their own reading list.
                 </div>
               </div>
             )}
 
             {activeTab === "skins" && (
               <div className="pcp-tabContent" aria-label="Skins">
-                <div className="pcp-listItems">
-                  {MOCK_SKINS.map((skin) => (
-                    <div key={skin.id} className="pcp-listItem">
-                      <div className="pcp-listItemMain">
-                        <div className="pcp-listItemTitle">{skin.name}</div>
-                        <div className="pcp-listItemMeta">{skin.downloads} downloads · {skin.likes} likes</div>
-                      </div>
-                      <button type="button" className="pcp-listItemBtn">Preview</button>
-                    </div>
-                  ))}
+                <div className="pcp-emptyState">
+                  Skins feature coming soon.
                 </div>
               </div>
             )}
@@ -506,15 +634,21 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
               <div className="pcp-panel pcp-panel--announcements">
                 <div className="pcp-panelTitle">Announcements</div>
                 <div className="pcp-announcementsBox">
-                  {MOCK_ANNOUNCEMENTS.map((ann) => (
-                    <div key={ann.id} className={`pcp-announcementItem ${ann.pinned ? "pcp-announcementItem--pinned" : ""}`}>
-                      {ann.pinned && <span className="pcp-announcementPin">📌</span>}
-                      <div className="pcp-announcementContent">
-                        <div className="pcp-announcementText">{ann.text}</div>
-                        <div className="pcp-announcementDate">{ann.date}</div>
+                  {announcements.length === 0 ? (
+                    <div className="pcp-emptyState pcp-emptyState--small">No announcements yet</div>
+                  ) : (
+                    announcements.map((ann, idx) => (
+                      <div key={idx} className={`pcp-announcementItem ${ann.pinned ? "pcp-announcementItem--pinned" : ""}`}>
+                        {ann.pinned && <span className="pcp-announcementPin">📌</span>}
+                        <div className="pcp-announcementContent">
+                          <div className="pcp-announcementText">{ann.text}</div>
+                          <div className="pcp-announcementDate">
+                            {ann.createdAt ? new Date(ann.createdAt).toLocaleDateString() : ""}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -575,22 +709,30 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
               <div className="pcp-panel pcp-panel--recentWorks">
                 <div className="pcp-panelTitle">Recent Works</div>
                 <div className="pcp-recentWorksBox">
-                  {MOCK_WORKS.slice(0, 3).map((work) => (
-                    <div
-                      key={work.id}
-                      className="pcp-recentWorkItem"
-                      onClick={() => handleWorkClick(work.id)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work.id)}
-                    >
-                      <div className="pcp-recentWorkCover" />
-                      <div className="pcp-recentWorkInfo">
-                        <div className="pcp-recentWorkTitle">{work.title}</div>
-                        <div className="pcp-recentWorkMeta">{work.genre} · {work.wordCount}</div>
+                  {userWorks.length === 0 ? (
+                    <div className="pcp-emptyState pcp-emptyState--small">No works yet</div>
+                  ) : (
+                    userWorks.slice(0, 3).map((work) => (
+                      <div
+                        key={work._id}
+                        className="pcp-recentWorkItem"
+                        onClick={() => handleWorkClick(work._id)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === "Enter" && handleWorkClick(work._id)}
+                      >
+                        {work.coverImageUrl ? (
+                          <img className="pcp-recentWorkCover" src={work.coverImageUrl} alt="" />
+                        ) : (
+                          <div className="pcp-recentWorkCover" />
+                        )}
+                        <div className="pcp-recentWorkInfo">
+                          <div className="pcp-recentWorkTitle">{work.title}</div>
+                          <div className="pcp-recentWorkMeta">{work.genre || "—"} · {work.wordCount?.toLocaleString() || 0} words</div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -598,15 +740,19 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
                 <div className="pcp-panelTitle">Chatroom</div>
                 <div className="pcp-chatBox">
                   <div className="pcp-chatMessages">
-                    {chatMessages.map((msg) => (
-                      <div key={msg.id} className="pcp-chatMessage">
-                        <div className="pcp-chatMsgHeader">
-                          <span className="pcp-chatMsgUser">@{msg.user}</span>
-                          <span className="pcp-chatMsgTime">{msg.time}</span>
+                    {chatMessages.length === 0 ? (
+                      <div className="pcp-chatEmpty">No messages yet. Start the conversation!</div>
+                    ) : (
+                      chatMessages.map((msg) => (
+                        <div key={msg.id} className="pcp-chatMessage">
+                          <div className="pcp-chatMsgHeader">
+                            <span className="pcp-chatMsgUser">@{msg.user}</span>
+                            <span className="pcp-chatMsgTime">{msg.time}</span>
+                          </div>
+                          <div className="pcp-chatMsgText">{msg.text}</div>
                         </div>
-                        <div className="pcp-chatMsgText">{msg.text}</div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                     <div ref={chatEndRef} />
                   </div>
                   <div className="pcp-chatInputRow">
@@ -636,6 +782,85 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
           </aside>
         </div>
       </section>
+
+      {/* Followers/Following Modal */}
+      {followModalOpen && (
+        <div className="pcp-modal-overlay" onClick={closeFollowModal}>
+          <div className="pcp-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="pcp-modalHeader">
+              <div className="pcp-modalTabs">
+                <button
+                  type="button"
+                  className={`pcp-modalTab ${followModalTab === "followers" ? "pcp-modalTab--active" : ""}`}
+                  onClick={() => setFollowModalTab("followers")}
+                >
+                  Followers ({followers.length})
+                </button>
+                <button
+                  type="button"
+                  className={`pcp-modalTab ${followModalTab === "following" ? "pcp-modalTab--active" : ""}`}
+                  onClick={() => setFollowModalTab("following")}
+                >
+                  Following ({following.length})
+                </button>
+              </div>
+              <button type="button" className="pcp-modalClose" onClick={closeFollowModal}>
+                ✕
+              </button>
+            </div>
+
+            <div className="pcp-modalBody">
+              {loadingFollows ? (
+                <div className="pcp-modalEmpty">Loading...</div>
+              ) : followModalTab === "followers" ? (
+                followers.length === 0 ? (
+                  <div className="pcp-modalEmpty">No followers yet</div>
+                ) : (
+                  <div className="pcp-followList">
+                    {followers.map((user) => (
+                      <Link
+                        key={user._id}
+                        to={`/communities/${user.username}`}
+                        className="pcp-followItem"
+                        onClick={closeFollowModal}
+                      >
+                        <ListAvatar avatarUrl={user.avatarUrl} name={user.displayName || user.username} />
+                        <div className="pcp-followItemInfo">
+                          <div className="pcp-followItemUsername">@{user.username}</div>
+                          {user.displayName && user.displayName !== user.username && (
+                            <div className="pcp-followItemDisplayName">{user.displayName}</div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )
+              ) : following.length === 0 ? (
+                <div className="pcp-modalEmpty">Not following anyone yet</div>
+              ) : (
+                <div className="pcp-followList">
+                  {following.map((user) => (
+                    <Link
+                      key={user._id}
+                      to={`/communities/${user.username}`}
+                      className="pcp-followItem"
+                      onClick={closeFollowModal}
+                    >
+                      <ListAvatar avatarUrl={user.avatarUrl} name={user.displayName || user.username} />
+                      <div className="pcp-followItemInfo">
+                        <div className="pcp-followItemUsername">@{user.username}</div>
+                        {user.displayName && user.displayName !== user.username && (
+                          <div className="pcp-followItemDisplayName">{user.displayName}</div>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

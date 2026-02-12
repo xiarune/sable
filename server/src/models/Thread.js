@@ -19,6 +19,14 @@ const threadSchema = new mongoose.Schema(
       ref: "User",
     },
 
+    // Message request handling (from non-followers)
+    isRequest: { type: Boolean, default: false },
+    requestAcceptedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    requestAcceptedAt: { type: Date },
+
     // Per-user settings
     mutedBy: [{
       type: mongoose.Schema.Types.ObjectId,
@@ -29,6 +37,13 @@ const threadSchema = new mongoose.Schema(
     unreadCounts: {
       type: Map,
       of: Number,
+      default: {},
+    },
+
+    // Last seen timestamp per participant (for seen indicators)
+    lastSeenAt: {
+      type: Map,
+      of: Date,
       default: {},
     },
   },

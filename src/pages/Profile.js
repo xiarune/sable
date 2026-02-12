@@ -1,9 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./Profile.css";
-import { authApi, worksApi, draftsApi } from "../api";
-
-import profileImg from "../assets/images/profile_picture.png";
+import { authApi, worksApi, draftsApi, uploadsApi, usersApi, communityApi } from "../api";
 
 function Stat({ label, value }) {
   return (
@@ -51,6 +49,8 @@ export default function Profile({ username = "guest" }) {
   const [works, setWorks] = React.useState([]);
   const [drafts, setDrafts] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [uploadingAvatar, setUploadingAvatar] = React.useState(false);
+  const avatarInputRef = React.useRef(null);
 
   React.useEffect(() => {
     async function loadData() {
@@ -77,8 +77,34 @@ export default function Profile({ username = "guest" }) {
   const effectiveUsername = user?.username || username || "guest";
   const displayName = user?.displayName || effectiveUsername;
   const handle = `@${effectiveUsername}`;
-  const avatarUrl = user?.avatarUrl || profileImg;
+  const avatarUrl = user?.avatarUrl || "";
   const stats = user?.stats || { followersCount: 0, followingCount: 0, worksCount: 0 };
+  const initials = (displayName || "U").charAt(0).toUpperCase();
+
+  // Handle avatar upload - syncs to both User profile and CommunityPage
+  async function handleAvatarUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    try {
+      const result = await uploadsApi.image(file, "avatar");
+      if (result.url) {
+        // Update both User profile and CommunityPage to keep them in sync
+        await Promise.all([
+          usersApi.updateProfile({ avatarUrl: result.url }),
+          communityApi.update({ profileImageUrl: result.url }),
+        ]);
+        setUser((prev) => prev ? { ...prev, avatarUrl: result.url } : prev);
+      }
+    } catch (err) {
+      console.error("Failed to upload avatar:", err);
+      alert("Failed to upload profile picture. Please try again.");
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  }
 
   function goToWorksPage() {
     navigate("/works");
@@ -115,15 +141,36 @@ export default function Profile({ username = "guest" }) {
 
   return (
     <div className="pf">
+      {/* Hidden file input for avatar upload */}
+      <input
+        type="file"
+        ref={avatarInputRef}
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={handleAvatarUpload}
+      />
+
       <div className="pf-shell">
         {/* Hero */}
         <section className="pf-hero" aria-label="Profile header">
           <div className="pf-heroTop">
             <div className="pf-id">
-              <div className="pf-avatarWrap" aria-label="Profile picture">
-                <img className="pf-avatar" src={avatarUrl} alt={`${displayName} profile`} />
-                <div className="pf-avatarFallback" aria-hidden="true">
-                  {displayName.slice(0, 1).toUpperCase()}
+              <div
+                className="pf-avatarWrap"
+                aria-label="Profile picture"
+                role="button"
+                tabIndex={0}
+                onClick={() => avatarInputRef.current?.click()}
+                onKeyDown={(e) => e.key === "Enter" && avatarInputRef.current?.click()}
+                title="Click to change profile picture"
+              >
+                {avatarUrl ? (
+                  <img className="pf-avatar" src={avatarUrl} alt={`${displayName} profile`} />
+                ) : (
+                  <div className="pf-avatar pf-avatar--fallback">{initials}</div>
+                )}
+                <div className="pf-avatarOverlay">
+                  {uploadingAvatar ? "..." : "Edit"}
                 </div>
               </div>
 

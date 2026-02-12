@@ -1,5 +1,19 @@
 const mongoose = require("mongoose");
 
+// Reaction sub-schema
+const reactionSchema = new mongoose.Schema(
+  {
+    emoji: { type: String, required: true },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    username: { type: String, required: true },
+  },
+  { _id: false }
+);
+
 // Individual message
 const messageSchema = new mongoose.Schema(
   {
@@ -28,6 +42,9 @@ const messageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     }],
+
+    // Message reactions (thumbs up, heart, etc.)
+    reactions: [reactionSchema],
   },
   {
     timestamps: true,

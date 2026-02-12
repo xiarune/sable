@@ -1,17 +1,20 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import "./YourCommunityPage.css";
-import { uploadsApi, worksApi } from "../api";
-
-import bannerImg from "../assets/images/community_banner.png";
-import profileImg from "../assets/images/profile_picture.png";
+import { uploadsApi, worksApi, communityApi, bookmarksApi, followsApi, usersApi, authApi } from "../api";
 
 import editBannerIcon from "../assets/images/edit_banner.png";
 import editProfileIcon from "../assets/images/edit_profile_picture.png";
 import subtractWidgetIcon from "../assets/images/subtract_widget.png";
 
-// localstorage key for widget settings
-const WIDGETS_KEY = "sable_community_widgets_v1";
+// Avatar component for followers/following list
+function ListAvatar({ avatarUrl, name }) {
+  const initial = (name || "U").charAt(0).toUpperCase();
+  if (avatarUrl) {
+    return <img className="ycp-listAvatar" src={avatarUrl} alt="" />;
+  }
+  return <div className="ycp-listAvatar ycp-listAvatar--fallback">{initial}</div>;
+}
 
 const DEFAULT_WIDGETS = {
   announcements: true,
@@ -19,57 +22,6 @@ const DEFAULT_WIDGETS = {
   recentWorks: true,
   chatroom: true,
 };
-
-function getWidgetSettings() {
-  try {
-    const saved = localStorage.getItem(WIDGETS_KEY);
-    return saved ? { ...DEFAULT_WIDGETS, ...JSON.parse(saved) } : DEFAULT_WIDGETS;
-  } catch {
-    return DEFAULT_WIDGETS;
-  }
-}
-
-function saveWidgetSettings(widgets) {
-  localStorage.setItem(WIDGETS_KEY, JSON.stringify(widgets));
-}
-
-// Mock data for tabs
-const MOCK_WORKS = [
-  { id: "w1", title: "The Midnight Garden", genre: "Fantasy", wordCount: "45,200" },
-  { id: "w2", title: "Echoes of Yesterday", genre: "Romance", wordCount: "32,100" },
-  { id: "w3", title: "Starbound", genre: "Sci-Fi", wordCount: "67,800" },
-];
-
-const MOCK_READING_LIST = [
-  { id: "r1", title: "When Stars Collide", author: "amira.salem", progress: "75%" },
-  { id: "r2", title: "The Last Summer", author: "hadassah", progress: "30%" },
-  { id: "r3", title: "Whispers in the Dark", author: "zoey", progress: "100%" },
-];
-
-const MOCK_SKINS = [
-  { id: "s1", name: "Dark Academia", downloads: 234, likes: 89 },
-  { id: "s2", name: "Cottagecore Dreams", downloads: 156, likes: 67 },
-  { id: "s3", name: "Midnight Blue", downloads: 312, likes: 124 },
-];
-
-const INITIAL_CHAT_MESSAGES = [
-  { id: "m1", user: "amira.salem", text: "Love the new chapter!", time: "2:34 PM" },
-  { id: "m2", user: "hadassah", text: "When's the next update coming?", time: "2:36 PM" },
-  { id: "m3", user: "zoey", text: "This community is amazing!", time: "2:40 PM" },
-];
-
-const DONATION_PRESETS = [5, 10, 25];
-
-const MOCK_RECENT_DONATIONS = [
-  { user: "bookworm", amount: "$10", time: "2 hours ago" },
-  { user: "storyfan", amount: "$5", time: "Yesterday" },
-];
-
-const MOCK_ANNOUNCEMENTS = [
-  { id: "a1", text: "New chapter coming this weekend!", date: "2 hours ago", pinned: true },
-  { id: "a2", text: "Thank you for 1000 followers!", date: "3 days ago", pinned: false },
-  { id: "a3", text: "Taking a short break next week", date: "1 week ago", pinned: false },
-];
 
 export default function YourCommunityPage({ username }) {
   const location = useLocation();
@@ -83,15 +35,20 @@ export default function YourCommunityPage({ username }) {
   const initialDisplayName = (username || "john.doe").toUpperCase();
 
   const [isEditing, setIsEditing] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+
+  // Community page data from API
+  const [communityPage, setCommunityPage] = React.useState(null);
 
   // Front-end "saved" profile fields
   const [displayName, setDisplayName] = React.useState(initialDisplayName);
-  const [handle] = React.useState("@User4658");
-  const [bio, setBio] = React.useState(
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus."
-  );
-  const [link, setLink] = React.useState("x.com/user4658");
-  const [visibility, setVisibility] = React.useState("public"); // public | private | following
+  const [handle, setHandle] = React.useState(`@${username || "user"}`);
+  const [bio, setBio] = React.useState("");
+  const [link, setLink] = React.useState("");
+  const [visibility, setVisibility] = React.useState("public");
+  const [bannerUrl, setBannerUrl] = React.useState("");
+  const [profileUrl, setProfileUrl] = React.useState("");
 
   // Draft fields used only in edit mode
   const [draftName, setDraftName] = React.useState(displayName);
@@ -109,12 +66,67 @@ export default function YourCommunityPage({ username }) {
   // Real data state
   const [userWorks, setUserWorks] = React.useState([]);
   const [userAudios, setUserAudios] = React.useState([]);
+  const [readingList, setReadingList] = React.useState([]);
+  const [announcements, setAnnouncements] = React.useState([]);
 
-  // Fetch user's works and audios
+  // New announcement input
+  const [newAnnouncementText, setNewAnnouncementText] = React.useState("");
+  const [newAnnouncementPinned, setNewAnnouncementPinned] = React.useState(false);
+
+  // Image upload state
+  const [uploadingBanner, setUploadingBanner] = React.useState(false);
+  const [uploadingProfile, setUploadingProfile] = React.useState(false);
+  const bannerInputRef = React.useRef(null);
+  const profileInputRef = React.useRef(null);
+
+  // Followers/following state
+  const [followers, setFollowers] = React.useState([]);
+  const [following, setFollowing] = React.useState([]);
+  const [followModalOpen, setFollowModalOpen] = React.useState(false);
+  const [followModalTab, setFollowModalTab] = React.useState("followers"); // "followers" | "following"
+  const [loadingFollows, setLoadingFollows] = React.useState(false);
+
+  // Fetch community page data and user profile
+  React.useEffect(() => {
+    async function loadCommunityPage() {
+      try {
+        // Fetch both community page and user profile
+        const [communityData, userData] = await Promise.all([
+          communityApi.getMine(),
+          authApi.me(),
+        ]);
+
+        if (communityData.page) {
+          setCommunityPage(communityData.page);
+          setDisplayName(communityData.page.displayName || initialDisplayName);
+          setHandle(`@${communityData.page.handle || username}`);
+          setBio(communityData.page.bio || "");
+          setLink(communityData.page.link || "");
+          setVisibility(communityData.page.visibility || "public");
+          setBannerUrl(communityData.page.bannerImageUrl || "");
+          // Prefer user's avatarUrl (source of truth) over communityPage.profileImageUrl
+          const userAvatar = userData?.user?.avatarUrl || "";
+          const pageAvatar = communityData.page.profileImageUrl || "";
+          setProfileUrl(userAvatar || pageAvatar);
+          setAnnouncements(communityData.page.announcements || []);
+          if (communityData.page.widgets) {
+            setWidgets({ ...DEFAULT_WIDGETS, ...communityData.page.widgets });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load community page:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCommunityPage();
+  }, [username, initialDisplayName]);
+
+  // Fetch user's works, audios, and reading list
   React.useEffect(() => {
     async function loadUserData() {
       try {
-        // Fetch user's works
         const worksData = await worksApi.mine();
         setUserWorks(worksData.works || []);
       } catch (err) {
@@ -122,11 +134,25 @@ export default function YourCommunityPage({ username }) {
       }
 
       try {
-        // Fetch user's audios
         const audiosData = await uploadsApi.list("audio");
         setUserAudios(audiosData.uploads || []);
       } catch (err) {
         console.error("Failed to load audios:", err);
+      }
+
+      try {
+        const bookmarksData = await bookmarksApi.list("work");
+        // Convert bookmarks to reading list format
+        const reading = (bookmarksData.bookmarks || []).map((b) => ({
+          id: b._id,
+          workId: b.workId,
+          title: b.title || "Unknown",
+          author: b.authorUsername || "Unknown",
+          progress: "—", // Progress tracking not yet implemented
+        }));
+        setReadingList(reading);
+      } catch (err) {
+        console.error("Failed to load reading list:", err);
       }
     }
 
@@ -134,10 +160,51 @@ export default function YourCommunityPage({ username }) {
   }, []);
 
   // Widget settings state
-  const [widgets, setWidgets] = React.useState(() => getWidgetSettings());
+  const [widgets, setWidgets] = React.useState(DEFAULT_WIDGETS);
 
-  // Chatroom state
-  const [chatMessages, setChatMessages] = React.useState(INITIAL_CHAT_MESSAGES);
+  // Fetch initial followers/following counts
+  React.useEffect(() => {
+    async function loadFollowCounts() {
+      try {
+        const [followersData, followingData] = await Promise.all([
+          followsApi.getFollowers(),
+          followsApi.getFollowing(),
+        ]);
+        setFollowers(followersData.followers || []);
+        setFollowing(followingData.following || []);
+      } catch (err) {
+        console.error("Failed to load follow counts:", err);
+      }
+    }
+    loadFollowCounts();
+  }, []);
+
+  // Fetch followers/following when modal opens (refresh data)
+  async function openFollowModal(tab) {
+    setFollowModalTab(tab);
+    setFollowModalOpen(true);
+    setLoadingFollows(true);
+
+    try {
+      const [followersData, followingData] = await Promise.all([
+        followsApi.getFollowers(),
+        followsApi.getFollowing(),
+      ]);
+      setFollowers(followersData.followers || []);
+      setFollowing(followingData.following || []);
+    } catch (err) {
+      console.error("Failed to load follows:", err);
+    } finally {
+      setLoadingFollows(false);
+    }
+  }
+
+  function closeFollowModal() {
+    setFollowModalOpen(false);
+  }
+
+  // Chatroom state (starts empty - real-time chat not yet implemented)
+  const [chatMessages, setChatMessages] = React.useState([]);
   const [chatInput, setChatInput] = React.useState("");
   const chatEndRef = React.useRef(null);
   const isInitialChatMount = React.useRef(true);
@@ -173,20 +240,89 @@ export default function YourCommunityPage({ username }) {
     }
   }, [chatMessages]);
 
-  // Donation state (for viewing received donations)
-  const [donationHistory] = React.useState(MOCK_RECENT_DONATIONS);
-  const [totalReceived] = React.useState("$245.00");
+  // Donation state (for viewing received donations - not yet implemented)
+  const [donationHistory] = React.useState([]);
+  const [totalReceived] = React.useState("$0.00");
 
   function handleWorkClick(workId) {
-    navigate(`/works/view/${encodeURIComponent(workId)}`);
+    navigate(`/works/${encodeURIComponent(workId)}`);
   }
 
-  function toggleWidget(widgetKey) {
-    setWidgets((prev) => {
-      const updated = { ...prev, [widgetKey]: !prev[widgetKey] };
-      saveWidgetSettings(updated);
-      return updated;
-    });
+  async function toggleWidget(widgetKey) {
+    const updated = { ...widgets, [widgetKey]: !widgets[widgetKey] };
+    setWidgets(updated);
+    try {
+      await communityApi.update({ widgets: updated });
+    } catch (err) {
+      console.error("Failed to save widget settings:", err);
+    }
+  }
+
+  async function handleAddAnnouncement() {
+    if (!newAnnouncementText.trim()) return;
+    try {
+      const data = await communityApi.addAnnouncement(newAnnouncementText.trim(), newAnnouncementPinned);
+      setAnnouncements(data.announcements || []);
+      setNewAnnouncementText("");
+      setNewAnnouncementPinned(false);
+    } catch (err) {
+      console.error("Failed to add announcement:", err);
+    }
+  }
+
+  async function handleDeleteAnnouncement(index) {
+    try {
+      const data = await communityApi.deleteAnnouncement(index);
+      setAnnouncements(data.announcements || []);
+    } catch (err) {
+      console.error("Failed to delete announcement:", err);
+    }
+  }
+
+  // Handle banner image upload
+  async function handleBannerUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingBanner(true);
+    try {
+      const result = await uploadsApi.image(file, "banner");
+      if (result.url) {
+        setBannerUrl(result.url);
+        await communityApi.update({ bannerImageUrl: result.url });
+      }
+    } catch (err) {
+      console.error("Failed to upload banner:", err);
+      alert("Failed to upload banner image. Please try again.");
+    } finally {
+      setUploadingBanner(false);
+      if (bannerInputRef.current) bannerInputRef.current.value = "";
+    }
+  }
+
+  // Handle profile image upload - syncs to both CommunityPage and User profile
+  async function handleProfileUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingProfile(true);
+    try {
+      const result = await uploadsApi.image(file, "avatar");
+      if (result.url) {
+        setProfileUrl(result.url);
+        // Update both CommunityPage and User profile to keep them in sync
+        await Promise.all([
+          communityApi.update({ profileImageUrl: result.url }),
+          usersApi.updateProfile({ avatarUrl: result.url }),
+        ]);
+      }
+    } catch (err) {
+      console.error("Failed to upload profile picture:", err);
+      alert("Failed to upload profile picture. Please try again.");
+    } finally {
+      setUploadingProfile(false);
+      if (profileInputRef.current) profileInputRef.current.value = "";
+    }
   }
 
   // Check if any widgets are disabled
@@ -216,12 +352,30 @@ export default function YourCommunityPage({ username }) {
     setIsEditing(true);
   }
 
-  function saveAndClose() {
-    setDisplayName((draftName || "").trim() || initialDisplayName);
-    setBio(draftBio || "");
-    setLink((draftLink || "").trim());
-    setVisibility(draftVisibility);
-    setIsEditing(false);
+  async function saveAndClose() {
+    const newName = (draftName || "").trim() || initialDisplayName;
+    const newBio = draftBio || "";
+    const newLink = (draftLink || "").trim();
+    const newVisibility = draftVisibility;
+
+    setSaving(true);
+    try {
+      await communityApi.update({
+        displayName: newName,
+        bio: newBio,
+        link: newLink,
+        visibility: newVisibility,
+      });
+      setDisplayName(newName);
+      setBio(newBio);
+      setLink(newLink);
+      setVisibility(newVisibility);
+    } catch (err) {
+      console.error("Failed to save community page:", err);
+    } finally {
+      setSaving(false);
+      setIsEditing(false);
+    }
   }
 
 
@@ -239,39 +393,100 @@ export default function YourCommunityPage({ username }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]); // location.key changes on navigation
 
+  if (loading) {
+    return (
+      <div className="ycp">
+        <div className="ycp-loading">Loading your community page...</div>
+      </div>
+    );
+  }
+
+  // Get initials for fallback avatar
+  const initials = (displayName || username || "U").charAt(0).toUpperCase();
+
   return (
     <div className="ycp">
+      {/* Hidden file inputs */}
+      <input
+        type="file"
+        ref={bannerInputRef}
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={handleBannerUpload}
+      />
+      <input
+        type="file"
+        ref={profileInputRef}
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={handleProfileUpload}
+      />
+
       {/* Banner */}
-      <section className="ycp-banner" style={{ backgroundImage: `url(${bannerImg})` }} aria-label="Community banner">
-        <button
-          type="button"
-          className="ycp-bannerEditBtn"
-          onClick={openEdit}
-          aria-label="Edit community page"
-          title="Edit"
-        >
-          <img className="ycp-bannerEditIcon" src={editBannerIcon} alt="" aria-hidden="true" />
-        </button>
+      <section
+        className={`ycp-banner ${!bannerUrl ? "ycp-banner--empty" : ""}`}
+        style={bannerUrl ? { backgroundImage: `url(${bannerUrl})` } : undefined}
+        aria-label="Community banner"
+      >
+        {/* Edit mode: show upload button */}
+        {isEditing ? (
+          <button
+            type="button"
+            className="ycp-bannerEditBtn ycp-bannerEditBtn--upload"
+            onClick={() => bannerInputRef.current?.click()}
+            disabled={uploadingBanner}
+            aria-label="Upload banner image"
+            title="Upload banner"
+          >
+            {uploadingBanner ? (
+              <span className="ycp-uploadingText">...</span>
+            ) : (
+              <img className="ycp-bannerEditIcon" src={editBannerIcon} alt="" aria-hidden="true" />
+            )}
+          </button>
+        ) : (
+          /* View mode: show pen icon to enter edit mode */
+          <button
+            type="button"
+            className="ycp-bannerEditBtn"
+            onClick={openEdit}
+            aria-label="Edit community page"
+            title="Edit community page"
+          >
+            <img className="ycp-bannerEditIcon" src={editBannerIcon} alt="" aria-hidden="true" />
+          </button>
+        )}
+        {isEditing && !bannerUrl && !uploadingBanner && (
+          <div className="ycp-bannerPlaceholder">Click to add a banner image</div>
+        )}
       </section>
 
       <section className="ycp-card" aria-label="Community profile">
         {/* Avatar */}
         <div className="ycp-avatarWrap">
-          <img className="ycp-avatar" src={profileImg} alt="Profile" />
+          {profileUrl ? (
+            <img className="ycp-avatar" src={profileUrl} alt="Profile" />
+          ) : (
+            <div className="ycp-avatar ycp-avatar--fallback">{initials}</div>
+          )}
 
-          {isEditing ? (
+          {/* Only show edit button in edit mode */}
+          {isEditing && (
             <button
               type="button"
               className="ycp-avatarEditBtn"
               aria-label="Edit profile picture"
               title="Edit profile picture"
-              onClick={() => {
-                
-              }}
+              onClick={() => profileInputRef.current?.click()}
+              disabled={uploadingProfile}
             >
-              <img className="ycp-avatarEditIcon" src={editProfileIcon} alt="" aria-hidden="true" />
+              {uploadingProfile ? (
+                <span className="ycp-uploadingText">...</span>
+              ) : (
+                <img className="ycp-avatarEditIcon" src={editProfileIcon} alt="" aria-hidden="true" />
+              )}
             </button>
-          ) : null}
+          )}
         </div>
 
         {/* View mode */}
@@ -296,6 +511,25 @@ export default function YourCommunityPage({ username }) {
               </div>
 
               <div className="ycp-handle">{handle}</div>
+
+              <div className="ycp-followStats">
+                <button
+                  type="button"
+                  className="ycp-followStat"
+                  onClick={() => openFollowModal("followers")}
+                >
+                  <span className="ycp-followStatCount">{followers.length}</span>
+                  <span className="ycp-followStatLabel">Followers</span>
+                </button>
+                <button
+                  type="button"
+                  className="ycp-followStat"
+                  onClick={() => openFollowModal("following")}
+                >
+                  <span className="ycp-followStatCount">{following.length}</span>
+                  <span className="ycp-followStatLabel">Following</span>
+                </button>
+              </div>
 
               {isSearchOpen && (
                 <div className="ycp-searchBar" aria-label="Search your content">
@@ -400,32 +634,35 @@ export default function YourCommunityPage({ username }) {
 
               {activeTab === "reading" && (
                 <div className="ycp-tabContent" aria-label="Reading List">
-                  <div className="ycp-listItems">
-                    {MOCK_READING_LIST.map((item) => (
-                      <div key={item.id} className="ycp-listItem">
-                        <div className="ycp-listItemMain">
-                          <div className="ycp-listItemTitle">{item.title}</div>
-                          <div className="ycp-listItemMeta">by @{item.author}</div>
+                  {readingList.length === 0 ? (
+                    <div className="ycp-emptyState">No works in your reading list yet.</div>
+                  ) : (
+                    <div className="ycp-listItems">
+                      {readingList.map((item) => (
+                        <div
+                          key={item.id}
+                          className="ycp-listItem"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => item.workId && navigate(`/works/${item.workId}`)}
+                          onKeyDown={(e) => e.key === "Enter" && item.workId && navigate(`/works/${item.workId}`)}
+                        >
+                          <div className="ycp-listItemMain">
+                            <div className="ycp-listItemTitle">{item.title}</div>
+                            <div className="ycp-listItemMeta">by @{item.author}</div>
+                          </div>
+                          <div className="ycp-listItemProgress">{item.progress}</div>
                         </div>
-                        <div className="ycp-listItemProgress">{item.progress}</div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
               {activeTab === "skins" && (
                 <div className="ycp-tabContent" aria-label="Skins">
-                  <div className="ycp-listItems">
-                    {MOCK_SKINS.map((skin) => (
-                      <div key={skin.id} className="ycp-listItem">
-                        <div className="ycp-listItemMain">
-                          <div className="ycp-listItemTitle">{skin.name}</div>
-                          <div className="ycp-listItemMeta">{skin.downloads} downloads · {skin.likes} likes</div>
-                        </div>
-                        <button type="button" className="ycp-listItemBtn">Preview</button>
-                      </div>
-                    ))}
+                  <div className="ycp-emptyState">
+                    Skins feature coming soon. You'll be able to create and share custom themes here.
                   </div>
                 </div>
               )}
@@ -459,15 +696,56 @@ export default function YourCommunityPage({ username }) {
                   <div className="ycp-panel ycp-panel--announcements">
                     <div className="ycp-panelTitle">Announcements</div>
                     <div className="ycp-announcementsBox">
-                      {MOCK_ANNOUNCEMENTS.map((ann) => (
-                        <div key={ann.id} className={`ycp-announcementItem ${ann.pinned ? "ycp-announcementItem--pinned" : ""}`}>
-                          {ann.pinned && <span className="ycp-announcementPin">📌</span>}
-                          <div className="ycp-announcementContent">
-                            <div className="ycp-announcementText">{ann.text}</div>
-                            <div className="ycp-announcementDate">{ann.date}</div>
+                      {announcements.length === 0 ? (
+                        <div className="ycp-emptyState ycp-emptyState--small">No announcements yet</div>
+                      ) : (
+                        announcements.map((ann, idx) => (
+                          <div key={idx} className={`ycp-announcementItem ${ann.pinned ? "ycp-announcementItem--pinned" : ""}`}>
+                            {ann.pinned && <span className="ycp-announcementPin">📌</span>}
+                            <div className="ycp-announcementContent">
+                              <div className="ycp-announcementText">{ann.text}</div>
+                              <div className="ycp-announcementDate">
+                                {ann.createdAt ? new Date(ann.createdAt).toLocaleDateString() : ""}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className="ycp-announcementDelete"
+                              onClick={() => handleDeleteAnnouncement(idx)}
+                              aria-label="Delete announcement"
+                              title="Delete"
+                            >
+                              ✕
+                            </button>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
+                      <div className="ycp-addAnnouncement">
+                        <input
+                          type="text"
+                          className="ycp-addAnnouncementInput"
+                          placeholder="New announcement..."
+                          value={newAnnouncementText}
+                          onChange={(e) => setNewAnnouncementText(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleAddAnnouncement()}
+                        />
+                        <label className="ycp-addAnnouncementPin">
+                          <input
+                            type="checkbox"
+                            checked={newAnnouncementPinned}
+                            onChange={(e) => setNewAnnouncementPinned(e.target.checked)}
+                          />
+                          Pin
+                        </label>
+                        <button
+                          type="button"
+                          className="ycp-addAnnouncementBtn"
+                          onClick={handleAddAnnouncement}
+                          disabled={!newAnnouncementText.trim()}
+                        >
+                          Add
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -537,15 +815,19 @@ export default function YourCommunityPage({ username }) {
                     <div className="ycp-panelTitle">Chatroom</div>
                     <div className="ycp-chatBox">
                       <div className="ycp-chatMessages">
-                        {chatMessages.map((msg) => (
-                          <div key={msg.id} className="ycp-chatMessage">
-                            <div className="ycp-chatMsgHeader">
-                              <span className="ycp-chatMsgUser">@{msg.user}</span>
-                              <span className="ycp-chatMsgTime">{msg.time}</span>
+                        {chatMessages.length === 0 ? (
+                          <div className="ycp-chatEmpty">No messages yet. Start the conversation!</div>
+                        ) : (
+                          chatMessages.map((msg) => (
+                            <div key={msg.id} className="ycp-chatMessage">
+                              <div className="ycp-chatMsgHeader">
+                                <span className="ycp-chatMsgUser">@{msg.user}</span>
+                                <span className="ycp-chatMsgTime">{msg.time}</span>
+                              </div>
+                              <div className="ycp-chatMsgText">{msg.text}</div>
                             </div>
-                            <div className="ycp-chatMsgText">{msg.text}</div>
-                          </div>
-                        ))}
+                          ))
+                        )}
                         <div ref={chatEndRef} />
                       </div>
                       <div className="ycp-chatInputRow">
@@ -645,8 +927,8 @@ export default function YourCommunityPage({ username }) {
               </div>
 
               <div className="ycp-editActions">
-                <button type="button" className="ycp-doneBtn" onClick={saveAndClose}>
-                  Done
+                <button type="button" className="ycp-doneBtn" onClick={saveAndClose} disabled={saving}>
+                  {saving ? "Saving..." : "Done"}
                 </button>
               </div>
             </div>
@@ -733,6 +1015,85 @@ export default function YourCommunityPage({ username }) {
           </div>
         ) : null}
       </section>
+
+      {/* Followers/Following Modal */}
+      {followModalOpen && (
+        <div className="ycp-modal-overlay" onClick={closeFollowModal}>
+          <div className="ycp-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ycp-modalHeader">
+              <div className="ycp-modalTabs">
+                <button
+                  type="button"
+                  className={`ycp-modalTab ${followModalTab === "followers" ? "ycp-modalTab--active" : ""}`}
+                  onClick={() => setFollowModalTab("followers")}
+                >
+                  Followers ({followers.length})
+                </button>
+                <button
+                  type="button"
+                  className={`ycp-modalTab ${followModalTab === "following" ? "ycp-modalTab--active" : ""}`}
+                  onClick={() => setFollowModalTab("following")}
+                >
+                  Following ({following.length})
+                </button>
+              </div>
+              <button type="button" className="ycp-modalClose" onClick={closeFollowModal}>
+                ✕
+              </button>
+            </div>
+
+            <div className="ycp-modalBody">
+              {loadingFollows ? (
+                <div className="ycp-modalEmpty">Loading...</div>
+              ) : followModalTab === "followers" ? (
+                followers.length === 0 ? (
+                  <div className="ycp-modalEmpty">No followers yet</div>
+                ) : (
+                  <div className="ycp-followList">
+                    {followers.map((user) => (
+                      <Link
+                        key={user._id}
+                        to={`/communities/${user.username}`}
+                        className="ycp-followItem"
+                        onClick={closeFollowModal}
+                      >
+                        <ListAvatar avatarUrl={user.avatarUrl} name={user.displayName || user.username} />
+                        <div className="ycp-followItemInfo">
+                          <div className="ycp-followItemUsername">@{user.username}</div>
+                          {user.displayName && user.displayName !== user.username && (
+                            <div className="ycp-followItemDisplayName">{user.displayName}</div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )
+              ) : following.length === 0 ? (
+                <div className="ycp-modalEmpty">Not following anyone yet</div>
+              ) : (
+                <div className="ycp-followList">
+                  {following.map((user) => (
+                    <Link
+                      key={user._id}
+                      to={`/communities/${user.username}`}
+                      className="ycp-followItem"
+                      onClick={closeFollowModal}
+                    >
+                      <ListAvatar avatarUrl={user.avatarUrl} name={user.displayName || user.username} />
+                      <div className="ycp-followItemInfo">
+                        <div className="ycp-followItemUsername">@{user.username}</div>
+                        {user.displayName && user.displayName !== user.username && (
+                          <div className="ycp-followItemDisplayName">{user.displayName}</div>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

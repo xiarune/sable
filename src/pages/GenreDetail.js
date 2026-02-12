@@ -1,111 +1,171 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { works } from "../data/libraryWorks";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { discoveryApi } from "../api";
 import "./Library.css";
-
-function slugify(s) {
-  return String(s || "")
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function groupByFirstLetter(items) {
-  const map = new Map();
-
-  for (const w of items) {
-    const t = (w.title || "").trim();
-    const letter = t ? t[0].toUpperCase() : "#";
-    const key = /[A-Z]/.test(letter) ? letter : "#";
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(w);
-  }
-
-  const groups = Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  return groups.map(([letter, list]) => ({
-    letter,
-    items: list.slice().sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" })),
-  }));
-}
+import defaultCover from "../assets/images/sable_default_cover.png";
 
 export default function GenreDetail() {
   const navigate = useNavigate();
   const { genreSlug } = useParams();
 
-  const genreName = React.useMemo(() => {
-    const allGenres = Array.from(new Set(works.map((w) => (w.genre || "Other").trim() || "Other")));
-    const found = allGenres.find((g) => slugify(g) === genreSlug);
-    return found || "Genre";
-  }, [genreSlug]);
+  const [genre, setGenre] = React.useState(null);
+  const [works, setWorks] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  const [sort, setSort] = React.useState("popular");
+  const [search, setSearch] = React.useState("");
 
-  const filtered = React.useMemo(() => {
-    return works.filter((w) => slugify((w.genre || "Other").trim() || "Other") === genreSlug);
-  }, [genreSlug]);
+  React.useEffect(() => {
+    async function loadGenre() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await discoveryApi.genre(genreSlug, 1, 100, sort);
+        setGenre(data.genre);
+        setWorks(data.works || []);
+      } catch (err) {
+        console.error("Failed to load genre:", err);
+        setError(err.message || "Failed to load genre");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadGenre();
+  }, [genreSlug, sort]);
 
-  const grouped = React.useMemo(() => groupByFirstLetter(filtered), [filtered]);
+  // Filter works by search
+  const filteredWorks = React.useMemo(() => {
+    if (!search.trim()) return works;
+    const q = search.toLowerCase();
+    return works.filter(
+      (w) =>
+        w.title?.toLowerCase().includes(q) ||
+        w.authorUsername?.toLowerCase().includes(q)
+    );
+  }, [works, search]);
 
-  function openWork(w) {
-    if (!w?.id) return;
-    navigate(`/works/${encodeURIComponent(w.id)}`);
+  if (loading) {
+    return (
+      <div className="shelfPage">
+        <div className="shelfBanner">
+          <h1 className="shelfTitle">Loading...</h1>
+        </div>
+        <div className="shelfBody">
+          <p>Loading genre...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !genre) {
+    return (
+      <div className="shelfPage">
+        <div className="shelfBanner">
+          <h1 className="shelfTitle">Genre Not Found</h1>
+        </div>
+        <div className="shelfBody">
+          <p>{error || "This genre doesn't exist."}</p>
+          <button
+            type="button"
+            className="workPill"
+            onClick={() => navigate("/genres")}
+          >
+            ← Back to Genres
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="shelfPage">
       <div className="shelfBanner">
-        <h1 className="shelfTitle">{genreName}</h1>
+        <h1 className="shelfTitle">{genre.name}</h1>
+        {genre.description && (
+          <p className="shelfSubtitle">{genre.description}</p>
+        )}
       </div>
 
       <div className="shelfBody shelfBody--withSidebar">
         <aside className="leftFilters" aria-label="Filters">
           <div className="filterSearchWrap">
-            <input className="filterSearch" placeholder={`Search ${genreName}...`} />
+            <input
+              className="filterSearch"
+              placeholder={`Search ${genre.name}...`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
 
-          <label className="filterRow">
-            <input type="checkbox" defaultChecked />
-            <span>Trending</span>
-          </label>
-          <label className="filterRow">
-            <input type="checkbox" defaultChecked />
-            <span>Newest</span>
-          </label>
-          <label className="filterRow">
-            <input type="checkbox" defaultChecked />
-            <span>Oldest</span>
-          </label>
-          <label className="filterRow">
-            <input type="checkbox" defaultChecked />
-            <span>Text Only</span>
-          </label>
-          <label className="filterRow">
-            <input type="checkbox" defaultChecked />
-            <span>Completed</span>
-          </label>
+          <div className="filterSection">
+            <div className="filterLabel">Sort By</div>
+            <label className="filterRow">
+              <input
+                type="radio"
+                name="sort"
+                checked={sort === "popular"}
+                onChange={() => setSort("popular")}
+              />
+              <span>Most Popular</span>
+            </label>
+            <label className="filterRow">
+              <input
+                type="radio"
+                name="sort"
+                checked={sort === "recent"}
+                onChange={() => setSort("recent")}
+              />
+              <span>Newest</span>
+            </label>
+            <label className="filterRow">
+              <input
+                type="radio"
+                name="sort"
+                checked={sort === "rating"}
+                onChange={() => setSort("rating")}
+              />
+              <span>Highest Rated</span>
+            </label>
+          </div>
         </aside>
 
         <section className="shelfMain">
-          {grouped.length === 0 ? (
-            <div className="emptyNote">No works found in this genre yet.</div>
+          {filteredWorks.length === 0 ? (
+            <div className="emptyNote">
+              {search
+                ? `No works found matching "${search}"`
+                : "No works found in this genre yet."}
+            </div>
           ) : (
-            grouped.map((g) => (
-              <div key={g.letter} className="letterBlock">
-                <div className="letterHeading">{g.letter}</div>
-
-                <div className="workPills">
-                  {g.items.map((w) => (
-                    <button key={w.id} type="button" className="workPill" onClick={() => openWork(w)}>
-                      {w.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))
+            <div className="worksGrid">
+              {filteredWorks.map((w) => (
+                <Link
+                  key={w._id}
+                  to={`/works/${w._id}`}
+                  className="workCard"
+                >
+                  <div className="workCardCover">
+                    <img
+                      src={w.coverImageUrl || defaultCover}
+                      alt=""
+                      className="workCardCoverImg"
+                    />
+                  </div>
+                  <div className="workCardInfo">
+                    <div className="workCardTitle">{w.title || "Untitled"}</div>
+                    <div className="workCardAuthor">
+                      by {w.authorUsername || "Unknown"}
+                    </div>
+                    <div className="workCardMeta">
+                      {w.views || 0} views
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           )}
         </section>
       </div>
     </div>
   );
 }
-

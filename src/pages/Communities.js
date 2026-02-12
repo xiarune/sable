@@ -2,16 +2,12 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "./Communities.css";
 
-// Assets 
-import profileImg from "../assets/images/profile_picture.png";
-import otherProfileImg from "../assets/images/other_profile.png";
-
 import { works as libraryWorks } from "../data/libraryWorks";
+import { authApi, usersApi, followsApi } from "../api";
 
-// localstorage keys
+// localstorage keys for post interactions (likes/bookmarks only - follows use API)
 const LIKES_KEY = "sable_likes_v1";
 const BOOKMARKS_KEY = "sable_bookmarks_v1";
-const FOLLOWING_KEY = "sable_following_v1";
 
 function getLikes() {
   try {
@@ -37,104 +33,14 @@ function setBookmarksStorage(list) {
   localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(list));
 }
 
-function getFollowing() {
-  try {
-    return JSON.parse(localStorage.getItem(FOLLOWING_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
-function setFollowingStorage(list) {
-  localStorage.setItem(FOLLOWING_KEY, JSON.stringify(list));
-}
-
-const MOCK_TOPICS = [
-  { id: "t1", label: "Writing Prompts", count: "12.4k" },
-  { id: "t2", label: "Slow-burn Romance", count: "9.8k" },
-  { id: "t3", label: "Dark Academia", count: "7.1k" },
-  { id: "t4", label: "Worldbuilding", count: "6.3k" },
-  { id: "t5", label: "Fanworks", count: "5.5k" },
-  { id: "t6", label: "Audio Reads", count: "3.9k" },
-];
-
-const MOCK_SUGGESTED = [
-  {
-    handle: "jane.doe",
-    display: "jane.doe",
-    avatar: otherProfileImg,
-    tagline: "writes fantasy + character studies",
-    followers: "12.2k",
-  },
-  {
-    handle: "john.doe",
-    display: "john.doe",
-    avatar: profileImg,
-    tagline: "short horror + noir vibes",
-    followers: "8.7k",
-  },
-  {
-    handle: "amira.salem",
-    display: "amira.salem",
-    avatar: "",
-    tagline: "romance, fluff, and comfort reads",
-    followers: "22.1k",
-  },
-];
-
-const BASE_POSTS = [
-  {
-    id: "p1",
-    type: "work",
-    workId: "w1",
-    user: { handle: "jane.doe", display: "jane.doe", avatar: otherProfileImg },
-    time: "2h",
-    title: "Night in The Woods",
-    caption: "New chapter is up. The forest is not what it seems.",
-    meta: { language: "Latin", words: "20,000", views: "1,000" },
-    tags: ["mystery", "forest", "slowburn"],
-  },
-  {
-    id: "p2",
-    type: "discussion",
-    user: { handle: "elias.arden", display: "elias.arden", avatar: "" },
-    time: "4h",
-    title: "Public Discussion",
-    caption: "What’s one rule you use to keep your magic systems coherent?",
-    meta: { replies: "214", likes: "1.9k" },
-    tags: ["worldbuilding", "magic-systems"],
-  },
-  {
-    id: "p3",
-    type: "skin",
-    user: { handle: "mira.ko", display: "mira.ko", avatar: "" },
-    time: "6h",
-    title: "New Skin Drop: Parchment Noir",
-    caption: "A cleaner reading skin with stronger contrast + softer borders.",
-    meta: { downloads: "3.2k", likes: "804" },
-    tags: ["skin", "ui", "noir"],
-  },
-  {
-    id: "p4",
-    type: "audio",
-    user: { handle: "noah.park", display: "noah.park", avatar: "" },
-    time: "9h",
-    title: "Audio: Chapter 1 — Rain on Glass",
-    caption: "Quick demo read. Would you want full chapters like this?",
-    meta: { length: "4:12", plays: "6.8k" },
-    tags: ["audio", "reading", "demo"],
-  },
-  {
-    id: "p5",
-    type: "work",
-    workId: "w6",
-    user: { handle: "amira.salem", display: "amira.salem", avatar: "" },
-    time: "1d",
-    title: "Cold Water",
-    caption: "A quick teaser post — what would you do if the lake went silent?",
-    meta: { language: "English", words: "17,800", views: "388" },
-    tags: ["thriller", "survival"],
-  },
+// Trending topics - static UI elements for filtering
+const TOPICS = [
+  { id: "t1", label: "Writing Prompts" },
+  { id: "t2", label: "Slow-burn Romance" },
+  { id: "t3", label: "Dark Academia" },
+  { id: "t4", label: "Worldbuilding" },
+  { id: "t5", label: "Fanworks" },
+  { id: "t6", label: "Audio Reads" },
 ];
 
 function initials(name) {
@@ -173,6 +79,37 @@ function openLoginModal() {
 export default function Communities({ isAuthed = false, username = "john.doe" }) {
   const [tab, setTab] = React.useState("Explore"); // Explore | Following | Discussions
   const [query, setQuery] = React.useState("");
+  const [currentUser, setCurrentUser] = React.useState(null);
+  const [suggestedUsers, setSuggestedUsers] = React.useState([]);
+  const [loadingUsers, setLoadingUsers] = React.useState(true);
+
+  // Fetch current user info
+  React.useEffect(() => {
+    if (isAuthed) {
+      authApi.me().then((data) => {
+        if (data && data.user && !data.error) {
+          setCurrentUser(data.user);
+        }
+      }).catch(() => {});
+    }
+  }, [isAuthed]);
+
+  // Fetch discoverable users
+  React.useEffect(() => {
+    async function loadUsers() {
+      try {
+        const data = await usersApi.getDiscoverable(10);
+        if (data.users) {
+          setSuggestedUsers(data.users);
+        }
+      } catch (err) {
+        console.error("Failed to load suggested users:", err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    }
+    loadUsers();
+  }, []);
 
   // Prevent auto-scroll on mount - use multiple strategies
   React.useEffect(() => {
@@ -200,13 +137,15 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   const [postType, setPostType] = React.useState("post"); // post | discussion | upload
   const [draft, setDraft] = React.useState("");
 
-  // Feed state (front-end only)
-  const [posts, setPosts] = React.useState(BASE_POSTS);
+  // Feed state - starts empty, to be populated from backend
+  const [posts, setPosts] = React.useState([]);
 
-  // Likes, bookmarks, following
+  // Likes and bookmarks (localStorage for posts)
   const [likedPosts, setLikedPosts] = React.useState(() => getLikes());
   const [bookmarkedPosts, setBookmarkedPosts] = React.useState(() => getBookmarks());
-  const [followingList, setFollowingList] = React.useState(() => getFollowing());
+
+  // Track follow state per user (managed via API)
+  const [followingInProgress, setFollowingInProgress] = React.useState({});
 
   // Reply
   const [replyingTo, setReplyingTo] = React.useState(null);
@@ -249,18 +188,29 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
     }
   }
 
-  function handleFollow(handle) {
-    const normalizedHandle = handle.trim().toLowerCase();
-    if (followingList.includes(normalizedHandle)) {
-      // Unfollow
-      const updated = followingList.filter((h) => h !== normalizedHandle);
-      setFollowingList(updated);
-      setFollowingStorage(updated);
-    } else {
-      // Follow
-      const updated = [...followingList, normalizedHandle];
-      setFollowingList(updated);
-      setFollowingStorage(updated);
+  async function handleFollow(userId, isCurrentlyFollowing) {
+    if (followingInProgress[userId]) return;
+
+    setFollowingInProgress((prev) => ({ ...prev, [userId]: true }));
+
+    try {
+      if (isCurrentlyFollowing) {
+        await followsApi.unfollow(userId);
+        // Update local state
+        setSuggestedUsers((prev) =>
+          prev.map((u) => (u._id === userId ? { ...u, isFollowing: false } : u))
+        );
+      } else {
+        await followsApi.follow(userId);
+        // Update local state
+        setSuggestedUsers((prev) =>
+          prev.map((u) => (u._id === userId ? { ...u, isFollowing: true } : u))
+        );
+      }
+    } catch (err) {
+      console.error("Follow action failed:", err);
+    } finally {
+      setFollowingInProgress((prev) => ({ ...prev, [userId]: false }));
     }
   }
 
@@ -322,10 +272,14 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
     const text = draft.trim();
     if (!text) return;
 
+    const userDisplay = currentUser?.displayName || currentUser?.username || normalizedUsername || "user";
+    const userHandle = currentUser?.username || normalizedUsername || "user";
+    const userAvatar = currentUser?.avatarUrl || "";
+
     const newPost = {
       id: `p_local_${Date.now()}`,
       type: postType === "discussion" ? "discussion" : "discussion",
-      user: { handle: normalizedUsername || "john.doe", display: normalizedUsername || "john.doe", avatar: profileImg },
+      user: { handle: userHandle, display: userDisplay, avatar: userAvatar },
       time: "now",
       title: postType === "discussion" ? "New Discussion" : "Update",
       caption: text,
@@ -386,9 +340,9 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
             </div>
 
             <div className="co-leftSection">
-              <div className="co-leftSectionTitle">Trending Topics</div>
+              <div className="co-leftSectionTitle">Topics</div>
               <div className="co-topicList">
-                {MOCK_TOPICS.map((t) => (
+                {TOPICS.map((t) => (
                   <button
                     key={t.id}
                     type="button"
@@ -398,7 +352,6 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                     title={`Search: ${t.label}`}
                   >
                     <span className="co-topicName">{t.label}</span>
-                    <span className="co-topicCount">{t.count}</span>
                   </button>
                 ))}
               </div>
@@ -463,7 +416,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
             {isAuthed ? (
               <div className="co-composeLeft">
                 <div className="co-composeAvatar" aria-hidden="true">
-                  <Avatar avatar={profileImg} name={username} />
+                  <Avatar avatar={currentUser?.avatarUrl || ""} name={currentUser?.displayName || currentUser?.username || username} />
                 </div>
 
                 <div className="co-composeBox">
@@ -539,7 +492,9 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
           {/* Feed */}
           <section className="co-feed" aria-label="Posts">
             {filteredPosts.length === 0 ? (
-              <div className="co-empty">Nothing matched that. Try a different search or pick a trending topic.</div>
+              <div className="co-empty">
+                {query ? "Nothing matched that search. Try different keywords." : "No posts yet. Be the first to share something with the community."}
+              </div>
             ) : (
               filteredPosts.map((p) => {
                 const workId = p.type === "work" ? p.workId || resolveWorkIdFromTitle(p.title) : null;
@@ -706,54 +661,55 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
           <div className="co-rightCard">
             <div className="co-rightTitle">Suggested Creators</div>
 
-            <div className="co-suggestList">
-              {MOCK_SUGGESTED.map((u) => (
-                <div key={u.handle} className="co-suggest">
-                  <Link
-                    to={communityHrefFor(u.handle)}
-                    className="co-suggestUser"
-                    aria-label={`Open ${u.display} community page`}
-                  >
-                    <div className="co-avatar co-avatar--sm">
-                      <Avatar avatar={u.avatar} name={u.display} />
-                    </div>
-                    <div className="co-suggestMeta">
-                      <div className="co-suggestName">{u.display}</div>
-                      <div className="co-suggestTagline">{u.tagline}</div>
-                      <div className="co-suggestFollowers">{u.followers} followers</div>
-                    </div>
-                  </Link>
+            {loadingUsers ? (
+              <div className="co-suggestEmpty">Loading...</div>
+            ) : suggestedUsers.length === 0 ? (
+              <div className="co-suggestEmpty">
+                No creators to suggest yet.
+              </div>
+            ) : (
+              <div className="co-suggestList">
+                {suggestedUsers.map((u) => (
+                  <div key={u._id} className="co-suggest">
+                    <Link
+                      to={`/communities/${u.username}`}
+                      className="co-suggestUser"
+                      aria-label={`Open @${u.username}'s community page`}
+                    >
+                      <div className="co-avatar co-avatar--sm">
+                        <Avatar avatar={u.avatarUrl} name={u.displayName || u.username} />
+                      </div>
+                      <div className="co-suggestMeta">
+                        <div className="co-suggestName">@{u.username}</div>
+                        {u.displayName && u.displayName !== u.username && (
+                          <div className="co-suggestDisplayName">{u.displayName}</div>
+                        )}
+                        <div className="co-suggestFollowers">{u.stats?.followersCount || 0} followers</div>
+                      </div>
+                    </Link>
 
-                  <button
-                    type="button"
-                    className={`co-followBtn ${followingList.includes(u.handle.toLowerCase()) ? "co-followBtn--following" : ""}`}
-                    onClick={() => requireAuth(() => handleFollow(u.handle))}
-                  >
-                    {followingList.includes(u.handle.toLowerCase()) ? "Following" : "Follow"}
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <button
+                      type="button"
+                      className={`co-followBtn ${u.isFollowing ? "co-followBtn--following" : ""}`}
+                      onClick={() => requireAuth(() => handleFollow(u._id, u.isFollowing))}
+                      disabled={followingInProgress[u._id]}
+                    >
+                      {followingInProgress[u._id]
+                        ? "..."
+                        : u.isFollowing
+                        ? "Following"
+                        : "Follow"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="co-rightCard">
             <div className="co-rightTitle">Live Discussions</div>
-
-            <div className="co-liveList" aria-label="Live discussions">
-              <button type="button" className="co-liveItem" onClick={() => setTab("Discussions")}>
-                <div className="co-liveTitle">“Best openings you’ve ever read?”</div>
-                <div className="co-liveSub">58 active • jump in</div>
-              </button>
-
-              <button type="button" className="co-liveItem" onClick={() => setTab("Discussions")}>
-                <div className="co-liveTitle">“How do you tag correctly?”</div>
-                <div className="co-liveSub">31 active • jump in</div>
-              </button>
-
-              <button type="button" className="co-liveItem" onClick={() => setTab("Discussions")}>
-                <div className="co-liveTitle">“Audio narrations: tips?”</div>
-                <div className="co-liveSub">17 active • jump in</div>
-              </button>
+            <div className="co-liveEmpty">
+              No active discussions right now. Start one in the feed.
             </div>
           </div>
         </aside>

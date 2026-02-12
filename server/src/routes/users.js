@@ -44,6 +44,44 @@ const updatePreferencesSchema = z.object({
   readReceipts: z.boolean().optional(),
 });
 
+// GET /users - Get discoverable users (for community page)
+router.get("/", optionalAuth, async (req, res, next) => {
+  try {
+    const { limit = 10 } = req.query;
+
+    // Get users who are visible (not invisible)
+    const query = {
+      "preferences.visibility": { $ne: "invisible" },
+    };
+
+    // Exclude current user if logged in
+    if (req.user) {
+      query._id = { $ne: req.user._id };
+    }
+
+    const users = await User.find(query)
+      .sort({ "stats.followersCount": -1, createdAt: -1 })
+      .limit(parseInt(limit))
+      .select("username displayName avatarUrl bio stats");
+
+    // If logged in, check which users the current user is following
+    let followingIds = [];
+    if (req.user) {
+      const follows = await Follow.find({ followerId: req.user._id });
+      followingIds = follows.map((f) => f.followeeId.toString());
+    }
+
+    const usersWithFollowStatus = users.map((u) => ({
+      ...u.toObject(),
+      isFollowing: followingIds.includes(u._id.toString()),
+    }));
+
+    res.json({ users: usersWithFollowStatus });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /users/:username - Get public profile
 router.get("/:username", optionalAuth, async (req, res, next) => {
   try {

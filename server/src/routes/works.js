@@ -2,10 +2,154 @@ const express = require("express");
 const { z } = require("zod");
 const Work = require("../models/Work");
 const Draft = require("../models/Draft");
+const Genre = require("../models/Genre");
+const Fandom = require("../models/Fandom");
+const Tag = require("../models/Tag");
 const { requireAuth, optionalAuth } = require("../middleware/auth");
 const { MAX_WORKS_PER_USER, MAX_CHAPTERS, MAX_BODY_LENGTH, MAX_TAGS, MAX_TAG_LENGTH } = require("../config/limits");
 
 const router = express.Router();
+
+// Helper to create slug from name
+function slugify(name) {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+// Helper to update genre, fandom, and tags when a work is published
+async function updateDiscoveryEntities(work, oldWork = null) {
+  const promises = [];
+
+  // Handle genre
+  if (work.genre && work.privacy === "Public" && work.status === "published") {
+    const genreSlug = slugify(work.genre);
+    promises.push(
+      Genre.findOneAndUpdate(
+        { slug: genreSlug },
+        {
+          $setOnInsert: { slug: genreSlug, name: work.genre },
+        },
+        { upsert: true, new: true }
+      ).then(async (genre) => {
+        // Recalculate works count
+        const count = await Work.countDocuments({
+          genre: work.genre,
+          privacy: "Public",
+          status: "published"
+        });
+        await Genre.findByIdAndUpdate(genre._id, { worksCount: count });
+      })
+    );
+  }
+
+  // Decrement old genre if changed
+  if (oldWork && oldWork.genre && oldWork.genre !== work.genre) {
+    const oldSlug = slugify(oldWork.genre);
+    promises.push(
+      Genre.findOne({ slug: oldSlug }).then(async (genre) => {
+        if (genre) {
+          const count = await Work.countDocuments({
+            genre: oldWork.genre,
+            privacy: "Public",
+            status: "published"
+          });
+          await Genre.findByIdAndUpdate(genre._id, { worksCount: count });
+        }
+      })
+    );
+  }
+
+  // Handle fandom
+  if (work.fandom && work.privacy === "Public" && work.status === "published") {
+    const fandomSlug = slugify(work.fandom);
+    promises.push(
+      Fandom.findOneAndUpdate(
+        { slug: fandomSlug },
+        {
+          $setOnInsert: { slug: fandomSlug, name: work.fandom },
+        },
+        { upsert: true, new: true }
+      ).then(async (fandom) => {
+        // Recalculate works count
+        const count = await Work.countDocuments({
+          fandom: work.fandom,
+          privacy: "Public",
+          status: "published"
+        });
+        await Fandom.findByIdAndUpdate(fandom._id, { worksCount: count });
+      })
+    );
+  }
+
+  // Decrement old fandom if changed
+  if (oldWork && oldWork.fandom && oldWork.fandom !== work.fandom) {
+    const oldSlug = slugify(oldWork.fandom);
+    promises.push(
+      Fandom.findOne({ slug: oldSlug }).then(async (fandom) => {
+        if (fandom) {
+          const count = await Work.countDocuments({
+            fandom: oldWork.fandom,
+            privacy: "Public",
+            status: "published"
+          });
+          await Fandom.findByIdAndUpdate(fandom._id, { worksCount: count });
+        }
+      })
+    );
+  }
+
+  // Handle tags
+  if (work.tags && work.tags.length > 0 && work.privacy === "Public" && work.status === "published") {
+    for (const tagName of work.tags) {
+      const tagSlug = slugify(tagName);
+      if (!tagSlug) continue;
+
+      promises.push(
+        Tag.findOneAndUpdate(
+          { slug: tagSlug },
+          {
+            $setOnInsert: { slug: tagSlug, name: tagName },
+          },
+          { upsert: true, new: true }
+        ).then(async (tag) => {
+          // Recalculate usage count
+          const count = await Work.countDocuments({
+            tags: tagName,
+            privacy: "Public",
+            status: "published"
+          });
+          await Tag.findByIdAndUpdate(tag._id, { usageCount: count });
+        })
+      );
+    }
+  }
+
+  // Update old tags if changed
+  if (oldWork && oldWork.tags) {
+    const removedTags = oldWork.tags.filter(t => !work.tags || !work.tags.includes(t));
+    for (const tagName of removedTags) {
+      const tagSlug = slugify(tagName);
+      promises.push(
+        Tag.findOne({ slug: tagSlug }).then(async (tag) => {
+          if (tag) {
+            const count = await Work.countDocuments({
+              tags: tagName,
+              privacy: "Public",
+              status: "published"
+            });
+            await Tag.findByIdAndUpdate(tag._id, { usageCount: count });
+          }
+        })
+      );
+    }
+  }
+
+  await Promise.all(promises);
+}
 
 // Validation schemas
 const chapterSchema = z.object({
@@ -160,6 +304,9 @@ router.post("/", requireAuth, async (req, res, next) => {
 
     await work.save();
 
+    // Update genre, fandom, and tags
+    await updateDiscoveryEntities(work);
+
     res.status(201).json({ message: "Work published", work });
   } catch (err) {
     next(err);
@@ -224,6 +371,9 @@ router.post("/publish/:draftId", requireAuth, async (req, res, next) => {
 
     await work.save();
 
+    // Update genre, fandom, and tags
+    await updateDiscoveryEntities(work);
+
     // Delete the draft after successful publish
     await Draft.findByIdAndDelete(draft._id);
 
@@ -249,8 +399,20 @@ router.put("/:id", requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: result.error.errors[0].message });
     }
 
+    // Save old values for comparison
+    const oldWork = {
+      genre: work.genre,
+      fandom: work.fandom,
+      tags: [...(work.tags || [])],
+      privacy: work.privacy,
+      status: work.status,
+    };
+
     Object.assign(work, result.data);
     await work.save();
+
+    // Update genre, fandom, and tags
+    await updateDiscoveryEntities(work, oldWork);
 
     res.json({ message: "Work updated", work });
   } catch (err) {

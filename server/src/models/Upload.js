@@ -9,7 +9,7 @@ const uploadSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["image", "audio"],
+      enum: ["image", "audio", "file"],
       required: true,
     },
     url: {
