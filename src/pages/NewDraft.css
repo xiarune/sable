@@ -124,6 +124,16 @@
   margin-bottom: 10px;
 }
 
+.nd-toolSubtitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 11px;
+  color: rgba(60, 55, 52, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
 .nd-toolHint {
   margin-top: 10px;
   font-family: "Libre Baskerville", serif;

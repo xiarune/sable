@@ -7,11 +7,11 @@ import "./SableLoader.css";
  * Sable Loading Animation
  * Centered Lottie animation that loops until content loads
  */
-export default function SableLoader({ size = "medium", fullPage = true }) {
+export default function SableLoader({ size = "large", fullPage = true }) {
   const sizeMap = {
-    small: 80,
-    medium: 140,
-    large: 200,
+    small: 120,
+    medium: 200,
+    large: 300,
   };
 
   const dimensions = sizeMap[size] || sizeMap.medium;

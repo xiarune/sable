@@ -112,7 +112,8 @@ const updateDraftSchema = z.object({
     .array(z.string().max(MAX_TAG_LENGTH))
     .max(MAX_TAGS, `Maximum ${MAX_TAGS} tags allowed`)
     .optional(),
-  skin: z.enum(["Default", "Parchment"]).optional(),
+  skin: z.string().max(100).optional(),
+  customSkinId: z.string().optional().nullable(),
   privacy: z.enum(["Public", "Following", "Private"]).optional(),
   language: z.enum(["English", "Vietnamese", "Japanese", "French", "Spanish"]).optional(),
   genre: z.string().max(100).optional(),
