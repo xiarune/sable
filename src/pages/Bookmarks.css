@@ -51,6 +51,28 @@
   color: #fff;
 }
 
+.bookmarksSections {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.bookmarksSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bookmarksSectionTitle {
+  margin: 0;
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: rgba(36, 75, 43, 0.85);
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(36, 75, 43, 0.15);
+}
+
 .bookmarksGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

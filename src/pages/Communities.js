@@ -419,8 +419,19 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   // Reply
   const [replyingTo, setReplyingTo] = React.useState(null);
   const [replyDraft, setReplyDraft] = React.useState("");
+  const [replyImageUrl, setReplyImageUrl] = React.useState(null);
   const [replyInProgress, setReplyInProgress] = React.useState(false);
   const [postComments, setPostComments] = React.useState({}); // { postId: [comments] }
+
+  // Comment interactions
+  const [editingComment, setEditingComment] = React.useState(null); // commentId
+  const [editCommentText, setEditCommentText] = React.useState("");
+  const [editCommentImage, setEditCommentImage] = React.useState(null);
+  const [likedComments, setLikedComments] = React.useState([]); // array of commentIds
+  const [replyingToComment, setReplyingToComment] = React.useState(null); // commentId for nested reply
+  const [commentReplyText, setCommentReplyText] = React.useState("");
+  const [commentReplyImage, setCommentReplyImage] = React.useState(null);
+  const [commentReplies, setCommentReplies] = React.useState({}); // { commentId: [replies] }
 
   const normalizedUsername = (username || "john.doe").trim().toLowerCase();
 
@@ -559,7 +570,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
     setReplyInProgress(true);
 
     try {
-      const response = await commentsApi.create(replyDraft.trim(), null, postId);
+      const response = await commentsApi.create(replyDraft.trim(), null, postId, null, replyImageUrl);
 
       if (response && response.comment) {
         // Add the new comment to the local state
@@ -580,11 +591,183 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
 
       setReplyingTo(null);
       setReplyDraft("");
+      setReplyImageUrl(null);
     } catch (err) {
       console.error("Failed to submit reply:", err);
       alert("Failed to submit reply. Please try again.");
     } finally {
       setReplyInProgress(false);
+    }
+  }
+
+  // Upload image for comment
+  async function handleCommentImageUpload(e, type = "reply") {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const response = await uploadsApi.image(file);
+      if (type === "reply") {
+        setReplyImageUrl(response.url);
+      } else if (type === "edit") {
+        setEditCommentImage(response.url);
+      } else if (type === "commentReply") {
+        setCommentReplyImage(response.url);
+      }
+    } catch (err) {
+      console.error("Failed to upload image:", err);
+    }
+    e.target.value = "";
+  }
+
+  // Delete a comment
+  async function handleDeleteComment(commentId, postId) {
+    try {
+      await commentsApi.delete(commentId);
+      setPostComments((prev) => ({
+        ...prev,
+        [postId]: (prev[postId] || []).filter((c) => c._id !== commentId),
+      }));
+      // Update comment count
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, meta: { ...p.meta, replies: String(Math.max(0, parseInt(p.meta.replies || "0") - 1)) } }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Failed to delete comment:", err);
+    }
+  }
+
+  // Start editing a comment
+  function startEditComment(comment) {
+    setEditingComment(comment._id);
+    setEditCommentText(comment.text);
+    setEditCommentImage(comment.imageUrl || null);
+  }
+
+  // Cancel editing
+  function cancelEditComment() {
+    setEditingComment(null);
+    setEditCommentText("");
+    setEditCommentImage(null);
+  }
+
+  // Save edited comment
+  async function saveEditComment(commentId, postId) {
+    if (!editCommentText.trim()) return;
+
+    try {
+      const response = await commentsApi.update(commentId, editCommentText.trim(), editCommentImage);
+      if (response && response.comment) {
+        setPostComments((prev) => ({
+          ...prev,
+          [postId]: (prev[postId] || []).map((c) =>
+            c._id === commentId ? response.comment : c
+          ),
+        }));
+      }
+      cancelEditComment();
+    } catch (err) {
+      console.error("Failed to update comment:", err);
+    }
+  }
+
+  // Like/unlike a comment
+  async function handleLikeComment(commentId, postId) {
+    const isLiked = likedComments.includes(commentId);
+
+    // Optimistic update
+    if (isLiked) {
+      setLikedComments((prev) => prev.filter((id) => id !== commentId));
+    } else {
+      setLikedComments((prev) => [...prev, commentId]);
+    }
+
+    try {
+      if (isLiked) {
+        await commentsApi.unlike(commentId);
+      } else {
+        await commentsApi.like(commentId);
+      }
+      // Update likes count in local state
+      setPostComments((prev) => ({
+        ...prev,
+        [postId]: (prev[postId] || []).map((c) =>
+          c._id === commentId
+            ? { ...c, likesCount: (c.likesCount || 0) + (isLiked ? -1 : 1) }
+            : c
+        ),
+      }));
+    } catch (err) {
+      // Revert on error
+      if (isLiked) {
+        setLikedComments((prev) => [...prev, commentId]);
+      } else {
+        setLikedComments((prev) => prev.filter((id) => id !== commentId));
+      }
+      console.error("Failed to like/unlike comment:", err);
+    }
+  }
+
+  // Load replies for a comment
+  async function loadCommentReplies(commentId) {
+    try {
+      const response = await commentsApi.replies(commentId);
+      if (response && response.replies) {
+        setCommentReplies((prev) => ({ ...prev, [commentId]: response.replies }));
+      }
+    } catch (err) {
+      console.error("Failed to load replies:", err);
+    }
+  }
+
+  // Start replying to a comment
+  function startReplyToComment(commentId) {
+    if (replyingToComment === commentId) {
+      setReplyingToComment(null);
+      setCommentReplyText("");
+      setCommentReplyImage(null);
+    } else {
+      setReplyingToComment(commentId);
+      setCommentReplyText("");
+      setCommentReplyImage(null);
+      loadCommentReplies(commentId);
+    }
+  }
+
+  // Submit reply to a comment
+  async function submitCommentReply(parentCommentId, postId) {
+    if (!commentReplyText.trim()) return;
+
+    try {
+      const response = await commentsApi.create(commentReplyText.trim(), null, postId, parentCommentId, commentReplyImage);
+      if (response && response.comment) {
+        setCommentReplies((prev) => ({
+          ...prev,
+          [parentCommentId]: [...(prev[parentCommentId] || []), response.comment],
+        }));
+      }
+      setReplyingToComment(null);
+      setCommentReplyText("");
+      setCommentReplyImage(null);
+    } catch (err) {
+      console.error("Failed to submit comment reply:", err);
+    }
+  }
+
+  // Delete a reply to a comment
+  async function handleDeleteCommentReply(replyId, parentCommentId) {
+    try {
+      await commentsApi.delete(replyId);
+      setCommentReplies((prev) => ({
+        ...prev,
+        [parentCommentId]: (prev[parentCommentId] || []).filter((r) => r._id !== replyId),
+      }));
+    } catch (err) {
+      console.error("Failed to delete reply:", err);
     }
   }
 
@@ -1057,7 +1240,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                         onClick={() => requireAuth(() => handleBookmark(p.id))}
                         disabled={bookmarkInProgress[p.id]}
                       >
-                        {bookmarkedPosts.includes(p.id) ? "✓ Saved" : "Save"}
+                        {bookmarkedPosts.includes(p.id) ? "✓ Bookmarked" : "Bookmark"}
                       </button>
                     </div>
 
@@ -1075,9 +1258,145 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                                   </Link>
                                   <span className="co-commentTime">
                                     {formatTimeAgo(comment.createdAt)}
+                                    {comment.editedAt && <span className="co-edited">(edited)</span>}
                                   </span>
                                 </div>
-                                <div className="co-commentText">{renderMentions(comment.text)}</div>
+
+                                {/* Editing mode */}
+                                {editingComment === comment._id ? (
+                                  <div className="co-commentEdit">
+                                    <textarea
+                                      className="co-replyInput"
+                                      value={editCommentText}
+                                      onChange={(e) => setEditCommentText(e.target.value)}
+                                      rows={2}
+                                    />
+                                    {editCommentImage && (
+                                      <div className="co-commentImagePreview">
+                                        <img src={editCommentImage} alt="Attachment" />
+                                        <button type="button" onClick={() => setEditCommentImage(null)}>×</button>
+                                      </div>
+                                    )}
+                                    <div className="co-commentEditActions">
+                                      <label className="co-imageUploadBtn">
+                                        📷
+                                        <input type="file" accept="image/*" onChange={(e) => handleCommentImageUpload(e, "edit")} hidden />
+                                      </label>
+                                      <button type="button" onClick={cancelEditComment}>Cancel</button>
+                                      <button type="button" onClick={() => saveEditComment(comment._id, p.id)}>Save</button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="co-commentText">{renderMentions(comment.text)}</div>
+                                    {comment.imageUrl && (
+                                      <div className="co-commentImage">
+                                        <img src={comment.imageUrl} alt="Comment attachment" />
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+
+                                {/* Comment actions */}
+                                {editingComment !== comment._id && (
+                                  <div className="co-commentActions">
+                                    <button
+                                      type="button"
+                                      className={`co-commentAction ${likedComments.includes(comment._id) ? "co-commentAction--liked" : ""}`}
+                                      onClick={() => requireAuth(() => handleLikeComment(comment._id, p.id))}
+                                    >
+                                      {likedComments.includes(comment._id) ? "♥" : "♡"} {comment.likesCount || 0}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="co-commentAction"
+                                      onClick={() => requireAuth(() => startReplyToComment(comment._id))}
+                                    >
+                                      Reply
+                                    </button>
+                                    {currentUser && comment.authorId === currentUser._id && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          className="co-commentAction"
+                                          onClick={() => startEditComment(comment)}
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="co-commentAction co-commentAction--delete"
+                                          onClick={() => handleDeleteComment(comment._id, p.id)}
+                                        >
+                                          Delete
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Nested replies */}
+                                {replyingToComment === comment._id && (
+                                  <div className="co-nestedReplies">
+                                    {commentReplies[comment._id] && commentReplies[comment._id].length > 0 && (
+                                      <div className="co-nestedReplyList">
+                                        {commentReplies[comment._id].map((reply) => (
+                                          <div key={reply._id} className="co-nestedReply">
+                                            <div className="co-commentHeader">
+                                              <Link to={`/communities/${reply.authorUsername}`} className="co-commentAuthor">
+                                                @{reply.authorUsername}
+                                              </Link>
+                                              <span className="co-commentTime">
+                                                {formatTimeAgo(reply.createdAt)}
+                                                {reply.editedAt && <span className="co-edited">(edited)</span>}
+                                              </span>
+                                              {currentUser && reply.authorId === currentUser._id && (
+                                                <button
+                                                  type="button"
+                                                  className="co-commentAction co-commentAction--delete"
+                                                  onClick={() => handleDeleteCommentReply(reply._id, comment._id)}
+                                                >
+                                                  Delete
+                                                </button>
+                                              )}
+                                            </div>
+                                            <div className="co-commentText">{renderMentions(reply.text)}</div>
+                                            {reply.imageUrl && (
+                                              <div className="co-commentImage">
+                                                <img src={reply.imageUrl} alt="Reply attachment" />
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Reply to comment input */}
+                                    <div className="co-nestedReplyBox">
+                                      <textarea
+                                        className="co-replyInput co-replyInput--small"
+                                        value={commentReplyText}
+                                        onChange={(e) => setCommentReplyText(e.target.value)}
+                                        placeholder={`Reply to @${comment.authorUsername}...`}
+                                        rows={2}
+                                      />
+                                      {commentReplyImage && (
+                                        <div className="co-commentImagePreview">
+                                          <img src={commentReplyImage} alt="Attachment" />
+                                          <button type="button" onClick={() => setCommentReplyImage(null)}>×</button>
+                                        </div>
+                                      )}
+                                      <div className="co-replyActions">
+                                        <label className="co-imageUploadBtn">
+                                          📷
+                                          <input type="file" accept="image/*" onChange={(e) => handleCommentImageUpload(e, "commentReply")} hidden />
+                                        </label>
+                                        <button type="button" onClick={() => setReplyingToComment(null)}>Cancel</button>
+                                        <button type="button" onClick={() => submitCommentReply(comment._id, p.id)} disabled={!commentReplyText.trim()}>Reply</button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1094,11 +1413,21 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                             autoFocus
                             disabled={replyInProgress}
                           />
+                          {replyImageUrl && (
+                            <div className="co-commentImagePreview">
+                              <img src={replyImageUrl} alt="Attachment" />
+                              <button type="button" onClick={() => setReplyImageUrl(null)}>×</button>
+                            </div>
+                          )}
                           <div className="co-replyActions">
+                            <label className="co-imageUploadBtn">
+                              📷
+                              <input type="file" accept="image/*" onChange={(e) => handleCommentImageUpload(e, "reply")} hidden />
+                            </label>
                             <button
                               type="button"
                               className="co-replyCancel"
-                              onClick={() => setReplyingTo(null)}
+                              onClick={() => { setReplyingTo(null); setReplyImageUrl(null); }}
                               disabled={replyInProgress}
                             >
                               Cancel
@@ -1172,12 +1501,6 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
             )}
           </div>
 
-          <div className="co-rightCard">
-            <div className="co-rightTitle">Live Discussions</div>
-            <div className="co-liveEmpty">
-              No active discussions right now. Start one in the feed.
-            </div>
-          </div>
         </aside>
       </div>
 

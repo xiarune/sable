@@ -12,9 +12,8 @@ import commentsIcon from "../assets/images/comments_icon.png";
 import bookmarkOffIcon from "../assets/images/bookmark_icon_off.png";
 import bookmarkOnIcon from "../assets/images/bookmark_icon_on.png";
 
-// Keep localStorage for view prefs and audio favs only - bookmarks use API
+// Keep localStorage for view prefs only - bookmarks use API
 const VIEW_PREFS_KEY = "sable_workview_prefs_v1";
-const AUDIO_FAVS_KEY = "sable_audio_favs_v1";
 
 function safeParse(json) {
   try {
@@ -223,12 +222,8 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     };
   });
 
-  // Audio favorites
-  const [audioFavs, setAudioFavs] = React.useState(() => {
-    const all = loadJson(AUDIO_FAVS_KEY, {});
-    const perUser = all?.[normalizedUser] || {};
-    return perUser;
-  });
+  // Audio bookmarks (API-based)
+  const [bookmarkedAudioIds, setBookmarkedAudioIds] = React.useState([]);
 
   // Work bookmark state (loaded from API)
   const [isBookmarked, setIsBookmarked] = React.useState(false);
@@ -238,31 +233,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   const [reportReason, setReportReason] = React.useState("");
   const [reportSubmitting, setReportSubmitting] = React.useState(false);
   const [reportSubmitted, setReportSubmitted] = React.useState(false);
-
-  // Custom skin CSS
-  const [customSkinCss, setCustomSkinCss] = React.useState("");
-
-  // Load custom skin CSS if work uses one
-  React.useEffect(() => {
-    if (!work?.customSkinId) {
-      setCustomSkinCss("");
-      return;
-    }
-
-    async function loadCustomSkin() {
-      try {
-        const data = await skinsApi.get(work.customSkinId);
-        if (data.skin?.css) {
-          setCustomSkinCss(data.skin.css);
-        }
-      } catch {
-        // Skin not found or not accessible - use built-in skin styling
-        setCustomSkinCss("");
-      }
-    }
-
-    loadCustomSkin();
-  }, [work?.customSkinId]);
 
   // Check bookmark status on load
   React.useEffect(() => {
@@ -279,6 +249,24 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
     checkBookmarkStatus();
   }, [isAuthed, decodedId]);
+
+  // Load bookmarked audio tracks
+  React.useEffect(() => {
+    if (!isAuthed) return;
+
+    async function loadAudioBookmarks() {
+      try {
+        const data = await bookmarksApi.list("audio");
+        if (data?.bookmarks) {
+          setBookmarkedAudioIds(data.bookmarks.map((b) => b.audioId));
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+
+    loadAudioBookmarks();
+  }, [isAuthed]);
 
   // Audio playback
   const audioRef = React.useRef(null);
@@ -346,14 +334,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     saveJson(VIEW_PREFS_KEY, next);
   }, [normalizedUser, prefs]);
 
-  // Persist audio favs per-user
-  React.useEffect(() => {
-    const all = loadJson(AUDIO_FAVS_KEY, {});
-    const next = { ...(all || {}) };
-    next[normalizedUser] = { ...(audioFavs || {}) };
-    saveJson(AUDIO_FAVS_KEY, next);
-  }, [normalizedUser, audioFavs]);
-
   // Load work from API or fall back to library works
   const [work, setWork] = React.useState(null);
   const [loadingWork, setLoadingWork] = React.useState(true);
@@ -387,6 +367,31 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     loadWork();
   }, [decodedId]);
 
+  // Custom skin CSS
+  const [customSkinCss, setCustomSkinCss] = React.useState("");
+
+  // Load custom skin CSS if work uses one
+  React.useEffect(() => {
+    if (!work?.customSkinId) {
+      setCustomSkinCss("");
+      return;
+    }
+
+    async function loadCustomSkin() {
+      try {
+        const data = await skinsApi.get(work.customSkinId);
+        if (data.skin?.css) {
+          setCustomSkinCss(data.skin.css);
+        }
+      } catch {
+        // Skin not found or not accessible - use built-in skin styling
+        setCustomSkinCss("");
+      }
+    }
+
+    loadCustomSkin();
+  }, [work?.customSkinId]);
+
   const title = (work?.title || "Untitled").trim();
   const authorHandle = (work?.authorUsername || work?.author || "author").trim();
 
@@ -417,7 +422,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   }, [authorHandle, work, activeChapter, title]);
   const currentTrack = audioTracks.find((t) => t.id === nowPlayingId) || null;
 
-  const currentTrackFav = currentTrack ? Boolean(audioFavs?.[currentTrack.id]) : false;
+  const currentTrackFav = currentTrack ? bookmarkedAudioIds.includes(currentTrack.id) : false;
 
   const audioHasDuration = Boolean(audioDurationSec) || Boolean(currentTrack?.duration);
   const audioProgressPct = React.useMemo(() => {
@@ -562,12 +567,42 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     setPanel((prev) => (prev === name ? null : name));
   }
 
-  function toggleAudioFav(trackId) {
-    setAudioFavs((prev) => {
-      const next = { ...(prev || {}) };
-      next[trackId] = !next[trackId];
-      return next;
-    });
+  async function toggleAudioFav(trackId) {
+    if (!isAuthed) {
+      openLoginModal();
+      return;
+    }
+
+    const isCurrentlyBookmarked = bookmarkedAudioIds.includes(trackId);
+    const track = audioTracks.find((t) => t.id === trackId);
+
+    // Optimistic update
+    if (isCurrentlyBookmarked) {
+      setBookmarkedAudioIds((prev) => prev.filter((id) => id !== trackId));
+    } else {
+      setBookmarkedAudioIds((prev) => [...prev, trackId]);
+    }
+
+    try {
+      if (isCurrentlyBookmarked) {
+        await bookmarksApi.unbookmarkAudio(trackId);
+      } else {
+        await bookmarksApi.bookmarkAudio(
+          trackId,
+          work?._id || work?.id,
+          track?.title || "Audio Track",
+          authorHandle
+        );
+      }
+    } catch (err) {
+      // Revert on error
+      if (isCurrentlyBookmarked) {
+        setBookmarkedAudioIds((prev) => [...prev, trackId]);
+      } else {
+        setBookmarkedAudioIds((prev) => prev.filter((id) => id !== trackId));
+      }
+      console.error("Failed to toggle audio bookmark:", err);
+    }
   }
 
   function stopAndResetAudioElement() {
@@ -1178,13 +1213,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
               <div className="wv-sep" />
 
-              {/* Cover image - only show if user uploaded one */}
-              {work?.coverImageUrl && (
-                <div className="wv-cover">
-                  <img className="wv-coverImg" src={work.coverImageUrl} alt="" />
-                </div>
-              )}
-
               {/* Audio from author - chapter audio takes priority */}
               {(activeChapter?.audioUrl || work?.audioUrl) && (
                 <div className="wv-authorAudio">
@@ -1397,7 +1425,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                         <div className="wv-audioList" aria-label="Audio tracks">
                           {audioTracks.map((t) => {
                             const active = t.id === nowPlayingId;
-                            const fav = Boolean(audioFavs?.[t.id]);
+                            const fav = bookmarkedAudioIds.includes(t.id);
 
                             return (
                               <div

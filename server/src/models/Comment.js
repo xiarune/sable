@@ -34,7 +34,17 @@ const commentSchema = new mongoose.Schema(
       trim: true,
       maxlength: 2000,
     },
+    // Optional image attachment (small, gif-like)
+    imageUrl: {
+      type: String,
+      default: null,
+    },
     likesCount: { type: Number, default: 0 },
+    // Edit tracking
+    editedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -108,57 +108,168 @@ export default function Bookmarks() {
           </p>
         </div>
       ) : (
-        <div className="bookmarksGrid" aria-label="Bookmarked items">
-          {bookmarks.map((bookmark) => (
-            <article
-              key={bookmark._id}
-              className="bookmarkCard"
-              aria-label={`Bookmarked ${bookmark.type}: ${bookmark.title}`}
-            >
-              <button
-                type="button"
-                className="bookmarkOpen"
-                aria-label={`Open: ${bookmark.title}`}
-                onClick={() => handleOpenBookmark(bookmark)}
-              >
-                <div className="coverWrap">
-                  {bookmark.coverUrl ? (
-                    <img
-                      className="coverImg"
-                      src={bookmark.coverUrl}
-                      alt={`${bookmark.title} cover`}
-                    />
-                  ) : (
-                    <div className={`coverPlaceholder ${bookmark.type === "audio" ? "coverPlaceholder--audio" : ""}`} aria-hidden="true">
-                      {bookmark.type === "work" ? "W" : bookmark.type === "audio" ? "🎧" : "P"}
+        <div className="bookmarksSections">
+          {/* Works Section */}
+          {(filter === "all" || filter === "work") && bookmarks.filter(b => b.type === "work").length > 0 && (
+            <section className="bookmarksSection">
+              <h2 className="bookmarksSectionTitle">Works</h2>
+              <div className="bookmarksGrid" aria-label="Bookmarked works">
+                {bookmarks.filter(b => b.type === "work").map((bookmark) => (
+                  <article
+                    key={bookmark._id}
+                    className="bookmarkCard"
+                    aria-label={`Bookmarked work: ${bookmark.title}`}
+                  >
+                    <button
+                      type="button"
+                      className="bookmarkOpen"
+                      aria-label={`Open: ${bookmark.title}`}
+                      onClick={() => handleOpenBookmark(bookmark)}
+                    >
+                      <div className="coverWrap">
+                        {bookmark.coverUrl ? (
+                          <img
+                            className="coverImg"
+                            src={bookmark.coverUrl}
+                            alt={`${bookmark.title} cover`}
+                          />
+                        ) : (
+                          <div className="coverPlaceholder" aria-hidden="true">W</div>
+                        )}
+                      </div>
+                      <div className="meta">
+                        <div className="workTitle">{bookmark.title || "Untitled"}</div>
+                      </div>
+                    </button>
+                    <div className="meta meta--footer">
+                      <Link
+                        className="workAuthor workAuthorLink"
+                        to={`/communities/${bookmark.authorUsername || "unknown"}`}
+                      >
+                        @{bookmark.authorUsername || "unknown"}
+                      </Link>
+                      <button
+                        type="button"
+                        className="bookmarkRemove"
+                        onClick={() => removeBookmark(bookmark)}
+                        aria-label={`Remove bookmark: ${bookmark.title}`}
+                      >
+                        x
+                      </button>
                     </div>
-                  )}
-                </div>
-
-                <div className="meta">
-                  <div className="workTitle">{bookmark.title || "Untitled"}</div>
-                  <div className="workType">{bookmark.type}</div>
-                </div>
-              </button>
-
-              <div className="meta meta--footer">
-                <Link
-                  className="workAuthor workAuthorLink"
-                  to={`/communities/${bookmark.authorUsername || "unknown"}`}
-                >
-                  @{bookmark.authorUsername || "unknown"}
-                </Link>
-                <button
-                  type="button"
-                  className="bookmarkRemove"
-                  onClick={() => removeBookmark(bookmark)}
-                  aria-label={`Remove bookmark: ${bookmark.title}`}
-                >
-                  x
-                </button>
+                  </article>
+                ))}
               </div>
-            </article>
-          ))}
+            </section>
+          )}
+
+          {/* Audio Section */}
+          {(filter === "all" || filter === "audio") && bookmarks.filter(b => b.type === "audio").length > 0 && (
+            <section className="bookmarksSection">
+              <h2 className="bookmarksSectionTitle">Audio</h2>
+              <div className="bookmarksGrid" aria-label="Bookmarked audio">
+                {bookmarks.filter(b => b.type === "audio").map((bookmark) => (
+                  <article
+                    key={bookmark._id}
+                    className="bookmarkCard"
+                    aria-label={`Bookmarked audio: ${bookmark.title}`}
+                  >
+                    <button
+                      type="button"
+                      className="bookmarkOpen"
+                      aria-label={`Open: ${bookmark.title}`}
+                      onClick={() => handleOpenBookmark(bookmark)}
+                    >
+                      <div className="coverWrap">
+                        {bookmark.coverUrl ? (
+                          <img
+                            className="coverImg"
+                            src={bookmark.coverUrl}
+                            alt={`${bookmark.title} cover`}
+                          />
+                        ) : (
+                          <div className="coverPlaceholder coverPlaceholder--audio" aria-hidden="true">🎧</div>
+                        )}
+                      </div>
+                      <div className="meta">
+                        <div className="workTitle">{bookmark.title || "Untitled"}</div>
+                      </div>
+                    </button>
+                    <div className="meta meta--footer">
+                      <Link
+                        className="workAuthor workAuthorLink"
+                        to={`/communities/${bookmark.authorUsername || "unknown"}`}
+                      >
+                        @{bookmark.authorUsername || "unknown"}
+                      </Link>
+                      <button
+                        type="button"
+                        className="bookmarkRemove"
+                        onClick={() => removeBookmark(bookmark)}
+                        aria-label={`Remove bookmark: ${bookmark.title}`}
+                      >
+                        x
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Posts Section */}
+          {(filter === "all" || filter === "post") && bookmarks.filter(b => b.type === "post").length > 0 && (
+            <section className="bookmarksSection">
+              <h2 className="bookmarksSectionTitle">Posts</h2>
+              <div className="bookmarksGrid" aria-label="Bookmarked posts">
+                {bookmarks.filter(b => b.type === "post").map((bookmark) => (
+                  <article
+                    key={bookmark._id}
+                    className="bookmarkCard"
+                    aria-label={`Bookmarked post: ${bookmark.title}`}
+                  >
+                    <button
+                      type="button"
+                      className="bookmarkOpen"
+                      aria-label={`Open: ${bookmark.title}`}
+                      onClick={() => handleOpenBookmark(bookmark)}
+                    >
+                      <div className="coverWrap">
+                        {bookmark.coverUrl ? (
+                          <img
+                            className="coverImg"
+                            src={bookmark.coverUrl}
+                            alt={`${bookmark.title} cover`}
+                          />
+                        ) : (
+                          <div className="coverPlaceholder" aria-hidden="true">P</div>
+                        )}
+                      </div>
+                      <div className="meta">
+                        <div className="workTitle">{bookmark.title || "Untitled"}</div>
+                      </div>
+                    </button>
+                    <div className="meta meta--footer">
+                      <Link
+                        className="workAuthor workAuthorLink"
+                        to={`/communities/${bookmark.authorUsername || "unknown"}`}
+                      >
+                        @{bookmark.authorUsername || "unknown"}
+                      </Link>
+                      <button
+                        type="button"
+                        className="bookmarkRemove"
+                        onClick={() => removeBookmark(bookmark)}
+                        aria-label={`Remove bookmark: ${bookmark.title}`}
+                      >
+                        x
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       )}
     </div>

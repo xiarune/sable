@@ -24,13 +24,13 @@ const bookmarkSchema = new mongoose.Schema(
       default: null,
     },
     audioId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "AudioTrack",
+      type: String,
       default: null,
     },
     // Denormalized for quick display
     title: { type: String },
     authorUsername: { type: String },
+    coverUrl: { type: String, default: "" },
   },
   {
     timestamps: true,

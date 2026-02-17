@@ -20,6 +20,12 @@ const createCommentSchema = z.object({
   workId: z.string().optional(),
   postId: z.string().optional(),
   parentId: z.string().optional(),
+  imageUrl: z.string().optional(),
+});
+
+const updateCommentSchema = z.object({
+  text: z.string().min(1).max(MAX_COMMENT_LENGTH),
+  imageUrl: z.string().optional().nullable(),
 });
 
 // GET /comments - Get comments for a work or post
@@ -78,7 +84,7 @@ router.post("/", requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: result.error.errors[0].message });
     }
 
-    const { text, workId, postId, parentId } = result.data;
+    const { text, workId, postId, parentId, imageUrl } = result.data;
 
     if (!workId && !postId) {
       return res.status(400).json({ error: "workId or postId required" });
@@ -89,6 +95,7 @@ router.post("/", requireAuth, async (req, res, next) => {
       workId: workId || null,
       postId: postId || null,
       parentId: parentId || null,
+      imageUrl: imageUrl || null,
       authorId: req.user._id,
       authorUsername: req.user.username,
     });
@@ -146,6 +153,98 @@ router.post("/", requireAuth, async (req, res, next) => {
     });
 
     res.status(201).json({ message: "Comment added", comment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /comments/:id - Edit comment
+router.put("/:id", requireAuth, async (req, res, next) => {
+  try {
+    const result = updateCommentSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.errors[0].message });
+    }
+
+    const comment = await Comment.findById(req.params.id);
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+    if (comment.authorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    const { text, imageUrl } = result.data;
+    comment.text = text;
+    if (imageUrl !== undefined) {
+      comment.imageUrl = imageUrl;
+    }
+    comment.editedAt = new Date();
+
+    await comment.save();
+
+    res.json({ message: "Comment updated", comment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /comments/:id/like - Like a comment
+router.post("/:id/like", requireAuth, async (req, res, next) => {
+  try {
+    const comment = await Comment.findById(req.params.id);
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+
+    // Check if already liked (using a simple array or separate collection)
+    // For simplicity, we'll use a CommentLike pattern similar to existing likes
+    const Like = require("../models/Like");
+
+    const existing = await Like.findOne({
+      userId: req.user._id,
+      commentId: comment._id,
+    });
+
+    if (existing) {
+      return res.status(400).json({ error: "Already liked" });
+    }
+
+    await Like.create({
+      userId: req.user._id,
+      commentId: comment._id,
+    });
+
+    await Comment.findByIdAndUpdate(comment._id, { $inc: { likesCount: 1 } });
+
+    res.json({ message: "Comment liked", likesCount: comment.likesCount + 1 });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /comments/:id/like - Unlike a comment
+router.delete("/:id/like", requireAuth, async (req, res, next) => {
+  try {
+    const comment = await Comment.findById(req.params.id);
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+
+    const Like = require("../models/Like");
+
+    const existing = await Like.findOneAndDelete({
+      userId: req.user._id,
+      commentId: comment._id,
+    });
+
+    if (!existing) {
+      return res.status(400).json({ error: "Not liked" });
+    }
+
+    await Comment.findByIdAndUpdate(comment._id, { $inc: { likesCount: -1 } });
+
+    res.json({ message: "Comment unliked", likesCount: Math.max(0, comment.likesCount - 1) });
   } catch (err) {
     next(err);
   }

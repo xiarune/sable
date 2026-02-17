@@ -61,6 +61,7 @@ router.post("/work/:workId", async (req, res, next) => {
       workId,
       title: work.title,
       authorUsername: work.authorUsername,
+      coverUrl: work.coverImageUrl || "",
     });
 
     await Work.findByIdAndUpdate(workId, { $inc: { bookmarksCount: 1 } });
@@ -114,6 +115,7 @@ router.post("/post/:postId", async (req, res, next) => {
       postId,
       title: post.title || post.caption?.slice(0, 50),
       authorUsername: post.authorUsername,
+      coverUrl: post.imageUrl || "",
     });
 
     res.status(201).json({ message: "Bookmarked", bookmark });
@@ -148,19 +150,33 @@ router.post("/audio/:audioId", async (req, res, next) => {
     const { audioId } = req.params;
     const { workId, title, authorUsername } = req.body;
 
-    const existing = await Bookmark.findOne({ userId: req.user._id, audioId });
-    if (existing) {
-      return res.status(400).json({ error: "Already bookmarked" });
+    // Try to get cover from associated work (only if workId is a valid ObjectId)
+    let coverUrl = "";
+    let validWorkId = null;
+    if (workId && /^[0-9a-fA-F]{24}$/.test(workId)) {
+      validWorkId = workId;
+      const work = await Work.findById(workId);
+      if (work?.coverImageUrl) {
+        coverUrl = work.coverImageUrl;
+      }
     }
 
-    const bookmark = await Bookmark.create({
-      userId: req.user._id,
-      type: "audio",
-      audioId,
-      workId,
-      title: title || "Audio Track",
-      authorUsername: authorUsername || "Unknown",
-    });
+    // Use findOneAndUpdate with upsert to avoid race conditions and index conflicts
+    const bookmark = await Bookmark.findOneAndUpdate(
+      { userId: req.user._id, audioId },
+      {
+        $setOnInsert: {
+          userId: req.user._id,
+          type: "audio",
+          audioId,
+          workId: validWorkId,
+          title: title || "Audio Track",
+          authorUsername: authorUsername || "Unknown",
+          coverUrl,
+        },
+      },
+      { upsert: true, new: true }
+    );
 
     res.status(201).json({ message: "Audio bookmarked", bookmark });
   } catch (err) {

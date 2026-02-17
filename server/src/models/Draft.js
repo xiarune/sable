@@ -34,8 +34,12 @@ const draftSchema = new mongoose.Schema(
     },
     skin: {
       type: String,
-      enum: ["Default", "Parchment"],
       default: "Default",
+    },
+    customSkinId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Skin",
+      default: null,
     },
     privacy: {
       type: String,
