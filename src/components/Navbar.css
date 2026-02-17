@@ -476,6 +476,39 @@
   box-shadow: 0 0 0 3px rgba(255, 235, 200, 0.35);
 }
 
+.loginInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.loginInputWrap .loginInput {
+  flex: 1;
+  padding-right: 44px;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.passwordToggle:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
 .authError {
   margin-top: 2px;
   background: rgba(125, 15, 18, 0.14);

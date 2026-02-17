@@ -294,6 +294,10 @@ export default function Inbox() {
   // File upload
   const fileInputRef = React.useRef(null);
 
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+  const [deleteInProgress, setDeleteInProgress] = React.useState(false);
+
   // Load initial data
   React.useEffect(() => {
     async function loadData() {
@@ -744,15 +748,18 @@ export default function Inbox() {
     }
   }
 
-  async function deleteThread() {
-    if (!activeThreadId) return;
+  function openDeleteModal() {
+    setShowDeleteModal(true);
+    setIsInfoOpen(false);
+  }
 
-    const confirmed = window.confirm("Are you sure you want to delete this chat? This action cannot be undone.");
-    if (!confirmed) return;
+  async function confirmDeleteThread() {
+    if (!activeThreadId || deleteInProgress) return;
+
+    setDeleteInProgress(true);
 
     try {
       await messagesApi.deleteThread(activeThreadId);
-      setIsInfoOpen(false);
 
       // Remove from threads list
       setThreads((prev) => prev.filter((t) => t._id !== activeThreadId));
@@ -761,15 +768,18 @@ export default function Inbox() {
       setActiveThreadId(null);
       setActiveThread(null);
       setMessages([]);
+      setShowDeleteModal(false);
     } catch (err) {
       console.error("Failed to delete chat:", err);
       alert("Failed to delete chat");
+    } finally {
+      setDeleteInProgress(false);
     }
   }
 
   function goToUserProfile(username) {
     if (username) {
-      navigate(`/community/${username}`);
+      navigate(`/communities/${username}`);
     }
   }
 
@@ -1367,7 +1377,7 @@ export default function Inbox() {
                   role="menuitem"
                   className="in-thread in-thread--danger"
                   style={{ width: "100%" }}
-                  onClick={deleteThread}
+                  onClick={openDeleteModal}
                 >
                   Delete Chat
                 </button>
@@ -1543,6 +1553,47 @@ export default function Inbox() {
         {/* Right column */}
         {renderRightColumn()}
       </div>
+
+      {/* Delete Chat Modal */}
+      {showDeleteModal && (
+        <div className="in-modalOverlay" onClick={() => !deleteInProgress && setShowDeleteModal(false)}>
+          <div className="in-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="in-modalHeader">
+              <h3 className="in-modalTitle">Delete Chat</h3>
+              <button
+                type="button"
+                className="in-modalClose"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleteInProgress}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="in-modalBody">
+              <p>Are you sure you want to delete this conversation with <strong>@{otherUser?.username}</strong>?</p>
+              <p style={{ opacity: 0.7, marginTop: 8 }}>This action cannot be undone. All messages will be permanently deleted.</p>
+            </div>
+            <div className="in-modalFooter">
+              <button
+                type="button"
+                className="in-modalBtn in-modalBtn--secondary"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleteInProgress}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="in-modalBtn in-modalBtn--danger"
+                onClick={confirmDeleteThread}
+                disabled={deleteInProgress}
+              >
+                {deleteInProgress ? "Deleting..." : "Delete Chat"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

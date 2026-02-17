@@ -44,6 +44,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import TwoFactorSetup from "./pages/TwoFactorSetup";
 import FAQ from "./pages/FAQ";
+import ErrorPage from "./pages/ErrorPage";
 
 export default function App() {
   const [isAuthed, setIsAuthed] = React.useState(false);
@@ -167,8 +168,8 @@ export default function App() {
           />
           <Route path="/bookmarks" element={isAuthed ? <Bookmarks /> : <Navigate to="/" replace />} />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Fallback / 404 */}
+          <Route path="*" element={<ErrorPage code="404" />} />
         </Routes>
       </main>
 

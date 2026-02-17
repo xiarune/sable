@@ -1,7 +1,7 @@
 // WorkEditor.js - Edit published work
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { worksApi, uploadsApi } from "../api";
+import { worksApi, uploadsApi, skinsApi } from "../api";
 import "./NewDraft.css";
 
 import chapterIcon from "../assets/images/chapter_icon.png";
@@ -13,7 +13,7 @@ import langIcon from "../assets/images/lang_icon.png";
 import imageIcon from "../assets/images/image_icon.png";
 import previewIcon from "../assets/images/preview_icon.png";
 
-const SKIN_OPTIONS = ["Default", "Parchment"];
+const BUILTIN_SKIN_OPTIONS = ["Default", "Parchment"];
 const PRIVACY_OPTIONS = ["Public", "Following", "Private"];
 const LANGUAGE_OPTIONS = ["English", "Vietnamese", "Japanese", "French", "Spanish"];
 
@@ -193,6 +193,8 @@ export default function WorkEditor() {
 
   const [tags, setTags] = React.useState([]);
   const [skin, setSkin] = React.useState("Default");
+  const [customSkinId, setCustomSkinId] = React.useState(null);
+  const [customSkins, setCustomSkins] = React.useState([]);
   const [privacy, setPrivacy] = React.useState("Public");
   const [language, setLanguage] = React.useState("English");
   const [genre, setGenre] = React.useState("");
@@ -365,6 +367,7 @@ export default function WorkEditor() {
         }
         setTags(Array.isArray(work.tags) ? work.tags : []);
         setSkin(work.skin || "Default");
+        setCustomSkinId(work.customSkinId || null);
         setPrivacy(work.privacy || "Public");
         setLanguage(work.language || "English");
         setGenre(work.genre || "");
@@ -383,6 +386,19 @@ export default function WorkEditor() {
     loadWork();
   }, [workId, navigate]);
 
+  // Load custom skins
+  React.useEffect(() => {
+    async function loadCustomSkins() {
+      try {
+        const data = await skinsApi.list("work");
+        setCustomSkins(data.skins || []);
+      } catch {
+        // Ignore errors
+      }
+    }
+    loadCustomSkins();
+  }, []);
+
   // Save work to API
   async function handleSave() {
     try {
@@ -400,6 +416,7 @@ export default function WorkEditor() {
         })),
         tags,
         skin,
+        customSkinId,
         privacy,
         language,
         genre: genre.trim() || "",
@@ -712,16 +729,47 @@ export default function WorkEditor() {
           {activeTool === "skin" && (
             <div className="nd-toolPanel">
               <div className="nd-toolTitle">Skin</div>
+              <div className="nd-toolSubtitle">Built-in Skins</div>
               <div className="nd-choiceRow">
-                {SKIN_OPTIONS.map((opt) => (
+                {BUILTIN_SKIN_OPTIONS.map((opt) => (
                   <label key={opt} className="nd-choice">
-                    <input type="radio" checked={skin === opt} onChange={() => setSkin(opt)} />
+                    <input
+                      type="radio"
+                      checked={skin === opt && !customSkinId}
+                      onChange={() => {
+                        setSkin(opt);
+                        setCustomSkinId(null);
+                      }}
+                    />
                     <span>{opt}</span>
                   </label>
                 ))}
               </div>
+              {customSkins.length > 0 && (
+                <>
+                  <div className="nd-toolSubtitle" style={{ marginTop: 12 }}>Custom Skins</div>
+                  <div className="nd-choiceRow">
+                    {customSkins.map((cs) => (
+                      <label key={cs._id} className="nd-choice">
+                        <input
+                          type="radio"
+                          checked={customSkinId === cs._id}
+                          onChange={() => {
+                            setSkin(cs.name);
+                            setCustomSkinId(cs._id);
+                          }}
+                        />
+                        <span>{cs.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
               <div className="nd-toolHint">
                 Choose a reading skin for your work. Readers will see this theme when viewing.
+                {customSkins.length === 0 && (
+                  <> Create custom skins in <a href="/settings" style={{ color: "#244b2b" }}>Settings → Skins</a>.</>
+                )}
               </div>
             </div>
           )}

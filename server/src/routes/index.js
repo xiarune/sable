@@ -20,6 +20,7 @@ const discoveryRoutes = require("./discovery");
 const importRoutes = require("./import");
 const contactRoutes = require("./contact");
 const adminRoutes = require("./admin");
+const skinsRoutes = require("./skins");
 
 const router = express.Router();
 
@@ -43,5 +44,6 @@ router.use("/discovery", discoveryRoutes);
 router.use("/import", importRoutes);
 router.use("/contact", contactRoutes);
 router.use("/admin", adminRoutes);
+router.use("/skins", skinsRoutes);
 
 module.exports = router;

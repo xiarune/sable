@@ -55,6 +55,10 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   const [authError, setAuthError] = React.useState("");
   const [authLoading, setAuthLoading] = React.useState(false);
 
+  // Password visibility toggles
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef(null);
 
@@ -108,6 +112,8 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     setPending2FAUserId(null);
     setAuthError("");
     setAuthMode("login");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
   }
 
   function resetAuthFieldsForMode(nextMode) {
@@ -905,25 +911,47 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
 
               <label className="loginField">
                 <span className="loginLabel">Password</span>
-                <input
-                  className="loginInput"
-                  value={formPassword}
-                  onChange={(e) => setFormPassword(e.target.value)}
-                  placeholder="••••••••"
-                  type="password"
-                />
+                <div className="loginInputWrap">
+                  <input
+                    className="loginInput"
+                    value={formPassword}
+                    onChange={(e) => setFormPassword(e.target.value)}
+                    placeholder="••••••••"
+                    type={showPassword ? "text" : "password"}
+                  />
+                  <button
+                    type="button"
+                    className="passwordToggle"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? "🙈" : "👁"}
+                  </button>
+                </div>
               </label>
 
               {authMode === "signup" ? (
                 <label className="loginField">
                   <span className="loginLabel">Confirm Password</span>
-                  <input
-                    className="loginInput"
-                    value={formConfirmPassword}
-                    onChange={(e) => setFormConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    type="password"
-                  />
+                  <div className="loginInputWrap">
+                    <input
+                      className="loginInput"
+                      value={formConfirmPassword}
+                      onChange={(e) => setFormConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      type={showConfirmPassword ? "text" : "password"}
+                    />
+                    <button
+                      type="button"
+                      className="passwordToggle"
+                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                      title={showConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmPassword ? "🙈" : "👁"}
+                    </button>
+                  </div>
                 </label>
               ) : null}
 
