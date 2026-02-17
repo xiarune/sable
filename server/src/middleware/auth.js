@@ -136,6 +136,40 @@ async function optionalAuth(req, res, next) {
   }
 }
 
+// Middleware: require admin privileges
+async function requireAdmin(req, res, next) {
+  try {
+    // First, require authentication
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+
+    if (!user) {
+      clearTokenCookie(res);
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    // Check admin status
+    if (!user.isAdmin) {
+      return res.status(403).json({ error: "Admin privileges required" });
+    }
+
+    req.user = user;
+    next();
+  } catch (err) {
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+      clearTokenCookie(res);
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+    next(err);
+  }
+}
+
 module.exports = {
   generateToken,
   createSession,
@@ -143,4 +177,5 @@ module.exports = {
   clearTokenCookie,
   requireAuth,
   optionalAuth,
+  requireAdmin,
 };

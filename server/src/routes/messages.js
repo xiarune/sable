@@ -19,6 +19,32 @@ const sendMessageSchema = z.object({
   attachmentName: z.string().optional(),
 });
 
+// GET /messages/unread-count - Get total unread message count
+router.get("/unread-count", async (req, res, next) => {
+  try {
+    const threads = await Thread.find({
+      participants: req.user._id,
+      isRequest: { $ne: true },
+    });
+
+    let totalUnread = 0;
+    threads.forEach((thread) => {
+      const unread = thread.unreadCounts?.get(req.user._id.toString()) || 0;
+      totalUnread += unread;
+    });
+
+    // Also count message requests as unread
+    const requestCount = await Thread.countDocuments({
+      participants: req.user._id,
+      isRequest: true,
+    });
+
+    res.json({ count: totalUnread, requestCount, total: totalUnread + requestCount });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /messages/threads - List accepted threads (not requests)
 router.get("/threads", async (req, res, next) => {
   try {

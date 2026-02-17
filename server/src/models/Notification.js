@@ -9,8 +9,13 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["comment", "like", "follow", "mention", "reply", "donation", "system"],
+      enum: ["comment", "like", "follow", "follow_request", "mention", "reply", "donation", "system", "post"],
       required: true,
+    },
+    // For follow requests - the request ID to accept/decline
+    followRequestId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "FollowRequest",
     },
     // Who triggered the notification
     actorId: {

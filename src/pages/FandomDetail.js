@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { discoveryApi } from "../api";
+import { SableLoader, DropCapTitle, BrowseOrnament } from "../components";
 import "./Library.css";
 import defaultCover from "../assets/images/sable_default_cover.png";
 
@@ -48,11 +49,10 @@ export default function FandomDetail() {
     return (
       <div className="shelfPage">
         <div className="shelfBanner">
-          <h1 className="shelfTitle">Loading...</h1>
+          <BrowseOrnament />
+          <DropCapTitle title="Fandom" variant="banner" />
         </div>
-        <div className="shelfBody">
-          <p>Loading fandom...</p>
-        </div>
+        <SableLoader />
       </div>
     );
   }
@@ -80,7 +80,8 @@ export default function FandomDetail() {
   return (
     <div className="shelfPage">
       <div className="shelfBanner">
-        <h1 className="shelfTitle">{fandom.name}</h1>
+        <BrowseOrnament />
+        <DropCapTitle title={fandom.name} variant="banner" />
         {fandom.description && (
           <p className="shelfSubtitle">{fandom.description}</p>
         )}

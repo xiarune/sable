@@ -8,9 +8,12 @@
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { authApi } from "../api";
+import notificationsApi from "../api/notifications";
+import messagesApi from "../api/messages";
+import { initSocket, onNotification, onNotificationsRead, onNewMessage } from "../api/socket";
 import "./Navbar.css";
 
-// Assets 
+// Assets
 import sableLogo from "../assets/images/Sable_Logo.png";
 
 import draftNavIcon from "../assets/images/draft_nav.svg";
@@ -58,6 +61,10 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const mobileMenuRef = React.useRef(null);
+
+  // Notification and inbox counts for red dot indicators
+  const [notificationCount, setNotificationCount] = React.useState(0);
+  const [inboxCount, setInboxCount] = React.useState(0);
 
   function toggleMobileMenu() {
     setIsMobileMenuOpen((v) => !v);
@@ -314,6 +321,68 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Fetch notification and inbox counts when authenticated
+  React.useEffect(() => {
+    if (!isAuthed) {
+      setNotificationCount(0);
+      setInboxCount(0);
+      return;
+    }
+
+    // Fetch initial counts
+    const fetchCounts = async () => {
+      try {
+        const [notifResponse, inboxResponse] = await Promise.all([
+          notificationsApi.getCount(),
+          messagesApi.getUnreadCount(),
+        ]);
+        setNotificationCount(notifResponse.count || 0);
+        setInboxCount(inboxResponse.total || 0);
+      } catch (err) {
+        console.error("Failed to fetch counts:", err);
+      }
+    };
+
+    fetchCounts();
+
+    // Setup real-time notification listeners
+    initSocket();
+
+    const unsubNotification = onNotification(() => {
+      setNotificationCount((prev) => prev + 1);
+    });
+
+    const unsubRead = onNotificationsRead((data) => {
+      if (data.all) {
+        setNotificationCount(0);
+      } else {
+        setNotificationCount((prev) => Math.max(0, prev - (data.count || 1)));
+      }
+    });
+
+    // Listen for new messages to increment inbox count
+    const unsubMessage = onNewMessage(() => {
+      setInboxCount((prev) => prev + 1);
+    });
+
+    // Poll inbox count periodically (every 30 seconds) as backup
+    const inboxPollInterval = setInterval(async () => {
+      try {
+        const response = await messagesApi.getUnreadCount();
+        setInboxCount(response.total || 0);
+      } catch (err) {
+        // Silently ignore polling errors
+      }
+    }, 30000);
+
+    return () => {
+      unsubNotification();
+      unsubRead();
+      unsubMessage();
+      clearInterval(inboxPollInterval);
+    };
+  }, [isAuthed]);
+
   const browseItems = isAuthed ? ["Genre", "Fandom", "Tags", "Bookmarks"] : ["Genre", "Fandom", "Tags"];
 
   return (
@@ -437,17 +506,19 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
                   </button>
                   <button
                     type="button"
-                    className="mobile-navlink"
+                    className="mobile-navlink mobile-navlink--withBadge"
                     onClick={() => { closeMobileMenu(); navigate("/inbox"); }}
                   >
                     Inbox
+                    {inboxCount > 0 && <span className="mobile-badge">{inboxCount}</span>}
                   </button>
                   <button
                     type="button"
-                    className="mobile-navlink"
+                    className="mobile-navlink mobile-navlink--withBadge"
                     onClick={() => { closeMobileMenu(); navigate("/notifications"); }}
                   >
                     Notifications
+                    {notificationCount > 0 && <span className="mobile-badge">{notificationCount}</span>}
                   </button>
 
                   <div className="mobile-divider" />
@@ -610,22 +681,24 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
 
                 <button
                   type="button"
-                  className="iconbtn iconbtn--svg"
-                  aria-label="Inbox"
+                  className="iconbtn iconbtn--svg iconbtn--withBadge"
+                  aria-label={`Inbox${inboxCount > 0 ? ` (${inboxCount} unread)` : ""}`}
                   onClick={() => navigate("/inbox")}
                   title="Inbox"
                 >
                   <img className="navIcon" src={inboxNavIcon} alt="" aria-hidden="true" />
+                  {inboxCount > 0 && <span className="iconbtn-badge" aria-hidden="true" />}
                 </button>
 
                 <button
                   type="button"
-                  className="iconbtn iconbtn--svg"
-                  aria-label="Notifications"
+                  className="iconbtn iconbtn--svg iconbtn--withBadge"
+                  aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ""}`}
                   onClick={() => navigate("/notifications")}
                   title="Notifications"
                 >
                   <img className="navIcon" src={notificationsNavIcon} alt="" aria-hidden="true" />
+                  {notificationCount > 0 && <span className="iconbtn-badge" aria-hidden="true" />}
                 </button>
               </div>
             </>

@@ -4,6 +4,9 @@ import { api } from "./client";
  * Messages/Inbox API
  */
 const messagesApi = {
+  // Get total unread message count
+  getUnreadCount: () => api.get("/messages/unread-count"),
+
   // Get all threads for current user
   getThreads: () => api.get("/messages/threads"),
 

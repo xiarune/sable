@@ -13,7 +13,7 @@ const postSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["work", "discussion", "skin", "audio", "post"],
+      enum: ["work", "skin", "audio", "post"],
       default: "post",
     },
     title: {
@@ -42,6 +42,12 @@ const postSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Image attachment
+    imageUrl: {
+      type: String,
+      default: null,
+    },
+
     // Metadata for different post types
     metadata: {
       language: String,
@@ -57,6 +63,9 @@ const postSchema = new mongoose.Schema(
     likesCount: { type: Number, default: 0 },
     commentsCount: { type: Number, default: 0 },
     sharesCount: { type: Number, default: 0 },
+
+    // Edit tracking
+    editedAt: { type: Date, default: null },
   },
   {
     timestamps: true,

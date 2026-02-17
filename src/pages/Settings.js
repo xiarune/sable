@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./Settings.css";
 import { settingsApi, usersApi, authApi } from "../api";
+import { SableLoader } from "../components";
 
 import profileImg from "../assets/images/profile_picture.png";
 
@@ -1021,9 +1022,7 @@ export default function Settings({ username, onLogout }) {
   if (loading) {
     return (
       <div className="st">
-        <div className="st-shell">
-          <div style={{ padding: 40, textAlign: "center" }}>Loading settings...</div>
-        </div>
+        <SableLoader />
       </div>
     );
   }

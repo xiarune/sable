@@ -151,4 +151,20 @@ router.get("/check", requireAuth, async (req, res, next) => {
   }
 });
 
+// GET /likes/posts - Get all post IDs the user has liked
+router.get("/posts", requireAuth, async (req, res, next) => {
+  try {
+    const likes = await Like.find({
+      userId: req.user._id,
+      postId: { $ne: null },
+    }).select("postId");
+
+    const postIds = likes.map((l) => l.postId.toString());
+
+    res.json({ postIds });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

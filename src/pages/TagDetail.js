@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { discoveryApi } from "../api";
+import { SableLoader, DropCapTitle, BrowseOrnament } from "../components";
 import "./Library.css";
 import defaultCover from "../assets/images/sable_default_cover.png";
 
@@ -48,11 +49,10 @@ export default function TagDetail() {
     return (
       <div className="shelfPage">
         <div className="shelfBanner">
-          <h1 className="shelfTitle">Loading...</h1>
+          <BrowseOrnament />
+          <DropCapTitle title="Tags" variant="banner" />
         </div>
-        <div className="shelfBody">
-          <p>Loading tag...</p>
-        </div>
+        <SableLoader />
       </div>
     );
   }
@@ -80,7 +80,8 @@ export default function TagDetail() {
   return (
     <div className="shelfPage">
       <div className="shelfBanner">
-        <h1 className="shelfTitle">#{tag.name}</h1>
+        <BrowseOrnament />
+        <DropCapTitle title={tag.name} variant="banner" />
         <p className="shelfSubtitle">{tag.usageCount || 0} works with this tag</p>
       </div>
 

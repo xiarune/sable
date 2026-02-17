@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { discoveryApi } from "../api";
+import { SableLoader, DropCapTitle, BrowseOrnament } from "../components";
 import "./Library.css";
 
 function groupByFirstLetter(items) {
@@ -57,11 +58,10 @@ export default function TagsIndex() {
     return (
       <div className="shelfPage">
         <div className="shelfBanner">
-          <h1 className="shelfTitle">Tags</h1>
+          <BrowseOrnament />
+          <DropCapTitle title="Tags" variant="banner" />
         </div>
-        <div className="shelfBody">
-          <p>Loading tags...</p>
-        </div>
+        <SableLoader />
       </div>
     );
   }
@@ -69,7 +69,8 @@ export default function TagsIndex() {
   return (
     <div className="shelfPage">
       <div className="shelfBanner">
-        <h1 className="shelfTitle">Tags</h1>
+        <BrowseOrnament />
+        <DropCapTitle title="Tags" variant="banner" />
       </div>
 
       <div className="shelfBody shelfBody--withSidebar">

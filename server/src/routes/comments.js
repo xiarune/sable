@@ -5,6 +5,12 @@ const Work = require("../models/Work");
 const Post = require("../models/Post");
 const { requireAuth } = require("../middleware/auth");
 const { MAX_COMMENT_LENGTH } = require("../config/limits");
+const {
+  notifyNewComment,
+  notifyCommentReply,
+  notifyPostComment,
+  notifyMentions,
+} = require("../services/notificationService");
 
 const router = express.Router();
 
@@ -89,13 +95,55 @@ router.post("/", requireAuth, async (req, res, next) => {
 
     await comment.save();
 
-    // Update comment count
+    // Update comment count and send notifications
     if (workId) {
-      await Work.findByIdAndUpdate(workId, { $inc: { commentsCount: 1 } });
+      const work = await Work.findByIdAndUpdate(workId, { $inc: { commentsCount: 1 } }, { new: true });
+
+      // If this is a reply to another comment, notify the original commenter
+      if (parentId) {
+        const parentComment = await Comment.findById(parentId);
+        if (parentComment && parentComment.authorId.toString() !== req.user._id.toString()) {
+          await notifyCommentReply(
+            parentComment.authorId,
+            req.user._id,
+            workId,
+            text,
+            comment._id
+          );
+        }
+      } else if (work && work.authorId) {
+        // Notify work author about new top-level comment
+        await notifyNewComment(workId, work.authorId, req.user._id, text, comment._id);
+      }
     }
+
     if (postId) {
-      await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } });
+      const post = await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } }, { new: true });
+
+      // If this is a reply to another comment, notify the original commenter
+      if (parentId) {
+        const parentComment = await Comment.findById(parentId);
+        if (parentComment && parentComment.authorId.toString() !== req.user._id.toString()) {
+          await notifyCommentReply(
+            parentComment.authorId,
+            req.user._id,
+            null, // No workId for post comments
+            text,
+            comment._id
+          );
+        }
+      } else if (post && post.authorId) {
+        // Notify post author about new top-level comment
+        await notifyPostComment(postId, post.authorId, req.user._id, text, comment._id);
+      }
     }
+
+    // Check for @mentions in the comment text
+    await notifyMentions(text, req.user._id, "comment", {
+      workId: workId || null,
+      postId: postId || null,
+      commentId: comment._id,
+    });
 
     res.status(201).json({ message: "Comment added", comment });
   } catch (err) {

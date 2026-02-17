@@ -2,6 +2,7 @@ import React from "react";
 import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import "./PublicCommunityPage.css";
 import { uploadsApi, worksApi, communityApi, followsApi, usersApi } from "../api";
+import { SableLoader } from "../components";
 
 function initials(name) {
   const s = (name || "U").trim();
@@ -351,7 +352,7 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   if (loading) {
     return (
       <div className="pcp">
-        <div className="pcp-loading">Loading community page...</div>
+        <SableLoader />
       </div>
     );
   }

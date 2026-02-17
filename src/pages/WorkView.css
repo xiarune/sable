@@ -60,7 +60,7 @@
   padding-left: 290px; /* sidebar width (260px) + left offset (14px) + gap (16px) */
 }
 
-/* Sidebar - FIXED to screen, always visible while scrolling */
+/* Sidebar */
 .wv-toc {
   position: fixed;
   top: 100px; /* Align with top of works section */

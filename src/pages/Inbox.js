@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./Inbox.css";
 
 import { messagesApi, authApi, uploadsApi } from "../api";
+import { SableLoader } from "../components";
 import {
   initSocket,
   getSocket,
@@ -1470,9 +1471,7 @@ export default function Inbox() {
   if (loading) {
     return (
       <div className="in-page">
-        <div className="in-shell" style={{ justifyContent: "center", alignItems: "center" }}>
-          <div>Loading inbox...</div>
-        </div>
+        <SableLoader />
       </div>
     );
   }

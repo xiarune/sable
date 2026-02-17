@@ -1,0 +1,16 @@
+.sableLoader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sableLoader--fullPage {
+  min-height: calc(100vh - 180px);
+  width: 100%;
+}
+
+.sableLoaderInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
