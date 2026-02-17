@@ -20,6 +20,9 @@ const Message = require("./Message");
 // Community Page
 const CommunityPage = require("./CommunityPage");
 
+// Skins
+const Skin = require("./Skin");
+
 // Audio
 const AudioTrack = require("./AudioTrack");
 
@@ -53,6 +56,9 @@ module.exports = {
 
   // Community Page
   CommunityPage,
+
+  // Skins
+  Skin,
 
   // Audio
   AudioTrack,

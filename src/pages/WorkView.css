@@ -351,6 +351,8 @@
 
 .wv-miniBody {
   padding: 12px 14px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .wv-miniTrackTitle {
@@ -620,7 +622,9 @@
 
 /* Music player specific */
 .wv-musicPlayer {
-  min-width: 240px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .wv-musicInputRow {
@@ -652,13 +656,17 @@
 
 .wv-youtubeEmbed {
   margin-top: 8px;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .wv-youtubeEmbed iframe {
   width: 100%;
+  max-width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: var(--radius-sm);
   background: #000;
+  display: block;
 }
 
 .wv-providerPlaceholder {
@@ -702,6 +710,8 @@
   text-align: center;
   padding: 16px 8px;
   gap: 10px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .wv-providerLogo {

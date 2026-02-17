@@ -221,6 +221,39 @@
   font-size: 14px;
 }
 
+.st-inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.st-inputWrap .st-input {
+  flex: 1;
+  padding-right: 44px;
+}
+
+.st-passwordToggle {
+  position: absolute;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.st-passwordToggle:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
 .st-textarea {
   min-height: 240px;
   border-radius: 12px;
@@ -528,6 +561,52 @@
   font-size: 12px;
   color: rgba(0, 0, 0, 0.4);
   font-style: italic;
+}
+
+.st-skinTile--custom {
+  position: relative;
+  text-align: center;
+}
+
+.st-skinPreview--custom {
+  background: linear-gradient(145deg, #fbf6e8, #e8dcc0);
+  border: 1px solid rgba(203, 184, 137, 0.5);
+}
+
+.st-skinPreview--custom .st-skinPreviewText {
+  color: #7a0f14;
+  font-family: "Cinzel Decorative", serif;
+}
+
+.st-skinDeleteBtn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(180, 60, 60, 0.85);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.st-skinTile--custom:hover .st-skinDeleteBtn {
+  opacity: 1;
+}
+
+.st-skinDeleteBtn:hover {
+  background: rgba(180, 60, 60, 0.95);
+}
+
+.st-modal--wide {
+  max-width: 640px;
 }
 
 /* Modal */

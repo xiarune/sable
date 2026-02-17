@@ -11,6 +11,8 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [status, setStatus] = React.useState("checking"); // "checking" | "valid" | "invalid" | "submitting" | "success"
   const [error, setError] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   React.useEffect(() => {
     async function validateToken() {
@@ -128,29 +130,79 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>New Password</label>
-            <input
-              className="nd-textarea"
-              style={{ minHeight: 44 }}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              autoFocus
-              minLength={6}
-            />
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <input
+                className="nd-textarea"
+                style={{ minHeight: 44, flex: 1, paddingRight: 44 }}
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoFocus
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                style={{
+                  position: "absolute",
+                  right: 8,
+                  width: 32,
+                  height: 32,
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 6,
+                  opacity: 0.7,
+                }}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "🙈" : "👁"}
+              </button>
+            </div>
           </div>
 
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>Confirm Password</label>
-            <input
-              className="nd-textarea"
-              style={{ minHeight: 44 }}
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              minLength={6}
-            />
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <input
+                className="nd-textarea"
+                style={{ minHeight: 44, flex: 1, paddingRight: 44 }}
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                style={{
+                  position: "absolute",
+                  right: 8,
+                  width: 32,
+                  height: 32,
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 6,
+                  opacity: 0.7,
+                }}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                title={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? "🙈" : "👁"}
+              </button>
+            </div>
           </div>
 
           {error && <div style={{ color: "red", marginBottom: 16 }}>{error}</div>}

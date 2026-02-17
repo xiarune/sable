@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import "./WorkView.css";
 import "../styles/skins.css";
 
-import { worksApi, bookmarksApi, commentsApi } from "../api";
+import { worksApi, bookmarksApi, commentsApi, skinsApi } from "../api";
 import { works as libraryWorks } from "../data/libraryWorks";
 
 import musicIcon from "../assets/images/music_icon.png";
@@ -232,6 +232,37 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
   // Work bookmark state (loaded from API)
   const [isBookmarked, setIsBookmarked] = React.useState(false);
+
+  // Report modal state
+  const [showReportModal, setShowReportModal] = React.useState(false);
+  const [reportReason, setReportReason] = React.useState("");
+  const [reportSubmitting, setReportSubmitting] = React.useState(false);
+  const [reportSubmitted, setReportSubmitted] = React.useState(false);
+
+  // Custom skin CSS
+  const [customSkinCss, setCustomSkinCss] = React.useState("");
+
+  // Load custom skin CSS if work uses one
+  React.useEffect(() => {
+    if (!work?.customSkinId) {
+      setCustomSkinCss("");
+      return;
+    }
+
+    async function loadCustomSkin() {
+      try {
+        const data = await skinsApi.get(work.customSkinId);
+        if (data.skin?.css) {
+          setCustomSkinCss(data.skin.css);
+        }
+      } catch {
+        // Skin not found or not accessible - use built-in skin styling
+        setCustomSkinCss("");
+      }
+    }
+
+    loadCustomSkin();
+  }, [work?.customSkinId]);
 
   // Check bookmark status on load
   React.useEffect(() => {
@@ -661,6 +692,39 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     }
   }
 
+  function openReportModal() {
+    if (!isAuthed) {
+      openLoginModal();
+      return;
+    }
+    setShowReportModal(true);
+    setReportReason("");
+    setReportSubmitted(false);
+  }
+
+  function closeReportModal() {
+    setShowReportModal(false);
+    setReportReason("");
+    setReportSubmitting(false);
+  }
+
+  async function submitReport() {
+    if (!reportReason.trim()) return;
+
+    setReportSubmitting(true);
+
+    // For now, simulate submission since backend doesn't exist yet
+    // In the future, this would call a reports API
+    setTimeout(() => {
+      setReportSubmitting(false);
+      setReportSubmitted(true);
+      // Auto-close after showing success message
+      setTimeout(() => {
+        closeReportModal();
+      }, 2000);
+    }, 800);
+  }
+
   const themeClass = prefs.theme === "dark" ? "wv-themeDark" : "wv-themePaper";
 
   // Determine skin class from work.skin - default to "default" if not set
@@ -692,6 +756,10 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
   return (
     <div className={`wv-page ${themeClass} ${skinClass}`}>
+      {/* Inject custom skin CSS */}
+      {customSkinCss && (
+        <style dangerouslySetInnerHTML={{ __html: customSkinCss }} />
+      )}
       <div className="wv-shell">
         <div className="wv-layout">
           {/* Sidebar */}
@@ -1092,6 +1160,19 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   >
                     <img src={commentsIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
                   </button>
+
+                  {/* Report - only show for non-authors */}
+                  {normalizedUser !== authorHandle.toLowerCase() && (
+                    <button
+                      type="button"
+                      className="wv-iconBtn"
+                      onClick={openReportModal}
+                      aria-label="Report this work"
+                      title="Report"
+                    >
+                      <span style={{ fontSize: 16 }}>&#9888;</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1368,6 +1449,94 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                 </div>
               </div>
             ) : null}
+
+            {/* Report Modal */}
+            {showReportModal && (
+              <div className="wv-panelOverlay" role="dialog" aria-modal="true" aria-label="Report work">
+                <div className="wv-panel" style={{ maxWidth: 480 }}>
+                  <div className="wv-panelTop">
+                    <div className="wv-panelTitle">Report Work</div>
+                    <button
+                      type="button"
+                      className="wv-panelClose"
+                      onClick={closeReportModal}
+                      disabled={reportSubmitting}
+                      aria-label="Close report modal"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="wv-panelBody">
+                    {reportSubmitted ? (
+                      <div style={{ textAlign: "center", padding: 20 }}>
+                        <div style={{ fontSize: 32, marginBottom: 12 }}>&#10003;</div>
+                        <div style={{ fontWeight: 700, marginBottom: 8 }}>Report Submitted</div>
+                        <div style={{ opacity: 0.7 }}>Thank you for helping keep Sable safe.</div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="wv-panelHint">
+                          Please select a reason for reporting this work.
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {[
+                            "Spam or misleading content",
+                            "Harassment or hate speech",
+                            "Copyright infringement",
+                            "Inappropriate content (not properly tagged)",
+                            "Other",
+                          ].map((reason) => (
+                            <button
+                              key={reason}
+                              type="button"
+                              className={`wv-miniPill ${reportReason === reason ? "wv-miniPill--active" : ""}`}
+                              onClick={() => setReportReason(reason)}
+                              style={{ textAlign: "left", padding: "10px 14px" }}
+                            >
+                              {reason}
+                            </button>
+                          ))}
+                        </div>
+                        {reportReason === "Other" && (
+                          <div style={{ marginTop: 12 }}>
+                            <textarea
+                              className="wv-commentInput"
+                              placeholder="Please describe the issue..."
+                              style={{ minHeight: 80 }}
+                              value={reportReason === "Other" ? "" : reportReason}
+                              onChange={(e) => setReportReason(`Other: ${e.target.value}`)}
+                            />
+                          </div>
+                        )}
+                        <div style={{ marginTop: 16, display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                          <button
+                            type="button"
+                            className="wv-backBtn"
+                            onClick={closeReportModal}
+                            disabled={reportSubmitting}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="wv-backBtn"
+                            style={{
+                              background: reportReason ? "rgba(180, 60, 60, 0.85)" : "rgba(180, 60, 60, 0.4)",
+                              color: "white",
+                              borderColor: "rgba(180, 60, 60, 0.5)",
+                            }}
+                            onClick={submitReport}
+                            disabled={!reportReason || reportSubmitting}
+                          >
+                            {reportSubmitting ? "Submitting..." : "Submit Report"}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </main>
         </div>
       </div>

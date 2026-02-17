@@ -976,3 +976,110 @@
   }
 }
 
+/* Delete Modal */
+.in-modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.in-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  width: 90%;
+  max-width: 400px;
+  overflow: hidden;
+}
+
+.in-modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.in-modalTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: rgba(70, 60, 55, 0.90);
+  margin: 0;
+}
+
+.in-modalClose {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  color: rgba(95, 85, 80, 0.55);
+  display: grid;
+  place-items: center;
+}
+
+.in-modalClose:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(95, 85, 80, 0.85);
+}
+
+.in-modalBody {
+  padding: 20px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(70, 60, 55, 0.85);
+  line-height: 1.5;
+}
+
+.in-modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.in-modalBtn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.in-modalBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.in-modalBtn--secondary {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(70, 60, 55, 0.85);
+}
+
+.in-modalBtn--secondary:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.10);
+}
+
+.in-modalBtn--danger {
+  background: rgba(200, 60, 60, 0.85);
+  color: white;
+}
+
+.in-modalBtn--danger:hover:not(:disabled) {
+  background: rgba(200, 60, 60, 0.95);
+}
+

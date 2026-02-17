@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./Settings.css";
-import { settingsApi, usersApi, authApi } from "../api";
+import { settingsApi, usersApi, authApi, skinsApi } from "../api";
 import { SableLoader } from "../components";
 
 import profileImg from "../assets/images/profile_picture.png";
@@ -30,6 +30,11 @@ export default function Settings({ username, onLogout }) {
   // Status line for actions
   const [modalStatus, setModalStatus] = React.useState("");
   const [modalLoading, setModalLoading] = React.useState(false);
+
+  // Password visibility toggles
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showPassword2, setShowPassword2] = React.useState(false);
+  const [showPassword3, setShowPassword3] = React.useState(false);
 
   // Privacy state
   const [blockedUsers, setBlockedUsers] = React.useState([]);
@@ -74,22 +79,29 @@ export default function Settings({ username, onLogout }) {
 
   // Skin modal
   const [skinName, setSkinName] = React.useState("");
-  const [skinAppliesTo, setSkinAppliesTo] = React.useState("Community Page");
+  const [skinAppliesTo, setSkinAppliesTo] = React.useState("work");
   const [skinCss, setSkinCss] = React.useState(
-    "/* Example */\n.ycp-card {\n  background: rgba(255,255,255,0.8);\n}\n"
+    "/* Example */\n.wv-card {\n  background: rgba(255,255,255,0.8);\n}\n"
   );
+  const [skinSaving, setSkinSaving] = React.useState(false);
+  const [skinError, setSkinError] = React.useState("");
+
+  // Custom skins list
+  const [customSkins, setCustomSkins] = React.useState([]);
+  const [skinsLoading, setSkinsLoading] = React.useState(false);
 
   // Load user data on mount
   React.useEffect(() => {
     async function loadData() {
       try {
-        const [meData, blockedData, mutedData, privacyData, sessionsData, accountsData] = await Promise.all([
+        const [meData, blockedData, mutedData, privacyData, sessionsData, accountsData, skinsData] = await Promise.all([
           authApi.me(),
           usersApi.getBlockedUsers().catch(() => ({ blockedUsers: [] })),
           settingsApi.getMutedWords().catch(() => ({ mutedWords: [] })),
           settingsApi.getPrivacy().catch(() => ({ privacy: {} })),
           settingsApi.getSessions().catch(() => ({ sessions: [] })),
           settingsApi.getConnectedAccounts().catch(() => ({ accounts: [], hasPassword: true })),
+          skinsApi.list().catch(() => ({ skins: [] })),
         ]);
 
         setUser(meData.user);
@@ -99,6 +111,7 @@ export default function Settings({ username, onLogout }) {
         setSessions(sessionsData.sessions || []);
         setConnectedAccounts(accountsData.accounts || []);
         setHasPassword(accountsData.hasPassword !== false);
+        setCustomSkins(skinsData.skins || []);
 
         // Set visibility from user preferences
         if (meData.user?.preferences?.visibility) {
@@ -143,6 +156,9 @@ export default function Settings({ username, onLogout }) {
     setModalValue3("");
     setModalStatus("");
     setModalLoading(false);
+    setShowPassword(false);
+    setShowPassword2(false);
+    setShowPassword3(false);
   }
 
   function closeModal() {
@@ -152,6 +168,9 @@ export default function Settings({ username, onLogout }) {
     setModalValue3("");
     setModalStatus("");
     setModalLoading(false);
+    setShowPassword(false);
+    setShowPassword2(false);
+    setShowPassword3(false);
   }
 
   const isGoodbyeModal = activeModal === "delete" || activeModal === "deactivate";
@@ -277,13 +296,23 @@ export default function Settings({ username, onLogout }) {
 
             <div className="st-field st-field--modal">
               <div className="st-fieldLabel">Current password</div>
-              <input
-                className="st-input"
-                type="password"
-                value={modalValue2}
-                onChange={(e) => setModalValue2(e.target.value)}
-                placeholder="Enter your password"
-              />
+              <div className="st-inputWrap">
+                <input
+                  className="st-input"
+                  type={showPassword2 ? "text" : "password"}
+                  value={modalValue2}
+                  onChange={(e) => setModalValue2(e.target.value)}
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  className="st-passwordToggle"
+                  onClick={() => setShowPassword2((v) => !v)}
+                  aria-label={showPassword2 ? "Hide password" : "Show password"}
+                >
+                  {showPassword2 ? "🙈" : "👁"}
+                </button>
+              </div>
             </div>
 
             {modalStatus && <div className="st-mutedNote" style={{ marginTop: 10, color: modalStatus.includes("success") ? "green" : "inherit" }}>{modalStatus}</div>}
@@ -324,35 +353,65 @@ export default function Settings({ username, onLogout }) {
 
             <div className="st-field st-field--modal">
               <div className="st-fieldLabel">Current password</div>
-              <input
-                className="st-input"
-                value={modalValue3}
-                onChange={(e) => setModalValue3(e.target.value)}
-                placeholder="Current password"
-                type="password"
-              />
+              <div className="st-inputWrap">
+                <input
+                  className="st-input"
+                  value={modalValue3}
+                  onChange={(e) => setModalValue3(e.target.value)}
+                  placeholder="Current password"
+                  type={showPassword3 ? "text" : "password"}
+                />
+                <button
+                  type="button"
+                  className="st-passwordToggle"
+                  onClick={() => setShowPassword3((v) => !v)}
+                  aria-label={showPassword3 ? "Hide password" : "Show password"}
+                >
+                  {showPassword3 ? "🙈" : "👁"}
+                </button>
+              </div>
             </div>
 
             <div className="st-field st-field--modal">
               <div className="st-fieldLabel">New password</div>
-              <input
-                className="st-input"
-                value={modalValue}
-                onChange={(e) => setModalValue(e.target.value)}
-                placeholder="New password (min 6 characters)"
-                type="password"
-              />
+              <div className="st-inputWrap">
+                <input
+                  className="st-input"
+                  value={modalValue}
+                  onChange={(e) => setModalValue(e.target.value)}
+                  placeholder="New password (min 6 characters)"
+                  type={showPassword ? "text" : "password"}
+                />
+                <button
+                  type="button"
+                  className="st-passwordToggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? "🙈" : "👁"}
+                </button>
+              </div>
             </div>
 
             <div className="st-field st-field--modal">
               <div className="st-fieldLabel">Confirm new password</div>
-              <input
-                className="st-input"
-                value={modalValue2}
-                onChange={(e) => setModalValue2(e.target.value)}
-                placeholder="Confirm password"
-                type="password"
-              />
+              <div className="st-inputWrap">
+                <input
+                  className="st-input"
+                  value={modalValue2}
+                  onChange={(e) => setModalValue2(e.target.value)}
+                  placeholder="Confirm password"
+                  type={showPassword2 ? "text" : "password"}
+                />
+                <button
+                  type="button"
+                  className="st-passwordToggle"
+                  onClick={() => setShowPassword2((v) => !v)}
+                  aria-label={showPassword2 ? "Hide password" : "Show password"}
+                >
+                  {showPassword2 ? "🙈" : "👁"}
+                </button>
+              </div>
             </div>
 
             {modalStatus && <div className="st-mutedNote" style={{ marginTop: 10, color: modalStatus.includes("success") ? "green" : "red" }}>{modalStatus}</div>}
@@ -380,13 +439,23 @@ export default function Settings({ username, onLogout }) {
 
             <div className="st-field st-field--modal">
               <div className="st-fieldLabel">Current password</div>
-              <input
-                className="st-input"
-                type="password"
-                value={modalValue2}
-                onChange={(e) => setModalValue2(e.target.value)}
-                placeholder="Enter your password"
-              />
+              <div className="st-inputWrap">
+                <input
+                  className="st-input"
+                  type={showPassword2 ? "text" : "password"}
+                  value={modalValue2}
+                  onChange={(e) => setModalValue2(e.target.value)}
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  className="st-passwordToggle"
+                  onClick={() => setShowPassword2((v) => !v)}
+                  aria-label={showPassword2 ? "Hide password" : "Show password"}
+                >
+                  {showPassword2 ? "🙈" : "👁"}
+                </button>
+              </div>
             </div>
 
             {modalStatus && <div className="st-mutedNote" style={{ marginTop: 10, color: modalStatus.includes("sent") ? "green" : "red" }}>{modalStatus}</div>}
@@ -1012,11 +1081,47 @@ export default function Settings({ username, onLogout }) {
     );
   }
 
-  function handleSkinSave() {
-    setSkinName("");
-    setSkinAppliesTo("Community Page");
-    setSkinCss("/* Example */\n.ycp-card {\n  background: rgba(255,255,255,0.8);\n}\n");
-    closeModal();
+  async function handleSkinSave() {
+    if (!skinName.trim()) {
+      setSkinError("Please enter a skin name.");
+      return;
+    }
+    if (!skinCss.trim()) {
+      setSkinError("Please enter some CSS.");
+      return;
+    }
+
+    setSkinSaving(true);
+    setSkinError("");
+
+    try {
+      const appliesTo = skinAppliesTo === "Community Page" ? "community" : "work";
+      const data = await skinsApi.create(skinName.trim(), appliesTo, skinCss.trim());
+
+      // Add to local list
+      setCustomSkins((prev) => [data.skin, ...prev]);
+
+      // Reset form
+      setSkinName("");
+      setSkinAppliesTo("work");
+      setSkinCss("/* Example */\n.wv-card {\n  background: rgba(255,255,255,0.8);\n}\n");
+      closeModal();
+    } catch (err) {
+      setSkinError(err.message || "Failed to save skin. Please try again.");
+    } finally {
+      setSkinSaving(false);
+    }
+  }
+
+  async function handleSkinDelete(skinId) {
+    if (!window.confirm("Are you sure you want to delete this skin?")) return;
+
+    try {
+      await skinsApi.delete(skinId);
+      setCustomSkins((prev) => prev.filter((s) => s._id !== skinId));
+    } catch (err) {
+      console.error("Failed to delete skin:", err);
+    }
   }
 
   if (loading) {
@@ -1331,12 +1436,43 @@ export default function Settings({ username, onLogout }) {
                   </p>
 
                   <div className="st-skinTray" aria-label="Custom skins">
-                    <div className="st-skinTile st-skinTile--empty">
-                      <div className="st-skinEmptyText">No custom skins yet</div>
-                    </div>
-                    <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />
-                    <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />
-                    <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />
+                    {customSkins.length === 0 ? (
+                      <>
+                        <div className="st-skinTile st-skinTile--empty">
+                          <div className="st-skinEmptyText">No custom skins yet</div>
+                        </div>
+                        <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />
+                        <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />
+                        <div className="st-skinTile st-skinTile--empty" aria-hidden="true" />
+                      </>
+                    ) : (
+                      <>
+                        {customSkins.map((skin) => (
+                          <div key={skin._id} className="st-skinTile st-skinTile--custom">
+                            <div className="st-skinPreview st-skinPreview--custom">
+                              <div className="st-skinPreviewText">Aa</div>
+                            </div>
+                            <div className="st-skinName">{skin.name}</div>
+                            <div className="st-skinDesc">
+                              {skin.appliesTo === "work" ? "Works" : "Community Page"}
+                            </div>
+                            <button
+                              type="button"
+                              className="st-skinDeleteBtn"
+                              onClick={() => handleSkinDelete(skin._id)}
+                              aria-label={`Delete ${skin.name}`}
+                              title="Delete skin"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                        {/* Fill remaining slots */}
+                        {customSkins.length < 4 && Array(4 - customSkins.length).fill(null).map((_, i) => (
+                          <div key={`empty-${i}`} className="st-skinTile st-skinTile--empty" aria-hidden="true" />
+                        ))}
+                      </>
+                    )}
                   </div>
                 </div>
               </>
@@ -1446,13 +1582,23 @@ export default function Settings({ username, onLogout }) {
               {activeModal === "delete" && (
                 <div className="st-field st-field--modal" style={{ marginTop: 16 }}>
                   <div className="st-fieldLabel">Enter your password to confirm</div>
-                  <input
-                    className="st-input"
-                    type="password"
-                    value={modalValue}
-                    onChange={(e) => setModalValue(e.target.value)}
-                    placeholder="Your password"
-                  />
+                  <div className="st-inputWrap">
+                    <input
+                      className="st-input"
+                      type={showPassword ? "text" : "password"}
+                      value={modalValue}
+                      onChange={(e) => setModalValue(e.target.value)}
+                      placeholder="Your password"
+                    />
+                    <button
+                      type="button"
+                      className="st-passwordToggle"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? "🙈" : "👁"}
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -1478,15 +1624,15 @@ export default function Settings({ username, onLogout }) {
 
       {/* Skins */}
       {isSkinModal && (
-        <div className="st-modalOverlay" role="dialog" aria-modal="true" onClick={closeModal}>
-          <div className="st-modal" onClick={(e) => e.stopPropagation()}>
-            <button type="button" className="st-modalClose" onClick={closeModal} aria-label="Close">
+        <div className="st-modalOverlay" role="dialog" aria-modal="true" onClick={skinSaving ? undefined : closeModal}>
+          <div className="st-modal st-modal--wide" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="st-modalClose" onClick={closeModal} disabled={skinSaving} aria-label="Close">
               x
             </button>
 
             <div className="st-skinModalHead">
               <div className="st-skinModalTitle">Create A New Skin</div>
-              <div className="st-skinModalSub">Write CSS below to customize your pages.</div>
+              <div className="st-skinModalSub">Write CSS below to customize how your works look. Your skins will be available in the work editor.</div>
             </div>
 
             <div className="st-skinForm">
@@ -1496,7 +1642,8 @@ export default function Settings({ username, onLogout }) {
                   className="st-input"
                   value={skinName}
                   onChange={(e) => setSkinName(e.target.value)}
-                  placeholder="e.g., Midnight Ink"
+                  placeholder="e.g., Medieval Manuscript"
+                  disabled={skinSaving}
                 />
               </div>
 
@@ -1506,9 +1653,10 @@ export default function Settings({ username, onLogout }) {
                   className="st-input"
                   value={skinAppliesTo}
                   onChange={(e) => setSkinAppliesTo(e.target.value)}
+                  disabled={skinSaving}
                 >
-                  <option value="Community Page">Community Page</option>
-                  <option value="Work">Work</option>
+                  <option value="work">Works</option>
+                  <option value="community">Community Page</option>
                 </select>
               </div>
 
@@ -1518,16 +1666,23 @@ export default function Settings({ username, onLogout }) {
                   className="st-textarea"
                   value={skinCss}
                   onChange={(e) => setSkinCss(e.target.value)}
+                  placeholder="/* Your custom CSS here */"
+                  disabled={skinSaving}
+                  style={{ minHeight: 300, fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, monospace" }}
                 />
               </div>
+
+              {skinError && (
+                <div className="st-mutedNote" style={{ color: "red", marginTop: 8 }}>{skinError}</div>
+              )}
             </div>
 
             <div className="st-modalActions">
-              <button type="button" className="st-actionBtn" onClick={closeModal}>
+              <button type="button" className="st-actionBtn" onClick={closeModal} disabled={skinSaving}>
                 Cancel
               </button>
-              <button type="button" className="st-actionBtn st-actionBtn--primary" onClick={handleSkinSave}>
-                Save Skin
+              <button type="button" className="st-actionBtn st-actionBtn--primary" onClick={handleSkinSave} disabled={skinSaving}>
+                {skinSaving ? "Saving..." : "Save Skin"}
               </button>
             </div>
           </div>

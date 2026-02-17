@@ -48,8 +48,13 @@ const workSchema = new mongoose.Schema(
     },
     skin: {
       type: String,
-      enum: ["Default", "Parchment"],
       default: "Default",
+    },
+    // Reference to a custom skin (if using custom)
+    customSkinId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Skin",
+      default: null,
     },
     privacy: {
       type: String,
