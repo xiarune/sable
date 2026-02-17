@@ -1,0 +1,30 @@
+.browseOrnament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.browseOrnamentImg {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.9;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .browseOrnamentImg {
+    height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .browseOrnamentImg {
+    height: 26px;
+  }
+
+  .browseOrnament {
+    margin-bottom: 6px;
+  }
+}

@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { discoveryApi } from "../api";
+import { SableLoader, DropCapTitle, BrowseOrnament } from "../components";
 import "./Library.css";
 
 export default function GenreIndex() {
@@ -26,11 +27,10 @@ export default function GenreIndex() {
     return (
       <div className="shelfPage">
         <div className="shelfBanner">
-          <h1 className="shelfTitle">Genre</h1>
+          <BrowseOrnament />
+          <DropCapTitle title="Genre" variant="banner" />
         </div>
-        <div className="shelfBody">
-          <p>Loading genres...</p>
-        </div>
+        <SableLoader />
       </div>
     );
   }
@@ -38,7 +38,8 @@ export default function GenreIndex() {
   return (
     <div className="shelfPage">
       <div className="shelfBanner">
-        <h1 className="shelfTitle">Genre</h1>
+        <BrowseOrnament />
+        <DropCapTitle title="Genre" variant="banner" />
       </div>
 
       <div className="shelfBody">

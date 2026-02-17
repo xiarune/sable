@@ -289,6 +289,13 @@
   font-weight: 700;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.92);
+  overflow: hidden;
+}
+
+.no-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .no-main {
@@ -399,6 +406,26 @@
   color: rgba(120, 86, 24, 0.92);
 }
 
+.no-chip--follow_request {
+  background: rgba(180, 120, 40, 0.14);
+  color: rgba(140, 90, 20, 0.92);
+}
+
+.no-chip--reply {
+  background: rgba(80, 120, 160, 0.12);
+  color: rgba(50, 90, 130, 0.92);
+}
+
+.no-chip--like {
+  background: rgba(200, 60, 80, 0.12);
+  color: rgba(160, 40, 60, 0.92);
+}
+
+.no-chip--post {
+  background: rgba(100, 80, 180, 0.12);
+  color: rgba(80, 60, 150, 0.92);
+}
+
 .no-unreadDot {
   width: 8px;
   height: 8px;
@@ -432,6 +459,85 @@
   font-family: "Libre Baskerville", serif;
   font-size: 12px;
   color: rgba(80, 70, 65, 0.55);
+}
+
+/* Follow request actions */
+.no-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.no-action {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 0;
+  cursor: pointer;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  font-weight: 700;
+  transition: filter 150ms ease;
+}
+
+.no-action:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.no-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.no-action--accept {
+  background: rgba(36, 75, 43, 0.85);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.no-action--decline {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(80, 70, 65, 0.85);
+}
+
+/* Loading and error states */
+.no-loading {
+  padding: 40px 20px;
+  text-align: center;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(80, 70, 65, 0.70);
+}
+
+.no-error {
+  padding: 20px;
+  margin-bottom: 16px;
+  text-align: center;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(122, 13, 18, 0.85);
+  background: rgba(122, 13, 18, 0.08);
+  border-radius: 10px;
+}
+
+/* Type icon variants */
+.no-typeIcon--follow_request {
+  background: rgba(180, 120, 40, 0.14);
+  color: rgba(140, 90, 20, 0.90);
+}
+
+.no-typeIcon--reply {
+  background: rgba(80, 120, 160, 0.12);
+  color: rgba(50, 90, 130, 0.90);
+}
+
+.no-typeIcon--like {
+  background: rgba(200, 60, 80, 0.12);
+  color: rgba(160, 40, 60, 0.90);
+}
+
+.no-typeIcon--post {
+  background: rgba(100, 80, 180, 0.12);
+  color: rgba(80, 60, 150, 0.90);
 }
 
 /* Responsive */

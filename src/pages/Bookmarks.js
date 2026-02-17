@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Bookmarks.css";
 import { bookmarksApi } from "../api";
+import { SableLoader, DropCapTitle } from "../components";
 
 export default function Bookmarks() {
   const navigate = useNavigate();
@@ -55,8 +56,8 @@ export default function Bookmarks() {
   if (loading) {
     return (
       <div className="bookmarksPage">
-        <h1 className="bookmarksTitle">Your Bookmarks</h1>
-        <div style={{ padding: 40, textAlign: "center" }}>Loading...</div>
+        <DropCapTitle title="Your Bookmarks" variant="page" className="bookmarksTitle" />
+        <SableLoader />
       </div>
     );
   }
@@ -64,7 +65,7 @@ export default function Bookmarks() {
   return (
     <div className="bookmarksPage">
       <div className="bookmarksHeader">
-        <h1 className="bookmarksTitle">Your Bookmarks</h1>
+        <DropCapTitle title="Your Bookmarks" variant="page" className="bookmarksTitle" />
 
         <div className="bookmarksFilters">
           <button

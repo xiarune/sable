@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { discoveryApi } from "../api";
+import { SableLoader, DropCapTitle, BrowseOrnament } from "../components";
 import "./Library.css";
 
 export default function FandomIndex() {
@@ -26,11 +27,10 @@ export default function FandomIndex() {
     return (
       <div className="shelfPage">
         <div className="shelfBanner">
-          <h1 className="shelfTitle">Fandom</h1>
+          <BrowseOrnament />
+          <DropCapTitle title="Fandom" variant="banner" />
         </div>
-        <div className="shelfBody">
-          <p>Loading fandoms...</p>
-        </div>
+        <SableLoader />
       </div>
     );
   }
@@ -38,7 +38,8 @@ export default function FandomIndex() {
   return (
     <div className="shelfPage">
       <div className="shelfBanner">
-        <h1 className="shelfTitle">Fandom</h1>
+        <BrowseOrnament />
+        <DropCapTitle title="Fandom" variant="banner" />
       </div>
 
       <div className="shelfBody">

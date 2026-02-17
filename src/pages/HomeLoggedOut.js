@@ -2,6 +2,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import WorkCarousel from "../components/WorkCarousel";
+import { SableLoader } from "../components";
 import { discoveryApi } from "../api";
 import homeIcon from "../assets/images/home_icon.png";
 import defaultCover from "../assets/images/sable_default_cover.png";
@@ -43,11 +44,7 @@ export default function HomeLoggedOut() {
   }
 
   if (loading) {
-    return (
-      <div style={{ padding: 40, textAlign: "center" }}>
-        Loading...
-      </div>
-    );
+    return <SableLoader />;
   }
 
   if (works.length === 0) {

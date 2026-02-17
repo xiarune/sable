@@ -1,0 +1,106 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.dropCapTitle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  font-family: "Cinzel Decorative", serif;
+  letter-spacing: 1px;
+}
+
+.dropCapWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dropCapImg {
+  display: block;
+  object-fit: contain;
+}
+
+.dropCapRest {
+  display: inline;
+}
+
+/* Banner variant (gold text on dark background - like shelfTitle) */
+.dropCapTitle--banner {
+  color: #d7b24c;
+  font-size: 46px;
+}
+
+.dropCapTitle--banner .dropCapImg {
+  height: 65px;
+  width: auto;
+  margin-right: 2px;
+  margin-bottom: -4px;
+}
+
+/* Page variant (dark text on light background) */
+.dropCapTitle--page {
+  color: #244b2b;
+  font-size: 36px;
+}
+
+.dropCapTitle--page .dropCapImg {
+  height: 52px;
+  width: auto;
+  margin-right: 2px;
+  margin-bottom: -3px;
+}
+
+/* Small variant for section headings */
+.dropCapTitle--small {
+  font-size: 24px;
+  color: #244b2b;
+}
+
+.dropCapTitle--small .dropCapImg {
+  height: 36px;
+  width: auto;
+  margin-right: 1px;
+  margin-bottom: -2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dropCapTitle--banner {
+    font-size: 32px;
+  }
+
+  .dropCapTitle--banner .dropCapImg {
+    height: 48px;
+    margin-bottom: -3px;
+  }
+
+  .dropCapTitle--page {
+    font-size: 28px;
+  }
+
+  .dropCapTitle--page .dropCapImg {
+    height: 40px;
+    margin-bottom: -2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dropCapTitle--banner {
+    font-size: 26px;
+  }
+
+  .dropCapTitle--banner .dropCapImg {
+    height: 38px;
+    margin-bottom: -2px;
+  }
+
+  .dropCapTitle--page {
+    font-size: 22px;
+  }
+
+  .dropCapTitle--page .dropCapImg {
+    height: 32px;
+    margin-bottom: -2px;
+  }
+}

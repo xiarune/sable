@@ -9,11 +9,33 @@ const NOTIFICATION_TYPES = {
   COMMENT: "comment",
   LIKE: "like",
   FOLLOW: "follow",
+  FOLLOW_REQUEST: "follow_request",
   MENTION: "mention",
   REPLY: "reply",
   DONATION: "donation",
   SYSTEM: "system",
+  POST: "post",
 };
+
+/**
+ * Parse @mentions from text and return array of usernames
+ * @param {string} text - Text to parse for mentions
+ * @returns {string[]} Array of mentioned usernames (lowercase)
+ */
+function parseMentions(text) {
+  if (!text) return [];
+  // Match @username where username is alphanumeric, underscore, or hyphen
+  const mentionRegex = /@([a-zA-Z0-9_-]+)/g;
+  const mentions = [];
+  let match;
+  while ((match = mentionRegex.exec(text)) !== null) {
+    const username = match[1].toLowerCase();
+    if (!mentions.includes(username)) {
+      mentions.push(username);
+    }
+  }
+  return mentions;
+}
 
 /**
  * Create and send a notification
@@ -30,6 +52,7 @@ async function sendNotification(options) {
     workId = null,
     postId = null,
     commentId = null,
+    followRequestId = null,
     silent = false,
   } = options;
 
@@ -50,6 +73,7 @@ async function sendNotification(options) {
       workId,
       postId,
       commentId,
+      followRequestId,
       read: false,
     });
     await notification.save();
@@ -75,6 +99,7 @@ async function sendNotification(options) {
         workId,
         postId,
         commentId,
+        followRequestId,
         createdAt: notification.createdAt,
       });
     }
@@ -108,6 +133,26 @@ async function notifyNewFollower(recipientId, followerId) {
     body: `${follower.displayName || follower.username} started following you`,
     actorId: followerId,
     actorUsername: follower.username,
+  });
+}
+
+/**
+ * Send a follow request notification (for private accounts)
+ */
+async function notifyFollowRequest(recipientId, requesterId, followRequestId) {
+  const User = require("../models/User");
+  const requester = await User.findById(requesterId);
+
+  if (!requester) return null;
+
+  return sendNotification({
+    recipientId,
+    type: NOTIFICATION_TYPES.FOLLOW_REQUEST,
+    title: "Follow Request",
+    body: `${requester.displayName || requester.username} wants to follow you`,
+    actorId: requesterId,
+    actorUsername: requester.username,
+    followRequestId,
   });
 }
 
@@ -231,13 +276,191 @@ async function getUnreadCount(userId) {
   return Notification.countDocuments({ recipientId: userId, read: false });
 }
 
+/**
+ * Send mention notifications
+ * @param {string} text - Text containing @mentions
+ * @param {string} senderId - User who wrote the text
+ * @param {string} contextType - "comment" or "post"
+ * @param {Object} context - { workId?, postId?, commentId? }
+ */
+async function notifyMentions(text, senderId, contextType, context = {}) {
+  try {
+    const User = require("../models/User");
+    const sender = await User.findById(senderId);
+    if (!sender) return [];
+
+    const mentionedUsernames = parseMentions(text);
+    if (mentionedUsernames.length === 0) return [];
+
+    // Find mentioned users (excluding the sender)
+    const mentionedUsers = await User.find({
+      username: { $in: mentionedUsernames },
+      _id: { $ne: senderId },
+    });
+
+    const notifications = [];
+    for (const user of mentionedUsers) {
+      let body = `${sender.displayName || sender.username} mentioned you`;
+      if (contextType === "comment") {
+        body += " in a comment";
+      } else if (contextType === "post") {
+        body += " in a post";
+      }
+
+      const notification = await sendNotification({
+        recipientId: user._id,
+        type: NOTIFICATION_TYPES.MENTION,
+        title: "You were mentioned",
+        body,
+        actorId: senderId,
+        actorUsername: sender.username,
+        workId: context.workId || null,
+        postId: context.postId || null,
+        commentId: context.commentId || null,
+      });
+
+      if (notification) {
+        notifications.push(notification);
+      }
+    }
+
+    return notifications;
+  } catch (err) {
+    logger.error("Failed to notify mentions", { error: err.message, senderId, contextType });
+    return [];
+  }
+}
+
+/**
+ * Send a system notification (e.g., from Sable admins)
+ * @param {string|string[]} recipientIds - User ID(s) to notify, or "all" for everyone
+ * @param {string} title - Notification title
+ * @param {string} body - Notification body
+ */
+async function notifySystem(recipientIds, title, body) {
+  try {
+    const User = require("../models/User");
+
+    let users;
+    if (recipientIds === "all") {
+      // Get all users
+      users = await User.find({}, "_id");
+    } else if (Array.isArray(recipientIds)) {
+      users = recipientIds.map((id) => ({ _id: id }));
+    } else {
+      users = [{ _id: recipientIds }];
+    }
+
+    const notifications = [];
+    for (const user of users) {
+      const notification = await sendNotification({
+        recipientId: user._id,
+        type: NOTIFICATION_TYPES.SYSTEM,
+        title,
+        body,
+      });
+
+      if (notification) {
+        notifications.push(notification);
+      }
+    }
+
+    return notifications;
+  } catch (err) {
+    logger.error("Failed to send system notification", { error: err.message });
+    return [];
+  }
+}
+
+/**
+ * Notify followers about a new post in community
+ * @param {string} authorId - Post author's ID
+ * @param {string} postId - Post ID
+ * @param {string} postTitle - Post title or preview
+ * @param {string} postType - Type of post (work, discussion, etc.)
+ */
+async function notifyNewPost(authorId, postId, postTitle, postType = "post") {
+  try {
+    const User = require("../models/User");
+    const Follow = require("../models/Follow");
+
+    const author = await User.findById(authorId);
+    if (!author) return [];
+
+    // Get all followers of the author
+    const follows = await Follow.find({ followeeId: authorId });
+
+    const notifications = [];
+    for (const follow of follows) {
+      const typeLabel = postType === "work" ? "shared a work" :
+                        postType === "discussion" ? "started a discussion" :
+                        postType === "skin" ? "shared a skin" :
+                        postType === "audio" ? "shared audio" : "posted";
+
+      const notification = await sendNotification({
+        recipientId: follow.followerId,
+        type: NOTIFICATION_TYPES.POST,
+        title: "New Post",
+        body: `${author.displayName || author.username} ${typeLabel}: ${postTitle?.slice(0, 60) || "New content"}`,
+        actorId: authorId,
+        actorUsername: author.username,
+        postId,
+      });
+
+      if (notification) {
+        notifications.push(notification);
+      }
+    }
+
+    return notifications;
+  } catch (err) {
+    logger.error("Failed to notify new post", { error: err.message, authorId, postId });
+    return [];
+  }
+}
+
+/**
+ * Notify about a comment on a post (not work)
+ */
+async function notifyPostComment(postId, authorId, commenterId, commentPreview, commentId = null) {
+  const User = require("../models/User");
+  const Post = require("../models/Post");
+
+  const [commenter, post] = await Promise.all([
+    User.findById(commenterId),
+    Post.findById(postId),
+  ]);
+
+  if (!commenter || !post) return null;
+
+  // Don't notify yourself
+  if (authorId.toString() === commenterId.toString()) return null;
+
+  return sendNotification({
+    recipientId: authorId,
+    type: NOTIFICATION_TYPES.COMMENT,
+    title: "New Comment",
+    body: `${commenter.displayName || commenter.username} commented on your post: ${commentPreview.slice(0, 80)}`,
+    actorId: commenterId,
+    actorUsername: commenter.username,
+    postId,
+    commentId,
+  });
+}
+
 module.exports = {
   NOTIFICATION_TYPES,
+  parseMentions,
   sendNotification,
   notifyNewFollower,
+  notifyFollowRequest,
   notifyNewComment,
   notifyCommentReply,
   notifyWorkLiked,
+  notifyMentions,
+  notifySystem,
+  notifyNewPost,
+  notifyPostComment,
   markNotificationsRead,
   getUnreadCount,
 };

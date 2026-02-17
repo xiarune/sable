@@ -2,6 +2,7 @@ import React from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import "./YourCommunityPage.css";
 import { uploadsApi, worksApi, communityApi, bookmarksApi, followsApi, usersApi, authApi } from "../api";
+import { SableLoader } from "../components";
 
 import editBannerIcon from "../assets/images/edit_banner.png";
 import editProfileIcon from "../assets/images/edit_profile_picture.png";
@@ -396,7 +397,7 @@ export default function YourCommunityPage({ username }) {
   if (loading) {
     return (
       <div className="ycp">
-        <div className="ycp-loading">Loading your community page...</div>
+        <SableLoader />
       </div>
     );
   }

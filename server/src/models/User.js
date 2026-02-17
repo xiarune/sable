@@ -166,6 +166,9 @@ const userSchema = new mongoose.Schema(
       worksCount: { type: Number, default: 0 },
     },
 
+    // Admin privileges
+    isAdmin: { type: Boolean, default: false },
+
     // Inbox settings
     inboxSettings: {
       readReceipts: { type: Boolean, default: true },

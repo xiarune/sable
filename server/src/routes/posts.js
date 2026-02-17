@@ -3,17 +3,19 @@ const { z } = require("zod");
 const Post = require("../models/Post");
 const { requireAuth, optionalAuth } = require("../middleware/auth");
 const { MAX_POST_LENGTH } = require("../config/limits");
+const { notifyNewPost, notifyMentions } = require("../services/notificationService");
 
 const router = express.Router();
 
 // Validation
 const createPostSchema = z.object({
-  type: z.enum(["work", "discussion", "skin", "audio", "post"]).optional(),
+  type: z.enum(["work", "skin", "audio", "post"]).optional(),
   title: z.string().max(200).optional(),
   caption: z.string().max(MAX_POST_LENGTH).optional(),
   content: z.string().max(5000).optional(),
   tags: z.array(z.string().max(30)).max(10).optional(),
   workId: z.string().optional(),
+  imageUrl: z.string().url().optional().nullable(),
 });
 
 const updatePostSchema = createPostSchema.partial();
@@ -30,14 +32,27 @@ router.get("/", optionalAuth, async (req, res, next) => {
 
     const [posts, total] = await Promise.all([
       Post.find(query)
+        .populate("authorId", "username displayName avatarUrl")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit)),
       Post.countDocuments(query),
     ]);
 
+    // Transform posts to include author info
+    const transformedPosts = posts.map((post) => {
+      const p = post.toObject();
+      p.author = p.authorId ? {
+        _id: p.authorId._id,
+        username: p.authorId.username,
+        displayName: p.authorId.displayName,
+        avatarUrl: p.authorId.avatarUrl,
+      } : null;
+      return p;
+    });
+
     res.json({
-      posts,
+      posts: transformedPosts,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -92,7 +107,26 @@ router.post("/", requireAuth, async (req, res, next) => {
 
     await post.save();
 
+    // Send response immediately - don't wait for notifications
     res.status(201).json({ message: "Post created", post });
+
+    // Notify followers about the new post (non-blocking)
+    try {
+      const postTitle = result.data.title || result.data.caption || "New post";
+      const postType = result.data.type || "post";
+      await notifyNewPost(req.user._id, post._id, postTitle, postType);
+
+      // Check for @mentions in caption and content
+      const textToCheck = `${result.data.caption || ""} ${result.data.content || ""}`;
+      if (textToCheck.trim()) {
+        await notifyMentions(textToCheck, req.user._id, "post", {
+          postId: post._id,
+        });
+      }
+    } catch (notifyErr) {
+      // Log but don't fail the request - post was already created
+      console.error("Failed to send post notifications:", notifyErr.message);
+    }
   } catch (err) {
     next(err);
   }
@@ -115,6 +149,7 @@ router.put("/:id", requireAuth, async (req, res, next) => {
     }
 
     Object.assign(post, result.data);
+    post.editedAt = new Date();
     await post.save();
 
     res.json({ message: "Post updated", post });

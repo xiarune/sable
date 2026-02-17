@@ -339,6 +339,78 @@
   filter: brightness(0.99);
 }
 
+.co-postBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Composer actions row */
+.co-composeActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.co-attachBtn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: rgba(0, 0, 0, 0.05);
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(60, 55, 52, 0.78);
+}
+
+.co-attachBtn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.co-attachBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Image preview in composer */
+.co-imagePreview {
+  position: relative;
+  margin-top: 10px;
+  border-radius: 10px;
+  overflow: hidden;
+  max-width: 300px;
+  max-height: 200px;
+}
+
+.co-imagePreview img {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.co-imageRemove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.co-imageRemove:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
 /* Logged-out composer button */
 .co-composeLoggedOut {
   width: 100%;
@@ -533,6 +605,31 @@
   overflow-wrap: anywhere;
 }
 
+/* Mentions in posts */
+.co-postCaption .co-mention {
+  color: #2a6b3a;
+  font-weight: 700;
+  background: rgba(42, 107, 58, 0.08);
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+/* Post images */
+.co-postImage {
+  margin-top: 12px;
+  border-radius: 10px;
+  overflow: hidden;
+  max-width: 400px;
+}
+
+.co-postImage img {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: cover;
+  display: block;
+}
+
 .co-postMeta {
   margin-top: 12px;
   display: flex;
@@ -651,6 +748,69 @@
   font-weight: 700;
   font-size: 12px;
   color: rgba(36, 75, 43, 0.95);
+}
+
+.co-replySubmit:disabled,
+.co-replyCancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.co-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Reply section with comments */
+.co-replySection {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.co-commentsList {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.co-comment {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 10px;
+}
+
+.co-commentHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.co-commentAuthor {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: #2a6b3a;
+  text-decoration: none;
+}
+
+.co-commentAuthor:hover {
+  text-decoration: underline;
+}
+
+.co-commentTime {
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.co-commentText {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.85);
+  line-height: 1.45;
 }
 
 /* Type pill */
@@ -804,6 +964,310 @@
 /* Small accessibility polish */
 .co-post:focus-within {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(36, 75, 43, 0.22);
+}
+
+/* Edited badge */
+.co-edited {
+  margin-left: 6px;
+  font-size: 11px;
+  font-style: italic;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* Mention input with highlighting */
+.mention-input-container {
+  position: relative;
+  margin-top: 10px;
+}
+
+.mention-highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: transparent;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: hidden;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.mention-highlight {
+  color: #2a6b3a;
+  font-weight: 700;
+  background: rgba(42, 107, 58, 0.08);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+.mention-textarea {
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.86);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+}
+
+/* Mention suggestions dropdown */
+.mention-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  overflow: hidden;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.mention-suggestion {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.mention-suggestion:hover,
+.mention-suggestion--active {
+  background: rgba(36, 75, 43, 0.08);
+}
+
+.mention-suggestion-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2a4d38 0%, #1f3a2a 100%);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.mention-suggestion-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mention-suggestion-avatar span {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.mention-suggestion-info {
+  min-width: 0;
+}
+
+.mention-suggestion-name {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: #2a6b3a;
+}
+
+.mention-suggestion-display {
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* Post menu (three dots) */
+.co-menuWrap {
+  position: relative;
+}
+
+.co-menuDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  z-index: 50;
+  min-width: 140px;
+  overflow: hidden;
+}
+
+.co-menuItem {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  padding: 10px 14px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.85);
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.co-menuItem:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.co-menuItem--danger {
+  color: #a32d2d;
+}
+
+.co-menuItem--danger:hover {
+  background: rgba(163, 45, 45, 0.08);
+}
+
+/* Modal styles */
+.co-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.co-modal {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: auto;
+}
+
+.co-modal--small {
+  max-width: 380px;
+}
+
+.co-modal-header {
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.co-modal-title {
+  margin: 0;
+  font-family: "Cinzel Decorative", serif;
+  font-size: 18px;
+  color: #244b2b;
+}
+
+.co-modal-close {
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  font-size: 18px;
+  color: rgba(0, 0, 0, 0.45);
+  line-height: 1;
+  padding: 4px;
+}
+
+.co-modal-close:hover {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.co-modal-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.co-modal-body {
+  padding: 18px;
+}
+
+.co-modal-text {
+  margin: 0;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(60, 55, 52, 0.85);
+  line-height: 1.5;
+}
+
+.co-modal-footer {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.co-modal-btn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 13px;
+  transition: opacity 0.1s;
+}
+
+.co-modal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.co-modal-btn--secondary {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(60, 55, 52, 0.75);
+}
+
+.co-modal-btn--secondary:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.co-modal-btn--primary {
+  background: rgba(36, 75, 43, 0.14);
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.co-modal-btn--primary:hover:not(:disabled) {
+  background: rgba(36, 75, 43, 0.22);
+}
+
+.co-modal-btn--danger {
+  background: rgba(163, 45, 45, 0.14);
+  color: #a32d2d;
+}
+
+.co-modal-btn--danger:hover:not(:disabled) {
+  background: rgba(163, 45, 45, 0.22);
 }
 
 /* Responsive */

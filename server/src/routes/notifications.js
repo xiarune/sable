@@ -21,13 +21,28 @@ router.get("/", async (req, res, next) => {
       Notification.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit)),
+        .limit(parseInt(limit))
+        .populate("actorId", "username displayName avatarUrl"),
       Notification.countDocuments(query),
       Notification.countDocuments({ recipientId: req.user._id, read: false }),
     ]);
 
+    // Transform notifications to include actor info in a cleaner format
+    const transformedNotifications = notifications.map((n) => {
+      const notif = n.toObject();
+      if (notif.actorId) {
+        notif.actor = {
+          _id: notif.actorId._id,
+          username: notif.actorId.username,
+          displayName: notif.actorId.displayName,
+          avatarUrl: notif.actorId.avatarUrl,
+        };
+      }
+      return notif;
+    });
+
     res.json({
-      notifications,
+      notifications: transformedNotifications,
       unreadCount,
       pagination: {
         page: parseInt(page),
@@ -36,6 +51,40 @@ router.get("/", async (req, res, next) => {
         pages: Math.ceil(total / parseInt(limit)),
       },
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /notifications/count - Get unread count (must be before /:id routes)
+router.get("/count", async (req, res, next) => {
+  try {
+    const count = await Notification.countDocuments({
+      recipientId: req.user._id,
+      read: false,
+    });
+
+    res.json({ count });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /notifications/read-all - Mark all as read (must be before /:id routes)
+router.put("/read-all", async (req, res, next) => {
+  try {
+    const result = await Notification.updateMany(
+      { recipientId: req.user._id, read: false },
+      { read: true }
+    );
+
+    // Emit real-time update
+    emitToUser(req.user._id.toString(), "notifications:read", {
+      all: true,
+      count: result.modifiedCount,
+    });
+
+    res.json({ message: "All marked as read", count: result.modifiedCount });
   } catch (err) {
     next(err);
   }
@@ -57,40 +106,6 @@ router.put("/:id/read", async (req, res, next) => {
     await notification.save();
 
     res.json({ message: "Marked as read" });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// GET /notifications/count - Get unread count
-router.get("/count", async (req, res, next) => {
-  try {
-    const count = await Notification.countDocuments({
-      recipientId: req.user._id,
-      read: false,
-    });
-
-    res.json({ count });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// PUT /notifications/read-all - Mark all as read
-router.put("/read-all", async (req, res, next) => {
-  try {
-    const result = await Notification.updateMany(
-      { recipientId: req.user._id, read: false },
-      { read: true }
-    );
-
-    // Emit real-time update
-    emitToUser(req.user._id.toString(), "notifications:read", {
-      all: true,
-      count: result.modifiedCount,
-    });
-
-    res.json({ message: "All marked as read", count: result.modifiedCount });
   } catch (err) {
     next(err);
   }

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { discoveryApi } from "../api";
+import { SableLoader, DropCapTitle, BrowseOrnament } from "../components";
 import "./Library.css";
 import defaultCover from "../assets/images/sable_default_cover.png";
 
@@ -48,11 +49,10 @@ export default function GenreDetail() {
     return (
       <div className="shelfPage">
         <div className="shelfBanner">
-          <h1 className="shelfTitle">Loading...</h1>
+          <BrowseOrnament />
+          <DropCapTitle title="Genre" variant="banner" />
         </div>
-        <div className="shelfBody">
-          <p>Loading genre...</p>
-        </div>
+        <SableLoader />
       </div>
     );
   }
@@ -80,7 +80,8 @@ export default function GenreDetail() {
   return (
     <div className="shelfPage">
       <div className="shelfBanner">
-        <h1 className="shelfTitle">{genre.name}</h1>
+        <BrowseOrnament />
+        <DropCapTitle title={genre.name} variant="banner" />
         {genre.description && (
           <p className="shelfSubtitle">{genre.description}</p>
         )}
