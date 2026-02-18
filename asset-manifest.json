@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/sable/static/css/main.983e5712.css",
-    "main.js": "/sable/static/js/main.43647f07.js",
+    "main.css": "/sable/static/css/main.b6f96e6b.css",
+    "main.js": "/sable/static/js/main.e0a1f8e2.js",
     "static/media/payment_confirmation.png": "/sable/static/media/payment_confirmation.f1c71a10ea8525bc72be.png",
     "static/media/O.png": "/sable/static/media/O.25c28aeeb608c0bc4ae9.png",
     "static/media/M.png": "/sable/static/media/M.43dba46e9e346c8ff992.png",
@@ -41,10 +41,13 @@
     "static/media/Sable_Logo.png": "/sable/static/media/Sable_Logo.28d0a664e29f3db4c0bb.png",
     "static/media/music_icon.png": "/sable/static/media/music_icon.b6af6d6d3735e9d2a86b.png",
     "static/media/skins_icon.png": "/sable/static/media/skins_icon.59a898803690cb4091dc.png",
+    "static/media/cover_icon.png": "/sable/static/media/cover_icon.ad0d7252b2d65831e5c7.png",
     "static/media/sable_default_cover.png": "/sable/static/media/sable_default_cover.ccc55d79d863840d2fa4.png",
+    "static/media/fandom_icon.png": "/sable/static/media/fandom_icon.f7d611bfa23019bd35e9.png",
     "static/media/lang_icon.png": "/sable/static/media/lang_icon.105228529046bd12f89f.png",
     "static/media/preview_icon.png": "/sable/static/media/preview_icon.1fcd2e2d8fc4c830ee14.png",
     "static/media/chapter_icon.png": "/sable/static/media/chapter_icon.ac618e0d2fc212bdebb2.png",
+    "static/media/genre_icon.png": "/sable/static/media/genre_icon.94a5fdda4fb21244e1a5.png",
     "static/media/profile_picture.png": "/sable/static/media/profile_picture.4e7b05b6c7cee8270840.png",
     "static/media/login_graphic.png": "/sable/static/media/login_graphic.a8cc436d608c95be204e.png",
     "static/media/notifications_nav.svg": "/sable/static/media/notifications_nav.ade0a0e72659bc4a3e08d0fd27a59295.svg",
@@ -52,11 +55,11 @@
     "static/media/inbox_nav.svg": "/sable/static/media/inbox_nav.71604770e5da501fb48453323c8fd6e1.svg",
     "static/media/search_nav.svg": "/sable/static/media/search_nav.f40a98ffd95b90fa922db1c181a1ceb0.svg",
     "index.html": "/sable/index.html",
-    "main.983e5712.css.map": "/sable/static/css/main.983e5712.css.map",
-    "main.43647f07.js.map": "/sable/static/js/main.43647f07.js.map"
+    "main.b6f96e6b.css.map": "/sable/static/css/main.b6f96e6b.css.map",
+    "main.e0a1f8e2.js.map": "/sable/static/js/main.e0a1f8e2.js.map"
   },
   "entrypoints": [
-    "static/css/main.983e5712.css",
-    "static/js/main.43647f07.js"
+    "static/css/main.b6f96e6b.css",
+    "static/js/main.e0a1f8e2.js"
   ]
 }
