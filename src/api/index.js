@@ -20,4 +20,5 @@ export { default as postsApi } from "./posts";
 export { default as skinsApi } from "./skins";
 export { default as reportsApi } from "./reports";
 export { default as readingListsApi } from "./readingLists";
+export { default as donationsApi } from "./donations";
 export { default as API_BASE_URL } from "./config";

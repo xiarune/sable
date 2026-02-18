@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import "./PublicCommunityPage.css";
-import { uploadsApi, worksApi, communityApi, followsApi, usersApi } from "../api";
+import { uploadsApi, worksApi, communityApi, followsApi, usersApi, donationsApi } from "../api";
 import { SableLoader } from "../components";
 
 function initials(name) {
@@ -278,20 +278,85 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   const [customDonation, setCustomDonation] = React.useState("");
   const [donationSuccess, setDonationSuccess] = React.useState(false);
   const [donationNote, setDonationNote] = React.useState("");
+  const [donationModalOpen, setDonationModalOpen] = React.useState(false);
+  const [donationProcessing, setDonationProcessing] = React.useState(false);
+  const [donationError, setDonationError] = React.useState("");
 
-  function handleDonate() {
+  function openDonationModal() {
     if (!isAuthed) {
       window.dispatchEvent(new Event("sable:open-auth"));
       return;
     }
-    setDonationSuccess(true);
-    setTimeout(() => setDonationSuccess(false), 3000);
+    setDonationModalOpen(true);
+    setDonationError("");
+  }
+
+  function closeDonationModal() {
+    if (donationProcessing) return;
+    setDonationModalOpen(false);
+    setDonationError("");
+  }
+
+  async function handleDonate() {
+    if (!isAuthed) {
+      window.dispatchEvent(new Event("sable:open-auth"));
+      return;
+    }
+
+    const amount = getEffectiveDonation();
+    if (amount < 1) {
+      setDonationError("Minimum donation is $1.00");
+      return;
+    }
+    if (amount > 5000) {
+      setDonationError("Maximum donation is $5,000");
+      return;
+    }
+
+    setDonationProcessing(true);
+    setDonationError("");
+
+    try {
+      // In production, this would integrate with PayPal SDK
+      // For now, simulate PayPal redirect and callback
+      // The actual PayPal flow would be:
+      // 1. Create PayPal order via their SDK
+      // 2. User approves payment on PayPal
+      // 3. Capture payment and get transaction ID
+      // 4. Call our API to record donation and notify user
+
+      // Simulate PayPal processing delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Record the donation and send notification
+      await donationsApi.donateToUser(userId, amount, donationNote.trim());
+
+      setDonationSuccess(true);
+      setDonationModalOpen(false);
+      setDonationNote("");
+      setCustomDonation("");
+      setDonationAmount(5);
+
+      // Hide success message after 5 seconds
+      setTimeout(() => setDonationSuccess(false), 5000);
+    } catch (err) {
+      console.error("Donation failed:", err);
+      setDonationError(err.message || "Payment failed. Please try again.");
+    } finally {
+      setDonationProcessing(false);
+    }
   }
 
   function getEffectiveDonation() {
     const custom = parseFloat(customDonation);
     if (!isNaN(custom) && custom > 0) return custom;
     return donationAmount;
+  }
+
+  function pickDonationPreset(amt) {
+    setDonationAmount(amt);
+    setCustomDonation("");
+    setDonationError("");
   }
 
   function handleWorkClick(workId) {
@@ -660,47 +725,19 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
                     <div className="pcp-donationSuccess">
                       <div className="pcp-donationSuccessIcon">✓</div>
                       <div className="pcp-donationSuccessText">Thank you for your support!</div>
+                      <div className="pcp-donationSuccessAmount">${getEffectiveDonation().toFixed(2)}</div>
                     </div>
                   ) : (
                     <>
-                      <div className="pcp-donationAmounts">
-                        {DONATION_PRESETS.map((amt) => (
-                          <button
-                            key={amt}
-                            type="button"
-                            className={`pcp-donationBtn ${donationAmount === amt && !customDonation ? "pcp-donationBtn--active" : ""}`}
-                            onClick={() => {
-                              setDonationAmount(amt);
-                              setCustomDonation("");
-                            }}
-                          >
-                            ${amt}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="pcp-donationCustom">
-                        <span className="pcp-donationDollar">$</span>
-                        <input
-                          type="text"
-                          className="pcp-donationInput"
-                          placeholder="Other"
-                          value={customDonation}
-                          onChange={(e) => setCustomDonation(e.target.value.replace(/[^\d.]/g, ""))}
-                        />
-                      </div>
-                      <input
-                        type="text"
-                        className="pcp-donationNote"
-                        placeholder="Add a note (optional)"
-                        value={donationNote}
-                        onChange={(e) => setDonationNote(e.target.value)}
-                      />
+                      <p className="pcp-donationDesc">
+                        Show your appreciation by supporting {profile.displayName}'s creative work.
+                      </p>
                       <button
                         type="button"
-                        className="pcp-donateBtn"
-                        onClick={handleDonate}
+                        className="pcp-supportBtn"
+                        onClick={openDonationModal}
                       >
-                        Donate ${getEffectiveDonation().toFixed(2)}
+                        Support with PayPal
                       </button>
                     </>
                   )}
@@ -858,6 +895,118 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Donation Modal */}
+      {donationModalOpen && (
+        <div className="pcp-modal-overlay" onClick={closeDonationModal}>
+          <div className="pcp-modal pcp-modal--donation" onClick={(e) => e.stopPropagation()}>
+            <div className="pcp-modalHeader">
+              <h3 className="pcp-donationModalTitle">Support {profile.displayName}</h3>
+              <button
+                type="button"
+                className="pcp-modalClose"
+                onClick={closeDonationModal}
+                disabled={donationProcessing}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="pcp-modalBody pcp-donationModalBody">
+              {/* Amount Selection */}
+              <div className="pcp-donationSection">
+                <div className="pcp-donationSectionTitle">Choose an amount</div>
+                <div className="pcp-donationAmounts">
+                  {DONATION_PRESETS.map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      className={`pcp-donationBtn ${donationAmount === amt && !customDonation ? "pcp-donationBtn--active" : ""}`}
+                      onClick={() => pickDonationPreset(amt)}
+                      disabled={donationProcessing}
+                    >
+                      ${amt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Amount */}
+              <div className="pcp-donationSection">
+                <label className="pcp-donationLabel" htmlFor="customDonation">
+                  Or enter a custom amount
+                </label>
+                <div className="pcp-donationCustom">
+                  <span className="pcp-donationDollar">$</span>
+                  <input
+                    id="customDonation"
+                    type="text"
+                    className="pcp-donationInput"
+                    placeholder="25.00"
+                    value={customDonation}
+                    onChange={(e) => {
+                      setCustomDonation(e.target.value.replace(/[^\d.]/g, ""));
+                      setDonationError("");
+                    }}
+                    disabled={donationProcessing}
+                  />
+                </div>
+              </div>
+
+              {/* Note */}
+              <div className="pcp-donationSection">
+                <label className="pcp-donationLabel" htmlFor="donationNote">
+                  Add a note (optional)
+                </label>
+                <textarea
+                  id="donationNote"
+                  className="pcp-donationNoteInput"
+                  placeholder="Say something nice..."
+                  value={donationNote}
+                  onChange={(e) => setDonationNote(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  disabled={donationProcessing}
+                />
+              </div>
+
+              {/* Summary */}
+              <div className="pcp-donationSummary">
+                <span className="pcp-donationSummaryLabel">Your contribution:</span>
+                <span className="pcp-donationSummaryAmount">${getEffectiveDonation().toFixed(2)}</span>
+              </div>
+
+              {/* Error Message */}
+              {donationError && (
+                <div className="pcp-donationError" role="alert">
+                  {donationError}
+                </div>
+              )}
+
+              {/* PayPal Button */}
+              <button
+                type="button"
+                className="pcp-paypalBtn"
+                onClick={handleDonate}
+                disabled={donationProcessing}
+              >
+                {donationProcessing ? (
+                  <span className="pcp-paypalProcessing">Processing...</span>
+                ) : (
+                  <>
+                    <span className="pcp-paypalLogo">PayPal</span>
+                    <span className="pcp-paypalText">Pay with PayPal</span>
+                  </>
+                )}
+              </button>
+
+              <div className="pcp-donationDisclaimer">
+                You'll be redirected to PayPal to complete your payment securely.
+              </div>
             </div>
           </div>
         </div>

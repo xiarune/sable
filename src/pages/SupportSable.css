@@ -1,11 +1,13 @@
-.supPuage {
+@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Libre+Baskerville:wght@400;700&display=swap");
+
+.supPage {
   min-height: calc(100vh - 64px);
-  background: #d7d0c2;
+  background: linear-gradient(180deg, #e8e2d4 0%, #d7d0c2 100%);
   padding: 36px 18px 54px;
 }
 
 .supShell {
-  max-width: 980px;
+  max-width: 680px;
   margin: 0 auto;
   display: grid;
   justify-items: center;
@@ -18,69 +20,103 @@
   font-weight: 700;
   letter-spacing: 0.35px;
   color: #21452a;
-  font-size: 22px;
+  font-size: 28px;
   text-align: center;
 }
 
+.supSubtitle {
+  margin: 0;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(30, 30, 30, 0.7);
+  text-align: center;
+  max-width: 460px;
+  line-height: 1.5;
+}
+
 .supCard {
-  width: min(980px, 100%);
+  width: 100%;
   background: #f2ebdd;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .supCardTop {
-  height: 34px;
-  background: #7f1f15;
+  height: 8px;
+  background: linear-gradient(90deg, #7f1f15 0%, #d29a2b 100%);
 }
 
 .supCardBody {
-  padding: 26px 28px 28px;
+  padding: 32px 28px 36px;
   display: grid;
-  justify-items: center;
-  gap: 18px;
+  gap: 24px;
 }
 
+/* Sections */
+.supSection {
+  display: grid;
+  gap: 12px;
+}
+
+.supSectionTitle {
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #21452a;
+  text-align: center;
+}
+
+/* Amount Buttons */
 .supAmounts {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 26px;
+  gap: 12px;
   flex-wrap: wrap;
-  margin-top: 6px;
 }
 
 .supAmtBtn {
-  width: 210px;
-  height: 72px;
-  border-radius: 24px;
-  border: 0;
+  width: 100px;
+  height: 56px;
+  border-radius: 12px;
+  border: 2px solid rgba(0, 0, 0, 0.12);
   cursor: pointer;
 
-  background: #e1b728;
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 
   font-family: "Libre Baskerville", serif;
-  font-weight: 800;
-  font-size: 38px;
-  color: #6b3c07;
+  font-weight: 700;
+  font-size: 24px;
+  color: #21452a;
 
-  transition: transform 120ms ease, filter 120ms ease;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
 }
 
 .supAmtBtn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.02);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(33, 69, 42, 0.3);
 }
 
 .supAmtBtn--active {
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18), 0 0 0 3px rgba(127, 31, 21, 0.25);
+  background: #e1b728;
+  border-color: #d29a2b;
+  color: #4a2c05;
+  box-shadow: 0 4px 12px rgba(225, 183, 40, 0.3);
 }
 
+.supAmtBtn--active:hover {
+  background: #e1b728;
+}
+
+/* Custom Amount Input */
 .supCustomRow {
-  width: min(520px, 100%);
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
   display: grid;
   gap: 8px;
 }
@@ -88,172 +124,176 @@
 .supLabel {
   font-family: "Libre Baskerville", serif;
   font-size: 13px;
-  color: rgba(30, 30, 30, 0.8);
+  color: rgba(30, 30, 30, 0.7);
+  text-align: center;
 }
 
 .supCustomInputWrap {
   display: grid;
-  grid-template-columns: 38px 1fr;
+  grid-template-columns: 32px 1fr;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 0 12px;
 }
 
 .supDollar {
   font-family: "Libre Baskerville", serif;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 18px;
-  color: rgba(0, 0, 0, 0.55);
-  text-align: right;
+  color: rgba(0, 0, 0, 0.5);
+  text-align: center;
 }
 
 .supInput {
   width: 100%;
-  height: 40px;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  padding: 0 12px;
-  background: rgba(255, 255, 255, 0.62);
+  height: 48px;
+  border: 0;
+  padding: 0;
+  background: transparent;
 
   font-family: "Libre Baskerville", serif;
-  font-size: 14px;
+  font-size: 18px;
+  color: #21452a;
   outline: none;
 }
 
-.supInput:focus {
-  box-shadow: 0 0 0 3px rgba(34, 76, 42, 0.18);
-  border-color: rgba(34, 76, 42, 0.55);
+.supInput::placeholder {
+  color: rgba(0, 0, 0, 0.3);
 }
 
-.supProviders {
-  width: min(520px, 100%);
-  display: grid;
-  gap: 14px;
-  margin-top: 6px;
+.supCustomInputWrap:focus-within {
+  border-color: rgba(33, 69, 42, 0.5);
+  box-shadow: 0 0 0 3px rgba(33, 69, 42, 0.1);
 }
 
-.supProvider {
-  height: 66px;
-  border-radius: 999px;
-  border: 0;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: transform 120ms ease, filter 120ms ease;
-}
-
-.supProvider:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.02);
-}
-
-.supProviderBrand {
-  font-family: "Libre Baskerville", serif;
-  font-weight: 800;
-  font-size: 20px;
-}
-
-.supProvider--paypal {
-  background: #ffd55a;
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12);
-}
-
-.supProvider--paypal .supProviderBrand {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  font-weight: 900;
-  font-style: italic;
-  color: #0c4aa8;
-  font-size: 28px;
-}
-
-.supProvider--card {
-  background: #0b0b0b;
-  box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.06);
-}
-
-.supProvider--card .supProviderBrand {
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 18px;
-}
-
-.supProvider--apple {
-  background: rgba(255, 255, 255, 0.72);
-  border: 2px solid rgba(0, 0, 0, 0.38);
-}
-
-.supProvider--apple .supProviderBrand {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  font-weight: 800;
-  color: #000;
-  font-size: 26px;
-}
-
-.supMeta {
+.supError {
   font-family: "Libre Baskerville", serif;
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.6);
+  color: rgba(127, 31, 21, 0.95);
   text-align: center;
 }
 
-/* Card form view (second screenshot vibe) */
-.supCardBody--form {
-  justify-items: start;
-  gap: 14px;
-  padding: 34px 44px 34px;
+/* Summary */
+.supSummary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(33, 69, 42, 0.08);
+  border-radius: 10px;
 }
 
-.supFormRow {
-  width: min(780px, 100%);
+.supSummaryLabel {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(30, 30, 30, 0.7);
+}
+
+.supSummaryAmount {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: #21452a;
+}
+
+/* PayPal Button */
+.supPaymentSection {
+  display: grid;
+  gap: 12px;
+}
+
+.supPayPalBtn {
+  width: 100%;
+  height: 60px;
+  border-radius: 30px;
+  border: 0;
+  cursor: pointer;
+
+  background: #ffc439;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.supPayPalBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+}
+
+.supPayPalBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.supPayPalLogo {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  font-size: 24px;
+  color: #003087;
+}
+
+.supPayPalText {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #003087;
+}
+
+.supPayPalProcessing {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #003087;
+}
+
+.supPaymentNote {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+/* Why Support Section */
+.supWhySection {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.supWhyTitle {
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #21452a;
+  margin-bottom: 12px;
+}
+
+.supWhyList {
+  margin: 0;
+  padding: 0 0 0 20px;
   display: grid;
   gap: 8px;
 }
 
-.supTwoCol {
-  width: min(780px, 100%);
-  display: grid;
-  grid-template-columns: 1fr 180px;
-  gap: 22px;
-}
-
-.supActions {
-  width: min(780px, 100%);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 10px;
-}
-
-.supBack {
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.28);
-  background: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-
+.supWhyList li {
   font-family: "Libre Baskerville", serif;
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.75);
+  font-size: 13px;
+  color: rgba(30, 30, 30, 0.75);
+  line-height: 1.4;
 }
 
-.supPayNow {
-  height: 44px;
-  padding: 0 22px;
-  border-radius: 10px;
-  border: 0;
-  background: #7f1f15;
-  cursor: pointer;
-
-  font-family: "Libre Baskerville", serif;
-  font-weight: 800;
-  color: #fff;
-}
-
-.supPayNow:hover {
-  filter: brightness(1.03);
-}
-
-/* Success popup */
+/* Success Modal */
 .supOverlay {
   position: fixed;
   inset: 0;
@@ -263,13 +303,13 @@
   align-items: center;
   justify-content: center;
 
-  padding: 42px;
+  padding: 24px;
 
   z-index: 9999;
 }
 
 .supModal {
-  width: min(680px, 84vw);
+  width: min(520px, 90vw);
 
   background: #f2ebdd;
   border-radius: 18px;
@@ -280,41 +320,57 @@
   justify-items: center;
   align-content: start;
 
-  max-height: calc(100vh - 84px);
-  overflow: hidden;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
 
-  padding: 86px 46px 38px;
+  padding: 40px 32px;
 
   box-sizing: border-box;
 }
 
 .supModal--thankyou {
-  border: 6px solid #d29a2b;
+  border: 4px solid #d29a2b;
 }
 
 .supThankTitle {
   font-family: "Cinzel Decorative", serif;
   font-weight: 700;
-  font-size: 32px;
-  line-height: 1.08;
+  font-size: 26px;
+  line-height: 1.2;
   color: #21452a;
   letter-spacing: 0.3px;
 
-  max-width: 18ch;
   margin: 0;
-
   text-align: center;
 }
 
+.supThankAmount {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 36px;
+  color: #d29a2b;
+  margin-top: 8px;
+}
+
 .supConfirmImg--thankyou {
-  width: min(480px, 78%);
+  width: min(320px, 70%);
   height: auto;
   display: block;
-  margin: 18px auto 10px;
+  margin: 20px auto 16px;
+}
+
+.supThankMessage {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(30, 30, 30, 0.75);
+  line-height: 1.5;
+  text-align: center;
+  margin: 0;
+  max-width: 380px;
 }
 
 .supBackHome {
-  margin-top: 10px;
+  margin-top: 20px;
 
   border: 0;
   background: transparent;
@@ -322,61 +378,55 @@
 
   font-family: "Cinzel Decorative", serif;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 16px;
   letter-spacing: 0.25px;
 
   color: rgba(40, 40, 40, 0.55);
-  padding: 6px 0;
+  padding: 8px 16px;
 
   text-align: center;
-  justify-self: center;
+  transition: color 150ms ease;
 }
 
 .supBackHome:hover {
-  color: rgba(40, 40, 40, 0.75);
+  color: rgba(40, 40, 40, 0.85);
 }
 
-@media (max-width: 720px) {
+/* Responsive */
+@media (max-width: 600px) {
+  .supTitle {
+    font-size: 22px;
+  }
+
   .supAmtBtn {
-    width: 170px;
-    height: 64px;
-    font-size: 32px;
+    width: 80px;
+    height: 48px;
+    font-size: 20px;
   }
 
-  .supCardBody--form {
-    padding: 26px 20px 28px;
-  }
-
-  .supTwoCol {
-    grid-template-columns: 1fr;
-  }
-
-  .supOverlay {
-    padding: 22px;
+  .supCardBody {
+    padding: 24px 18px 28px;
   }
 
   .supModal {
-    padding: 68px 22px 26px;
-    max-height: calc(100vh - 64px);
-    width: min(520px, 92vw);
+    padding: 32px 20px;
+    width: min(420px, 94vw);
   }
 
   .supThankTitle {
-    font-size: 26px;
+    font-size: 22px;
+  }
+
+  .supThankAmount {
+    font-size: 28px;
   }
 
   .supConfirmImg--thankyou {
-    width: 100%;
-    margin: 16px auto 8px;
+    width: 80%;
+    margin: 16px auto 12px;
   }
 
   .supBackHome {
-    font-size: 16px;
+    font-size: 14px;
   }
 }
-
-
-
-
-
-
