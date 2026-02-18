@@ -448,6 +448,38 @@ async function notifyPostComment(postId, authorId, commenterId, commentPreview, 
   });
 }
 
+/**
+ * Notify a user about receiving a donation
+ * @param {string} recipientId - User ID receiving the donation
+ * @param {string} donorId - User ID who made the donation
+ * @param {number} amount - Donation amount
+ * @param {string} note - Optional note from donor
+ */
+async function notifyDonation(recipientId, donorId, amount, note = "") {
+  const User = require("../models/User");
+  const donor = await User.findById(donorId);
+
+  if (!donor) return null;
+
+  const donorName = donor.displayName || donor.username;
+  const formattedAmount = `$${amount.toFixed(2)}`;
+
+  let body = `${donorName} donated ${formattedAmount} to support you!`;
+  if (note && note.trim()) {
+    const truncatedNote = note.slice(0, 100) + (note.length > 100 ? "..." : "");
+    body = `${donorName} donated ${formattedAmount}: "${truncatedNote}"`;
+  }
+
+  return sendNotification({
+    recipientId,
+    type: NOTIFICATION_TYPES.DONATION,
+    title: "You received a donation!",
+    body,
+    actorId: donorId,
+    actorUsername: donor.username,
+  });
+}
+
 module.exports = {
   NOTIFICATION_TYPES,
   parseMentions,
@@ -461,6 +493,7 @@ module.exports = {
   notifySystem,
   notifyNewPost,
   notifyPostComment,
+  notifyDonation,
   markNotificationsRead,
   getUnreadCount,
 };

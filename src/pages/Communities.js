@@ -264,15 +264,27 @@ function renderMentions(text) {
   });
 }
 
-// Trending topics - static UI elements for filtering
-const TOPICS = [
-  { id: "t1", label: "Writing Prompts" },
-  { id: "t2", label: "Slow-burn Romance" },
-  { id: "t3", label: "Dark Academia" },
-  { id: "t4", label: "Worldbuilding" },
-  { id: "t5", label: "Fanworks" },
-  { id: "t6", label: "Audio Reads" },
+// Feed filter options
+const FEED_FILTERS = [
+  { id: "popular", label: "Popular", icon: "🔥" },
+  { id: "following", label: "Following", icon: "👥" },
+  { id: "recent", label: "Recent", icon: "🕐" },
 ];
+
+// Community info (would come from backend in production)
+const COMMUNITY_INFO = {
+  description: "A community for writers, readers, and creative minds to share their work, discuss stories, and connect with fellow enthusiasts.",
+  rules: [
+    "Be respectful and kind to all members",
+    "No spam or self-promotion without contribution",
+    "Use content warnings for sensitive topics",
+    "Credit original creators when sharing",
+    "Keep discussions on-topic",
+  ],
+  moderators: [
+    { username: "sable_admin", displayName: "Sable Admin" },
+  ],
+};
 
 function initials(name) {
   const s = (name || "U").trim();
@@ -296,7 +308,7 @@ function openLoginModal() {
 }
 
 export default function Communities({ isAuthed = false, username = "john.doe" }) {
-  const [tab, setTab] = React.useState("Explore"); // Explore | Following | Discussions
+  const [feedFilter, setFeedFilter] = React.useState("popular"); // popular | following | recent
   const [query, setQuery] = React.useState("");
   const [currentUser, setCurrentUser] = React.useState(null);
   const [suggestedUsers, setSuggestedUsers] = React.useState([]);
@@ -1129,6 +1141,9 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   const filteredPosts = React.useMemo(() => {
     const q = query.trim().toLowerCase();
 
+    // Get following usernames for filtering
+    const followingUsernames = followingList.map((u) => u.username?.toLowerCase());
+
     // First filter out blocked and muted content, but mark hidden posts
     let filtered = posts
       .filter((p) => {
@@ -1143,6 +1158,24 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
         isHidden: hiddenPosts.includes(p.id),
       }));
 
+    // Apply feed filter
+    if (feedFilter === "following") {
+      filtered = filtered.filter((p) => {
+        const handle = p.user?.handle?.toLowerCase();
+        return followingUsernames.includes(handle);
+      });
+    }
+
+    // Sort based on filter
+    if (feedFilter === "popular") {
+      filtered = [...filtered].sort((a, b) => {
+        const likesA = parseInt(a.meta?.likes || "0", 10);
+        const likesB = parseInt(b.meta?.likes || "0", 10);
+        return likesB - likesA;
+      });
+    }
+    // "recent" uses default order from backend (already sorted by createdAt desc)
+
     // Then apply search filter
     return q
       ? filtered.filter((p) => {
@@ -1155,7 +1188,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
           return hay.includes(q);
         })
       : filtered;
-  }, [posts, query, hiddenPosts, blockedUsers, mutedUsers]);
+  }, [posts, query, hiddenPosts, blockedUsers, mutedUsers, feedFilter, followingList]);
 
   // if a post is a work but lacks workId, try to resolve from library mock data by title
   function resolveWorkIdFromTitle(title) {
@@ -1169,43 +1202,103 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
     <div className="co-page" aria-label="Communities explore page">
       <div className="co-shell">
         {/* Left Sidebar */}
-        <aside className="co-left" aria-label="Community center navigation">
+        <aside className="co-left" aria-label="Community navigation">
+          {/* Feed Filters */}
           <div className="co-leftCard">
-            <div className="co-leftTitle">Community Center</div>
-
-            <div className="co-leftTabs" role="tablist" aria-label="Community tabs">
-              {["Explore", "Following"].map((t) => (
+            <div className="co-leftTitle">Feed</div>
+            <div className="co-feedFilters">
+              {FEED_FILTERS.map((f) => (
                 <button
-                  key={t}
+                  key={f.id}
                   type="button"
-                  className={tab === t ? "co-leftTab co-leftTab--active" : "co-leftTab"}
-                  onClick={() => setTab(t)}
-                  role="tab"
-                  aria-selected={tab === t ? "true" : "false"}
+                  className={`co-feedFilter ${feedFilter === f.id ? "co-feedFilter--active" : ""}`}
+                  onClick={() => setFeedFilter(f.id)}
+                  aria-label={`Show ${f.label} posts`}
                 >
-                  {t}
+                  <span className="co-feedFilterIcon">{f.icon}</span>
+                  <span className="co-feedFilterLabel">{f.label}</span>
                 </button>
               ))}
             </div>
+          </div>
 
-            <div className="co-leftSection">
-              <div className="co-leftSectionTitle">Topics</div>
-              <div className="co-topicList">
-                {TOPICS.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className="co-topic"
-                    onClick={() => setQuery(t.label)}
-                    aria-label={`Search topic ${t.label}`}
-                    title={`Search: ${t.label}`}
+          {/* Community About & Rules */}
+          <div className="co-leftCard">
+            <div className="co-leftTitle">About Community</div>
+            <p className="co-communityDesc">{COMMUNITY_INFO.description}</p>
+
+            <div className="co-rulesSection">
+              <div className="co-rulesSectionTitle">Community Rules</div>
+              <ol className="co-rulesList">
+                {COMMUNITY_INFO.rules.map((rule, idx) => (
+                  <li key={idx} className="co-rule">{rule}</li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="co-moderatorsSection">
+              <div className="co-rulesSectionTitle">Moderators</div>
+              <div className="co-moderatorsList">
+                {COMMUNITY_INFO.moderators.map((mod) => (
+                  <Link
+                    key={mod.username}
+                    to={`/communities/${mod.username}`}
+                    className="co-moderator"
                   >
-                    <span className="co-topicName">{t.label}</span>
-                  </button>
+                    @{mod.username}
+                  </Link>
                 ))}
               </div>
             </div>
+          </div>
 
+          {/* Suggested Creators - moved from right sidebar */}
+          <div className="co-leftCard">
+            <div className="co-leftTitle">Suggested Creators</div>
+
+            {loadingUsers ? (
+              <div className="co-suggestEmpty">Loading...</div>
+            ) : suggestedUsers.length === 0 ? (
+              <div className="co-suggestEmpty">
+                No creators to suggest yet.
+              </div>
+            ) : (
+              <div className="co-suggestList">
+                {suggestedUsers.slice(0, 5).map((u) => (
+                  <div key={u._id} className="co-suggest">
+                    <Link
+                      to={`/communities/${u.username}`}
+                      className="co-suggestUser"
+                      aria-label={`Open @${u.username}'s community page`}
+                    >
+                      <div className="co-avatar co-avatar--sm">
+                        <Avatar avatar={u.avatarUrl} name={u.displayName || u.username} />
+                      </div>
+                      <div className="co-suggestMeta">
+                        <div className="co-suggestName">@{u.username}</div>
+                        {u.displayName && u.displayName !== u.username && (
+                          <div className="co-suggestDisplayName">{u.displayName}</div>
+                        )}
+                        <div className="co-suggestFollowers">{u.stats?.followersCount || 0} followers</div>
+                      </div>
+                    </Link>
+
+                    <button
+                      type="button"
+                      className={`co-followBtn ${u.isFollowing ? "co-followBtn--following" : ""}`}
+                      onClick={() => requireAuth(() => handleFollow(u._id, u.isFollowing))}
+                      disabled={followingInProgress[u._id]}
+                    >
+                      {followingInProgress[u._id]
+                        ? "..."
+                        : u.isFollowing
+                        ? "Following"
+                        : "Follow"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </aside>
 
@@ -1229,24 +1322,21 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
               </div>
             </div>
 
+            {/* Mobile feed filters - shown when sidebar is hidden */}
+            <div className="co-mobileFilters">
+              {FEED_FILTERS.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  className={`co-mobileFilter ${feedFilter === f.id ? "co-mobileFilter--active" : ""}`}
+                  onClick={() => setFeedFilter(f.id)}
+                >
+                  {f.icon} {f.label}
+                </button>
+              ))}
+            </div>
+
             <div className="co-filters" aria-label="Feed filters">
-              <button
-                type="button"
-                className={tab === "Explore" ? "co-filter co-filter--active" : "co-filter"}
-                onClick={() => setTab("Explore")}
-              >
-                All Posts
-              </button>
-              <button
-                type="button"
-                className={tab === "Following" ? "co-filter co-filter--active" : "co-filter"}
-                onClick={() => setTab("Following")}
-              >
-                Following
-              </button>
-
-              <span className="co-filterSep" aria-hidden="true" />
-
               <button type="button" className="co-filter co-filter--ghost" onClick={() => {}}>
                 Sort: Trending ▾
               </button>
@@ -1712,57 +1802,6 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
           </section>
         </main>
 
-        {/* Right Sidebar */}
-        <aside className="co-right" aria-label="Suggestions and live activity">
-          <div className="co-rightCard">
-            <div className="co-rightTitle">Suggested Creators</div>
-
-            {loadingUsers ? (
-              <div className="co-suggestEmpty">Loading...</div>
-            ) : suggestedUsers.length === 0 ? (
-              <div className="co-suggestEmpty">
-                No creators to suggest yet.
-              </div>
-            ) : (
-              <div className="co-suggestList">
-                {suggestedUsers.map((u) => (
-                  <div key={u._id} className="co-suggest">
-                    <Link
-                      to={`/communities/${u.username}`}
-                      className="co-suggestUser"
-                      aria-label={`Open @${u.username}'s community page`}
-                    >
-                      <div className="co-avatar co-avatar--sm">
-                        <Avatar avatar={u.avatarUrl} name={u.displayName || u.username} />
-                      </div>
-                      <div className="co-suggestMeta">
-                        <div className="co-suggestName">@{u.username}</div>
-                        {u.displayName && u.displayName !== u.username && (
-                          <div className="co-suggestDisplayName">{u.displayName}</div>
-                        )}
-                        <div className="co-suggestFollowers">{u.stats?.followersCount || 0} followers</div>
-                      </div>
-                    </Link>
-
-                    <button
-                      type="button"
-                      className={`co-followBtn ${u.isFollowing ? "co-followBtn--following" : ""}`}
-                      onClick={() => requireAuth(() => handleFollow(u._id, u.isFollowing))}
-                      disabled={followingInProgress[u._id]}
-                    >
-                      {followingInProgress[u._id]
-                        ? "..."
-                        : u.isFollowing
-                        ? "Following"
-                        : "Follow"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-        </aside>
       </div>
 
       {/* Edit Post Modal */}

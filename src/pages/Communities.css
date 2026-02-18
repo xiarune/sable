@@ -9,11 +9,11 @@
 }
 
 .co-shell {
-  max-width: 1260px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 0 18px;
   display: grid;
-  grid-template-columns: 280px 1fr 320px;
+  grid-template-columns: 280px 1fr;
   gap: 18px;
   align-items: start;
   width: 100%;
@@ -30,6 +30,10 @@
 }
 
 .co-rightCard + .co-rightCard {
+  margin-top: 14px;
+}
+
+.co-leftCard + .co-leftCard {
   margin-top: 14px;
 }
 
@@ -1425,13 +1429,15 @@
   background: rgba(163, 45, 45, 0.22);
 }
 
+/* Mobile filters - hidden by default on desktop */
+.co-mobileFilters {
+  display: none;
+}
+
 /* Responsive */
-@media (max-width: 1120px) {
+@media (max-width: 900px) {
   .co-shell {
-    grid-template-columns: 280px 1fr;
-  }
-  .co-right {
-    grid-column: 1 / -1;
+    grid-template-columns: 240px 1fr;
   }
 }
 
@@ -1439,12 +1445,45 @@
   .co-shell {
     grid-template-columns: 1fr;
   }
+  .co-left {
+    display: none;
+  }
   .co-mainHeaderTop {
     flex-direction: column;
     align-items: stretch;
   }
   .co-searchWrap {
     max-width: none;
+  }
+}
+
+/* Mobile feed filter tabs - shown when sidebar is hidden */
+@media (max-width: 760px) {
+  .co-mobileFilters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .co-mobileFilter {
+    border: 0;
+    cursor: pointer;
+    border-radius: 999px;
+    padding: 9px 14px;
+    background: rgba(0, 0, 0, 0.05);
+    font-family: "Libre Baskerville", serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: rgba(60, 55, 52, 0.80);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .co-mobileFilter--active {
+    background: rgba(36, 75, 43, 0.12);
+    color: rgba(36, 75, 43, 0.95);
   }
 }
 
@@ -1648,6 +1687,120 @@
 
 .co-nsfwReveal:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+/* Feed Filters in left sidebar */
+.co-feedFilters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.co-feedFilter {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font-family: "Libre Baskerville", serif;
+  transition: background 0.15s;
+}
+
+.co-feedFilter:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.co-feedFilter--active {
+  background: rgba(36, 75, 43, 0.12);
+}
+
+.co-feedFilter--active:hover {
+  background: rgba(36, 75, 43, 0.16);
+}
+
+.co-feedFilterIcon {
+  font-size: 16px;
+}
+
+.co-feedFilterLabel {
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.82);
+}
+
+.co-feedFilter--active .co-feedFilterLabel {
+  color: rgba(36, 75, 43, 0.95);
+}
+
+/* Community About & Rules */
+.co-communityDesc {
+  margin: 0 0 14px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.78);
+  line-height: 1.5;
+}
+
+.co-rulesSection {
+  margin-bottom: 14px;
+}
+
+.co-rulesSectionTitle {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(36, 75, 43, 0.75);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.co-rulesList {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.co-rule {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(60, 55, 52, 0.72);
+  line-height: 1.45;
+}
+
+.co-moderatorsSection {
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.co-moderatorsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.co-moderator {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: #2a6b3a;
+  text-decoration: none;
+  padding: 4px 10px;
+  background: rgba(36, 75, 43, 0.08);
+  border-radius: 999px;
+}
+
+.co-moderator:hover {
+  background: rgba(36, 75, 43, 0.14);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 

@@ -23,6 +23,7 @@ const adminRoutes = require("./admin");
 const skinsRoutes = require("./skins");
 const reportsRoutes = require("./reports");
 const readingListsRoutes = require("./readingLists");
+const donationsRoutes = require("./donations");
 
 const router = express.Router();
 
@@ -49,5 +50,6 @@ router.use("/admin", adminRoutes);
 router.use("/skins", skinsRoutes);
 router.use("/reports", reportsRoutes);
 router.use("/reading-lists", readingListsRoutes);
+router.use("/donations", donationsRoutes);
 
 module.exports = router;

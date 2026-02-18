@@ -570,113 +570,55 @@
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
-  padding: 14px;
+  padding: 20px;
+  text-align: center;
 }
 
-.pcp-donationAmounts {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.pcp-donationBtn {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: #fff;
-  border-radius: 6px;
-  font-family: "Libre Baskerville", serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: #1f3a2a;
-  cursor: pointer;
-}
-
-.pcp-donationBtn:hover {
-  background: rgba(0, 0, 0, 0.03);
-}
-
-.pcp-donationBtn--active {
-  background: #1f3a2a;
-  color: #fff;
-  border-color: #1f3a2a;
-}
-
-.pcp-donationCustom {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.pcp-donationDollar {
-  font-family: "Libre Baskerville", serif;
-  font-size: 14px;
-  color: rgba(0, 0, 0, 0.5);
-}
-
-.pcp-donationInput {
-  flex: 1;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-family: "Libre Baskerville", serif;
-  font-size: 14px;
-  outline: none;
-}
-
-.pcp-donationInput:focus {
-  border-color: #1f3a2a;
-}
-
-.pcp-donationNote {
-  width: 100%;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 6px;
-  padding: 8px 12px;
+.pcp-donationDesc {
+  margin: 0 0 16px;
   font-family: "Libre Baskerville", serif;
   font-size: 13px;
-  outline: none;
-  margin-bottom: 10px;
+  color: rgba(0, 0, 0, 0.65);
+  line-height: 1.45;
 }
 
-.pcp-donationNote:focus {
-  border-color: #1f3a2a;
-}
-
-.pcp-donateBtn {
+.pcp-supportBtn {
   width: 100%;
-  padding: 12px;
+  padding: 14px 20px;
   border: none;
-  background: #1f3a2a;
-  color: #fff;
-  border-radius: 6px;
+  background: #ffc439;
+  color: #003087;
+  border-radius: 999px;
   font-family: "Libre Baskerville", serif;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
-.pcp-donateBtn:hover {
-  background: #2a4d38;
+.pcp-supportBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* Donation Success in panel */
 .pcp-donationSuccess {
   text-align: center;
-  padding: 20px;
+  padding: 16px;
 }
 
 .pcp-donationSuccessIcon {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: #1f3a2a;
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  margin-bottom: 10px;
+  font-size: 24px;
+  margin-bottom: 12px;
 }
 
 .pcp-donationSuccessText {
@@ -684,6 +626,222 @@
   font-size: 14px;
   font-weight: 700;
   color: #1f3a2a;
+  margin-bottom: 4px;
+}
+
+.pcp-donationSuccessAmount {
+  font-family: "Libre Baskerville", serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #d29a2b;
+}
+
+/* Donation Modal */
+.pcp-modal--donation {
+  max-width: 440px;
+}
+
+.pcp-donationModalTitle {
+  font-family: "Libre Baskerville", serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f3a2a;
+  margin: 0;
+}
+
+.pcp-donationModalBody {
+  display: grid;
+  gap: 18px;
+}
+
+.pcp-donationSection {
+  display: grid;
+  gap: 10px;
+}
+
+.pcp-donationSectionTitle {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f3a2a;
+  text-align: center;
+}
+
+.pcp-donationLabel {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.pcp-donationAmounts {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.pcp-donationBtn {
+  width: 70px;
+  padding: 12px 8px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  border-radius: 10px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f3a2a;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.pcp-donationBtn:hover:not(:disabled) {
+  border-color: rgba(31, 58, 42, 0.3);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.pcp-donationBtn--active {
+  background: #e1b728;
+  color: #4a2c05;
+  border-color: #d29a2b;
+}
+
+.pcp-donationBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pcp-donationCustom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 0 12px;
+}
+
+.pcp-donationDollar {
+  font-family: "Libre Baskerville", serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.pcp-donationInput {
+  flex: 1;
+  border: 0;
+  padding: 12px 0;
+  font-family: "Libre Baskerville", serif;
+  font-size: 16px;
+  color: #1f3a2a;
+  outline: none;
+  background: transparent;
+}
+
+.pcp-donationInput::placeholder {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.pcp-donationNoteInput {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.pcp-donationNoteInput:focus {
+  border-color: #1f3a2a;
+}
+
+.pcp-donationSummary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px;
+  background: rgba(31, 58, 42, 0.06);
+  border-radius: 10px;
+}
+
+.pcp-donationSummaryLabel {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.pcp-donationSummaryAmount {
+  font-family: "Libre Baskerville", serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f3a2a;
+}
+
+.pcp-donationError {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: #b91c1c;
+  text-align: center;
+  padding: 8px;
+  background: rgba(185, 28, 28, 0.08);
+  border-radius: 6px;
+}
+
+.pcp-paypalBtn {
+  width: 100%;
+  height: 54px;
+  border-radius: 27px;
+  border: 0;
+  cursor: pointer;
+  background: #ffc439;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.pcp-paypalBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pcp-paypalBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.pcp-paypalLogo {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  font-size: 20px;
+  color: #003087;
+}
+
+.pcp-paypalText {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #003087;
+}
+
+.pcp-paypalProcessing {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #003087;
+}
+
+.pcp-donationDisclaimer {
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.45);
+  text-align: center;
 }
 
 /* Recent Works widget styles */
