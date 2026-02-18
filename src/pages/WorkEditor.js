@@ -2,6 +2,7 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { worksApi, uploadsApi, skinsApi } from "../api";
+import { SableLoader } from "../components";
 import "./NewDraft.css";
 
 import chapterIcon from "../assets/images/chapter_icon.png";
@@ -12,10 +13,19 @@ import privacyIcon from "../assets/images/privacy_icon.png";
 import langIcon from "../assets/images/lang_icon.png";
 import imageIcon from "../assets/images/image_icon.png";
 import previewIcon from "../assets/images/preview_icon.png";
+import genreIcon from "../assets/images/genre_icon.png";
+import fandomIcon from "../assets/images/fandom_icon.png";
+import coverIcon from "../assets/images/cover_icon.png";
 
 const BUILTIN_SKIN_OPTIONS = ["Default", "Parchment"];
 const PRIVACY_OPTIONS = ["Public", "Following", "Private"];
 const LANGUAGE_OPTIONS = ["English", "Vietnamese", "Japanese", "French", "Spanish"];
+const PROGRESS_STATUS_OPTIONS = [
+  { value: "ongoing", label: "Ongoing" },
+  { value: "completed", label: "Completed" },
+  { value: "hiatus", label: "On Hiatus" },
+  { value: "abandoned", label: "Abandoned" },
+];
 
 // Common genres for creative writing
 const GENRE_SUGGESTIONS = [
@@ -199,6 +209,7 @@ export default function WorkEditor() {
   const [language, setLanguage] = React.useState("English");
   const [genre, setGenre] = React.useState("");
   const [fandom, setFandom] = React.useState("");
+  const [progressStatus, setProgressStatus] = React.useState("ongoing");
   const [coverImageUrl, setCoverImageUrl] = React.useState("");
 
   const [audioUrl, setAudioUrl] = React.useState("");
@@ -372,6 +383,7 @@ export default function WorkEditor() {
         setLanguage(work.language || "English");
         setGenre(work.genre || "");
         setFandom(work.fandom || "");
+        setProgressStatus(work.progressStatus || "ongoing");
         setCoverImageUrl(work.coverImageUrl || "");
         setAudioUrl(work.audioUrl || "");
         setImageUrls(Array.isArray(work.imageUrls) ? work.imageUrls : []);
@@ -421,6 +433,7 @@ export default function WorkEditor() {
         language,
         genre: genre.trim() || "",
         fandom: fandom.trim() || "Original Work",
+        progressStatus,
         coverImageUrl,
         audioUrl,
         imageUrls,
@@ -516,9 +529,7 @@ export default function WorkEditor() {
   if (loading) {
     return (
       <div className="nd-page">
-        <div className="nd-shell">
-          <p>Loading work...</p>
-        </div>
+        <SableLoader />
       </div>
     );
   }
@@ -552,14 +563,14 @@ export default function WorkEditor() {
               active={activeTool === "tags"}
             />
             <ActionPill
-              icon="📚"
+              icon={<IconImg src={genreIcon} alt="Genre" />}
               label="Genre"
               subLabel={genre || "Required"}
               onClick={() => toggleTool("genre")}
               active={activeTool === "genre"}
             />
             <ActionPill
-              icon="🌍"
+              icon={<IconImg src={fandomIcon} alt="Fandom" />}
               label="Fandom"
               subLabel={fandom || "Original"}
               onClick={() => toggleTool("fandom")}
@@ -580,6 +591,13 @@ export default function WorkEditor() {
               active={activeTool === "privacy"}
             />
             <ActionPill
+              icon="📊"
+              label="Status"
+              subLabel={PROGRESS_STATUS_OPTIONS.find(o => o.value === progressStatus)?.label || "Ongoing"}
+              onClick={() => toggleTool("progressStatus")}
+              active={activeTool === "progressStatus"}
+            />
+            <ActionPill
               icon={<IconImg src={langIcon} alt="Language" />}
               label="Language"
               subLabel={language}
@@ -587,7 +605,7 @@ export default function WorkEditor() {
               active={activeTool === "language"}
             />
             <ActionPill
-              icon="🖼️"
+              icon={<IconImg src={coverIcon} alt="Cover" />}
               label="Cover"
               subLabel={coverImageUrl ? "Set" : "None"}
               onClick={() => toggleTool("cover")}
@@ -784,6 +802,23 @@ export default function WorkEditor() {
                     <span>{opt}</span>
                   </label>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {activeTool === "progressStatus" && (
+            <div className="nd-toolPanel">
+              <div className="nd-toolTitle">Work Status</div>
+              <div className="nd-choiceRow">
+                {PROGRESS_STATUS_OPTIONS.map((opt) => (
+                  <label key={opt.value} className="nd-choice">
+                    <input type="radio" checked={progressStatus === opt.value} onChange={() => setProgressStatus(opt.value)} />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="nd-toolHint">
+                Let readers know if your work is ongoing, completed, on hiatus, or abandoned.
               </div>
             </div>
           )}

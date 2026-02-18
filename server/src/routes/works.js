@@ -171,6 +171,7 @@ const createWorkSchema = z.object({
   language: z.enum(["English", "Vietnamese", "Japanese", "French", "Spanish"]).optional(),
   genre: z.string().optional(),
   fandom: z.string().optional(),
+  progressStatus: z.enum(["ongoing", "completed", "hiatus", "abandoned"]).optional(),
   coverImageUrl: z.string().optional(),
   audioUrl: z.string().optional(),
   imageUrls: z.array(z.string()).optional(),

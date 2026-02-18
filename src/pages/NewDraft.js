@@ -5,6 +5,7 @@ import "./NewDraft.css";
 import { draftsApi } from "../api/drafts";
 import { uploadsApi } from "../api/uploads";
 import importApi from "../api/import";
+import { SableLoader } from "../components";
 
 import chapterIcon from "../assets/images/chapter_icon.png";
 import importIcon from "../assets/images/import_icon.png";
@@ -14,6 +15,9 @@ import privacyIcon from "../assets/images/privacy_icon.png";
 import langIcon from "../assets/images/lang_icon.png";
 import imageIcon from "../assets/images/image_icon.png";
 import previewIcon from "../assets/images/preview_icon.png";
+import genreIcon from "../assets/images/genre_icon.png";
+import fandomIcon from "../assets/images/fandom_icon.png";
+import coverIcon from "../assets/images/cover_icon.png";
 
 const SKIN_OPTIONS = ["Default", "Parchment"];
 const PRIVACY_OPTIONS = ["Public", "Following", "Private"];
@@ -579,9 +583,7 @@ export default function NewDraft() {
   if (loadingDraft) {
     return (
       <div className="nd-page">
-        <div className="nd-shell">
-          <h1 className="nd-title">Loading Draft...</h1>
-        </div>
+        <SableLoader />
       </div>
     );
   }
@@ -615,14 +617,14 @@ export default function NewDraft() {
               active={activeTool === "tags"}
             />
             <ActionPill
-              icon="📚"
+              icon={<IconImg src={genreIcon} alt="Genre" />}
               label="Genre"
               subLabel={genre || "Required"}
               onClick={() => toggleTool("genre")}
               active={activeTool === "genre"}
             />
             <ActionPill
-              icon="🌍"
+              icon={<IconImg src={fandomIcon} alt="Fandom" />}
               label="Fandom"
               subLabel={fandom || "Original"}
               onClick={() => toggleTool("fandom")}
@@ -650,7 +652,7 @@ export default function NewDraft() {
               active={activeTool === "language"}
             />
             <ActionPill
-              icon="🖼️"
+              icon={<IconImg src={coverIcon} alt="Cover" />}
               label="Cover"
               subLabel={coverImageUrl ? "Set" : "None"}
               onClick={() => toggleTool("cover")}

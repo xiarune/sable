@@ -87,6 +87,14 @@ const workSchema = new mongoose.Schema(
       enum: ["published", "archived"],
       default: "published",
     },
+    // Progress status for display
+    progressStatus: {
+      type: String,
+      enum: ["ongoing", "completed", "hiatus", "abandoned"],
+      default: "ongoing",
+    },
+    // Loves count (separate from likes)
+    lovesCount: { type: Number, default: 0 },
     publishedAt: { type: Date, default: Date.now },
   },
   {

@@ -21,6 +21,8 @@ const importRoutes = require("./import");
 const contactRoutes = require("./contact");
 const adminRoutes = require("./admin");
 const skinsRoutes = require("./skins");
+const reportsRoutes = require("./reports");
+const readingListsRoutes = require("./readingLists");
 
 const router = express.Router();
 
@@ -45,5 +47,7 @@ router.use("/import", importRoutes);
 router.use("/contact", contactRoutes);
 router.use("/admin", adminRoutes);
 router.use("/skins", skinsRoutes);
+router.use("/reports", reportsRoutes);
+router.use("/reading-lists", readingListsRoutes);
 
 module.exports = router;

@@ -53,6 +53,11 @@ const draftSchema = new mongoose.Schema(
     },
     genre: { type: String, default: "" },
     fandom: { type: String, default: "" },
+    progressStatus: {
+      type: String,
+      enum: ["ongoing", "completed", "hiatus", "abandoned"],
+      default: "ongoing",
+    },
 
     // Media (S3 URLs)
     coverImageUrl: { type: String, default: "" },

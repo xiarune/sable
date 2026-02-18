@@ -11,10 +11,16 @@ const likesApi = {
   unlikePost: (postId) => api.delete(`/likes/post/${postId}`),
 
   // Like a work
-  likeWork: (workId) => api.post(`/likes/work/${workId}`),
+  likeWork: (workId) => api.post(`/likes/work/${workId}`, { type: "like" }),
 
-  // Unlike a work
+  // Love a work
+  loveWork: (workId) => api.post(`/likes/work/${workId}`, { type: "love" }),
+
+  // Unlike/unlove a work
   unlikeWork: (workId) => api.delete(`/likes/work/${workId}`),
+
+  // Get all work likes/loves for current user
+  getWorkLikes: () => api.get("/likes/works"),
 
   // Like a comment
   likeComment: (commentId) => api.post(`/likes/comment/${commentId}`),

@@ -66,6 +66,10 @@ const postSchema = new mongoose.Schema(
 
     // Edit tracking
     editedAt: { type: Date, default: null },
+
+    // Content warnings
+    isSpoiler: { type: Boolean, default: false },
+    isNSFW: { type: Boolean, default: false },
   },
   {
     timestamps: true,

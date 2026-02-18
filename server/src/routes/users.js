@@ -245,4 +245,109 @@ router.get("/blocked", requireAuth, async (req, res, next) => {
   }
 });
 
+// POST /users/mute/:userId - Mute a user
+router.post("/mute/:userId", requireAuth, async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    if (userId === req.user._id.toString()) {
+      return res.status(400).json({ error: "Cannot mute yourself" });
+    }
+
+    if (!req.user.mutedUsers) {
+      req.user.mutedUsers = [];
+    }
+
+    if (!req.user.mutedUsers.includes(userId)) {
+      req.user.mutedUsers.push(userId);
+      await req.user.save();
+    }
+
+    res.json({ message: "User muted" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /users/mute/:userId - Unmute a user
+router.delete("/mute/:userId", requireAuth, async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    if (!req.user.mutedUsers) {
+      req.user.mutedUsers = [];
+    }
+
+    req.user.mutedUsers = req.user.mutedUsers.filter(
+      (id) => id.toString() !== userId
+    );
+    await req.user.save();
+
+    res.json({ message: "User unmuted" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /users/muted - Get muted users
+router.get("/muted", requireAuth, async (req, res, next) => {
+  try {
+    const mutedUsers = await User.find({ _id: { $in: req.user.mutedUsers || [] } })
+      .select("username displayName avatarUrl");
+
+    res.json({ mutedUsers });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /users/hide-post/:postId - Hide a post
+router.post("/hide-post/:postId", requireAuth, async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+
+    if (!req.user.hiddenPosts) {
+      req.user.hiddenPosts = [];
+    }
+
+    if (!req.user.hiddenPosts.includes(postId)) {
+      req.user.hiddenPosts.push(postId);
+      await req.user.save();
+    }
+
+    res.json({ message: "Post hidden" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /users/hide-post/:postId - Unhide a post
+router.delete("/hide-post/:postId", requireAuth, async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+
+    if (!req.user.hiddenPosts) {
+      req.user.hiddenPosts = [];
+    }
+
+    req.user.hiddenPosts = req.user.hiddenPosts.filter(
+      (id) => id.toString() !== postId
+    );
+    await req.user.save();
+
+    res.json({ message: "Post unhidden" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /users/hidden-posts - Get hidden post IDs
+router.get("/hidden-posts", requireAuth, async (req, res, next) => {
+  try {
+    res.json({ hiddenPostIds: req.user.hiddenPosts || [] });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

@@ -16,6 +16,8 @@ const createPostSchema = z.object({
   tags: z.array(z.string().max(30)).max(10).optional(),
   workId: z.string().optional(),
   imageUrl: z.string().url().optional().nullable(),
+  isSpoiler: z.boolean().optional(),
+  isNSFW: z.boolean().optional(),
 });
 
 const updatePostSchema = createPostSchema.partial();

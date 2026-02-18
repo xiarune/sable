@@ -63,6 +63,44 @@ const usersApi = {
    * Unblock a user
    */
   unblockUser: (userId) => api.delete(`/users/block/${userId}`),
+
+  // ============================================
+  // MUTING
+  // ============================================
+
+  /**
+   * Get muted users list
+   */
+  getMutedUsers: () => api.get("/users/muted"),
+
+  /**
+   * Mute a user
+   */
+  muteUser: (userId) => api.post(`/users/mute/${userId}`),
+
+  /**
+   * Unmute a user
+   */
+  unmuteUser: (userId) => api.delete(`/users/mute/${userId}`),
+
+  // ============================================
+  // HIDDEN POSTS
+  // ============================================
+
+  /**
+   * Get hidden post IDs
+   */
+  getHiddenPosts: () => api.get("/users/hidden-posts"),
+
+  /**
+   * Hide a post
+   */
+  hidePost: (postId) => api.post(`/users/hide-post/${postId}`),
+
+  /**
+   * Unhide a post
+   */
+  unhidePost: (postId) => api.delete(`/users/hide-post/${postId}`),
 };
 
 export default usersApi;
