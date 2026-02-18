@@ -118,6 +118,7 @@ const updateDraftSchema = z.object({
   language: z.enum(["English", "Vietnamese", "Japanese", "French", "Spanish"]).optional(),
   genre: z.string().max(100).optional(),
   fandom: z.string().max(200).optional(),
+  progressStatus: z.enum(["ongoing", "completed", "hiatus", "abandoned"]).optional(),
   coverImageUrl: z.string().optional(),
   audioUrl: z.string().optional(),
   imageUrls: z.array(z.string()).optional(),
@@ -341,6 +342,7 @@ router.post("/:id/publish", async (req, res, next) => {
     work.language = draft.language || "English";
     work.genre = draft.genre || "";
     work.fandom = draft.fandom || "";
+    work.progressStatus = draft.progressStatus || "ongoing";
     work.coverImageUrl = draft.coverImageUrl || "";
     work.audioUrl = draft.audioUrl || "";
     work.imageUrls = Array.isArray(draft.imageUrls) ? [...draft.imageUrls] : [];

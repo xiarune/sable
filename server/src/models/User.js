@@ -120,7 +120,10 @@ const userSchema = new mongoose.Schema(
 
     // Blocked/muted
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    mutedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     mutedWords: [{ type: String }],
+    // Hidden posts (client-side hide without blocking)
+    hiddenPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
 
     // 2FA
     twoFactor: {

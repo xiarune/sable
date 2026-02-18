@@ -7,6 +7,12 @@ const likeSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    // Type of reaction (like or love)
+    type: {
+      type: String,
+      enum: ["like", "love"],
+      default: "like",
+    },
     // Can like a Work, Post, or Comment
     workId: {
       type: mongoose.Schema.Types.ObjectId,

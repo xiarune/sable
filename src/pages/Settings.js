@@ -5,6 +5,8 @@ import { settingsApi, usersApi, authApi, skinsApi } from "../api";
 import { SableLoader } from "../components";
 
 import profileImg from "../assets/images/profile_picture.png";
+import visibleIcon from "../assets/images/Visible.png";
+import visibleOffIcon from "../assets/images/Visible_Off.png";
 
 export default function Settings({ username, onLogout }) {
   const navigate = useNavigate();
@@ -85,6 +87,7 @@ export default function Settings({ username, onLogout }) {
   );
   const [skinSaving, setSkinSaving] = React.useState(false);
   const [skinError, setSkinError] = React.useState("");
+  const [editingSkin, setEditingSkin] = React.useState(null); // skin object being edited
 
   // Custom skins list
   const [customSkins, setCustomSkins] = React.useState([]);
@@ -310,7 +313,7 @@ export default function Settings({ username, onLogout }) {
                   onClick={() => setShowPassword2((v) => !v)}
                   aria-label={showPassword2 ? "Hide password" : "Show password"}
                 >
-                  {showPassword2 ? "🙈" : "👁"}
+                  <img src={showPassword2 ? visibleIcon : visibleOffIcon} alt="" style={{ width: 18, height: 18 }} />
                 </button>
               </div>
             </div>
@@ -367,7 +370,7 @@ export default function Settings({ username, onLogout }) {
                   onClick={() => setShowPassword3((v) => !v)}
                   aria-label={showPassword3 ? "Hide password" : "Show password"}
                 >
-                  {showPassword3 ? "🙈" : "👁"}
+                  <img src={showPassword3 ? visibleIcon : visibleOffIcon} alt="" style={{ width: 18, height: 18 }} />
                 </button>
               </div>
             </div>
@@ -388,7 +391,7 @@ export default function Settings({ username, onLogout }) {
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? "🙈" : "👁"}
+                  <img src={showPassword ? visibleIcon : visibleOffIcon} alt="" style={{ width: 18, height: 18 }} />
                 </button>
               </div>
             </div>
@@ -409,7 +412,7 @@ export default function Settings({ username, onLogout }) {
                   onClick={() => setShowPassword2((v) => !v)}
                   aria-label={showPassword2 ? "Hide password" : "Show password"}
                 >
-                  {showPassword2 ? "🙈" : "👁"}
+                  <img src={showPassword2 ? visibleIcon : visibleOffIcon} alt="" style={{ width: 18, height: 18 }} />
                 </button>
               </div>
             </div>
@@ -453,7 +456,7 @@ export default function Settings({ username, onLogout }) {
                   onClick={() => setShowPassword2((v) => !v)}
                   aria-label={showPassword2 ? "Hide password" : "Show password"}
                 >
-                  {showPassword2 ? "🙈" : "👁"}
+                  <img src={showPassword2 ? visibleIcon : visibleOffIcon} alt="" style={{ width: 18, height: 18 }} />
                 </button>
               </div>
             </div>
@@ -1124,6 +1127,54 @@ export default function Settings({ username, onLogout }) {
     }
   }
 
+  function handleSkinEdit(skin) {
+    setEditingSkin(skin);
+    setSkinName(skin.name);
+    setSkinAppliesTo(skin.appliesTo === "community" ? "Community Page" : "work");
+    setSkinCss(skin.css);
+    setSkinError("");
+    openModal("createSkin");
+  }
+
+  async function handleSkinUpdate() {
+    if (!skinName.trim()) {
+      setSkinError("Please enter a skin name.");
+      return;
+    }
+    if (!skinCss.trim()) {
+      setSkinError("Please enter some CSS.");
+      return;
+    }
+
+    setSkinSaving(true);
+    setSkinError("");
+
+    try {
+      const appliesTo = skinAppliesTo === "Community Page" ? "community" : "work";
+      const data = await skinsApi.update(editingSkin._id, {
+        name: skinName.trim(),
+        appliesTo,
+        css: skinCss.trim(),
+      });
+
+      // Update in local list
+      setCustomSkins((prev) =>
+        prev.map((s) => (s._id === editingSkin._id ? data.skin : s))
+      );
+
+      // Reset form
+      setEditingSkin(null);
+      setSkinName("");
+      setSkinAppliesTo("work");
+      setSkinCss("/* Example */\n.wv-card {\n  background: rgba(255,255,255,0.8);\n}\n");
+      closeModal();
+    } catch (err) {
+      setSkinError(err.message || "Failed to update skin. Please try again.");
+    } finally {
+      setSkinSaving(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="st">
@@ -1456,15 +1507,26 @@ export default function Settings({ username, onLogout }) {
                             <div className="st-skinDesc">
                               {skin.appliesTo === "work" ? "Works" : "Community Page"}
                             </div>
-                            <button
-                              type="button"
-                              className="st-skinDeleteBtn"
-                              onClick={() => handleSkinDelete(skin._id)}
-                              aria-label={`Delete ${skin.name}`}
-                              title="Delete skin"
-                            >
-                              ✕
-                            </button>
+                            <div className="st-skinActions">
+                              <button
+                                type="button"
+                                className="st-skinEditBtn"
+                                onClick={() => handleSkinEdit(skin)}
+                                aria-label={`Edit ${skin.name}`}
+                                title="Edit skin"
+                              >
+                                ✎
+                              </button>
+                              <button
+                                type="button"
+                                className="st-skinDeleteBtn"
+                                onClick={() => handleSkinDelete(skin._id)}
+                                aria-label={`Delete ${skin.name}`}
+                                title="Delete skin"
+                              >
+                                ✕
+                              </button>
+                            </div>
                           </div>
                         ))}
                         {/* Fill remaining slots */}
@@ -1596,7 +1658,7 @@ export default function Settings({ username, onLogout }) {
                       onClick={() => setShowPassword((v) => !v)}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
-                      {showPassword ? "🙈" : "👁"}
+                      <img src={showPassword ? visibleIcon : visibleOffIcon} alt="" style={{ width: 18, height: 18 }} />
                     </button>
                   </div>
                 </div>
@@ -1631,7 +1693,7 @@ export default function Settings({ username, onLogout }) {
             </button>
 
             <div className="st-skinModalHead">
-              <div className="st-skinModalTitle">Create A New Skin</div>
+              <div className="st-skinModalTitle">{editingSkin ? "Edit Skin" : "Create A New Skin"}</div>
               <div className="st-skinModalSub">Write CSS below to customize how your works look. Your skins will be available in the work editor.</div>
             </div>
 
@@ -1678,11 +1740,16 @@ export default function Settings({ username, onLogout }) {
             </div>
 
             <div className="st-modalActions">
-              <button type="button" className="st-actionBtn" onClick={closeModal} disabled={skinSaving}>
+              <button type="button" className="st-actionBtn" onClick={() => { closeModal(); setEditingSkin(null); }} disabled={skinSaving}>
                 Cancel
               </button>
-              <button type="button" className="st-actionBtn st-actionBtn--primary" onClick={handleSkinSave} disabled={skinSaving}>
-                {skinSaving ? "Saving..." : "Save Skin"}
+              <button
+                type="button"
+                className="st-actionBtn st-actionBtn--primary"
+                onClick={editingSkin ? handleSkinUpdate : handleSkinSave}
+                disabled={skinSaving}
+              >
+                {skinSaving ? "Saving..." : editingSkin ? "Update Skin" : "Save Skin"}
               </button>
             </div>
           </div>

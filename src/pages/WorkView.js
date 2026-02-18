@@ -5,6 +5,7 @@ import "../styles/skins.css";
 
 import { worksApi, bookmarksApi, commentsApi, skinsApi } from "../api";
 import { works as libraryWorks } from "../data/libraryWorks";
+import { SableLoader } from "../components";
 
 import musicIcon from "../assets/images/music_icon.png";
 import settingsIcon from "../assets/images/settings_icon.png";
@@ -770,9 +771,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   if (loadingWork) {
     return (
       <div className={`wv-page ${themeClass} skin-default`}>
-        <div className="wv-shell">
-          <p>Loading work...</p>
-        </div>
+        <SableLoader />
       </div>
     );
   }

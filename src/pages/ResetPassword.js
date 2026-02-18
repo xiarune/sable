@@ -3,6 +3,9 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { authApi } from "../api";
 import "./NewDraft.css";
 
+import visibleIcon from "../assets/images/Visible.png";
+import visibleOffIcon from "../assets/images/Visible_Off.png";
+
 export default function ResetPassword() {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -162,7 +165,7 @@ export default function ResetPassword() {
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 title={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? "🙈" : "👁"}
+                <img src={showPassword ? visibleIcon : visibleOffIcon} alt="" style={{ width: 18, height: 18 }} />
               </button>
             </div>
           </div>
@@ -200,7 +203,7 @@ export default function ResetPassword() {
                 aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                 title={showConfirmPassword ? "Hide password" : "Show password"}
               >
-                {showConfirmPassword ? "🙈" : "👁"}
+                <img src={showConfirmPassword ? visibleIcon : visibleOffIcon} alt="" style={{ width: 18, height: 18 }} />
               </button>
             </div>
           </div>

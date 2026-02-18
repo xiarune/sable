@@ -620,6 +620,7 @@
   border-radius: 10px;
   overflow: hidden;
   max-width: 400px;
+  position: relative;
 }
 
 .co-postImage img {
@@ -811,6 +812,160 @@
   font-size: 13px;
   color: rgba(60, 55, 52, 0.85);
   line-height: 1.45;
+}
+
+/* Comment image - small, gif-like */
+.co-commentImage {
+  margin-top: 8px;
+  max-width: 120px;
+}
+
+.co-commentImage img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+}
+
+/* Comment image preview when uploading */
+.co-commentImagePreview {
+  position: relative;
+  display: inline-block;
+  margin-top: 8px;
+  max-width: 80px;
+}
+
+.co-commentImagePreview img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  display: block;
+}
+
+.co-commentImagePreview button {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Comment actions */
+.co-commentActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.co-commentAction {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.45);
+  padding: 2px 0;
+}
+
+.co-commentAction:hover {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.co-commentAction--liked {
+  color: rgba(180, 60, 60, 0.85);
+}
+
+.co-commentAction--delete {
+  color: rgba(180, 60, 60, 0.65);
+}
+
+.co-commentAction--delete:hover {
+  color: rgba(180, 60, 60, 0.9);
+}
+
+/* Comment edit mode */
+.co-commentEdit {
+  margin-top: 6px;
+}
+
+.co-commentEditActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.co-commentEditActions button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(36, 75, 43, 0.85);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.co-commentEditActions button:hover {
+  background: rgba(36, 75, 43, 0.08);
+}
+
+/* Image upload button */
+.co-imageUploadBtn {
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.co-imageUploadBtn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Nested replies */
+.co-nestedReplies {
+  margin-top: 10px;
+  margin-left: 20px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(36, 75, 43, 0.15);
+}
+
+.co-nestedReplyList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.co-nestedReply {
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+}
+
+.co-nestedReplyBox {
+  padding: 8px 0;
+}
+
+.co-replyInput--small {
+  font-size: 12px;
+  padding: 8px 10px;
+}
+
+/* Edited indicator */
+.co-edited {
+  font-style: italic;
+  margin-left: 4px;
+  color: rgba(0, 0, 0, 0.35);
 }
 
 /* Type pill */
@@ -1291,6 +1446,208 @@
   .co-searchWrap {
     max-width: none;
   }
+}
+
+/* Spoiler/NSFW toggle buttons */
+.co-attachBtn--active {
+  background: rgba(36, 75, 43, 0.16);
+  color: rgba(36, 75, 43, 0.95);
+}
+
+.co-composeActionsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* Report modal styles */
+.co-report-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.co-report-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.85);
+  transition: background 0.1s;
+}
+
+.co-report-option:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.co-report-option input[type="radio"] {
+  accent-color: #244b2b;
+  width: 16px;
+  height: 16px;
+}
+
+.co-report-label {
+  display: block;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(60, 55, 52, 0.7);
+  margin-bottom: 6px;
+}
+
+.co-report-textarea {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 60px;
+  box-sizing: border-box;
+}
+
+.co-report-textarea:focus {
+  outline: none;
+  border-color: rgba(36, 75, 43, 0.4);
+}
+
+/* Hidden post placeholder */
+.co-post--hidden {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px dashed rgba(0, 0, 0, 0.15);
+}
+
+.co-hiddenPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.co-hiddenText {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.5);
+  font-style: italic;
+}
+
+.co-hiddenUndo {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(36, 75, 43, 0.85);
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+
+.co-hiddenUndo:hover {
+  background: rgba(36, 75, 43, 0.1);
+}
+
+/* Spoiler/NSFW content tags */
+.co-postMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.co-contentTags {
+  display: flex;
+  gap: 6px;
+}
+
+.co-contentTag {
+  font-family: "Libre Baskerville", serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.co-contentTag--spoiler {
+  background: rgba(214, 168, 64, 0.2);
+  color: rgba(140, 100, 20, 0.9);
+}
+
+.co-contentTag--nsfw {
+  background: rgba(180, 60, 60, 0.15);
+  color: rgba(150, 40, 40, 0.9);
+}
+
+/* NSFW blurred image */
+.co-postImage--blurred {
+  position: relative;
+}
+
+.co-postImage--blurred img {
+  filter: blur(20px);
+  transform: scale(1.05);
+}
+
+.co-nsfwOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+.co-nsfwWarning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 30px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.co-nsfwIcon {
+  font-size: 24px;
+}
+
+.co-nsfwLabel {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+}
+
+.co-nsfwReveal {
+  border: 0;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.co-nsfwReveal:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 

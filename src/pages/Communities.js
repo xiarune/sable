@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import "./Communities.css";
 
 import { works as libraryWorks } from "../data/libraryWorks";
-import { authApi, usersApi, followsApi, uploadsApi, likesApi, bookmarksApi, commentsApi } from "../api";
+import { authApi, usersApi, followsApi, uploadsApi, likesApi, bookmarksApi, commentsApi, reportsApi } from "../api";
 import postsApi from "../api/posts";
+import { SableLoader } from "../components";
 
 // Mention input component with highlighting and suggestions
 function MentionInput({ value, onChange, placeholder, rows = 2, followingList = [] }) {
@@ -149,7 +150,7 @@ function MentionInput({ value, onChange, placeholder, rows = 2, followingList = 
 }
 
 // Post menu component (three dots)
-function PostMenu({ post, onEdit, onDelete, onReport, isOwner }) {
+function PostMenu({ post, onEdit, onDelete, onReport, onBlock, onMute, onHide, isOwner }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const menuRef = React.useRef(null);
 
@@ -202,16 +203,48 @@ function PostMenu({ post, onEdit, onDelete, onReport, isOwner }) {
               </button>
             </>
           ) : (
-            <button
-              type="button"
-              className="co-menuItem co-menuItem--danger"
-              onClick={() => {
-                setIsOpen(false);
-                onReport?.(post);
-              }}
-            >
-              Report Post
-            </button>
+            <>
+              <button
+                type="button"
+                className="co-menuItem"
+                onClick={() => {
+                  setIsOpen(false);
+                  onHide?.(post);
+                }}
+              >
+                Hide Post
+              </button>
+              <button
+                type="button"
+                className="co-menuItem"
+                onClick={() => {
+                  setIsOpen(false);
+                  onMute?.(post);
+                }}
+              >
+                Mute @{post.user?.handle}
+              </button>
+              <button
+                type="button"
+                className="co-menuItem co-menuItem--danger"
+                onClick={() => {
+                  setIsOpen(false);
+                  onBlock?.(post);
+                }}
+              >
+                Block @{post.user?.handle}
+              </button>
+              <button
+                type="button"
+                className="co-menuItem co-menuItem--danger"
+                onClick={() => {
+                  setIsOpen(false);
+                  onReport?.(post);
+                }}
+              >
+                Report Post
+              </button>
+            </>
           )}
         </div>
       )}
@@ -367,6 +400,8 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
           workId: p.workId || null,
           authorId: p.author?._id || p.authorId,
           editedAt: p.editedAt || null,
+          isSpoiler: p.isSpoiler || false,
+          isNSFW: p.isNSFW || false,
         }));
 
         setPosts(transformedPosts);
@@ -433,7 +468,70 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   const [commentReplyImage, setCommentReplyImage] = React.useState(null);
   const [commentReplies, setCommentReplies] = React.useState({}); // { commentId: [replies] }
 
+  // Content moderation state
+  const [hiddenPosts, setHiddenPosts] = React.useState([]);
+  const [mutedUsers, setMutedUsers] = React.useState([]);
+  const [blockedUsers, setBlockedUsers] = React.useState([]);
+
+  // Report modal
+  const [reportingPost, setReportingPost] = React.useState(null);
+  const [reportReason, setReportReason] = React.useState("");
+  const [reportDescription, setReportDescription] = React.useState("");
+  const [reportInProgress, setReportInProgress] = React.useState(false);
+
+  // Spoiler/NSFW toggles for new posts
+  const [isSpoiler, setIsSpoiler] = React.useState(false);
+  const [isNSFW, setIsNSFW] = React.useState(false);
+
+  // Track revealed NSFW images (by post ID)
+  const [revealedNSFW, setRevealedNSFW] = React.useState([]);
+
+  // Scroll position memory
+  const scrollKey = "communities-scroll-position";
+
   const normalizedUsername = (username || "john.doe").trim().toLowerCase();
+
+  // Load hidden/muted/blocked users
+  React.useEffect(() => {
+    if (isAuthed) {
+      usersApi.getHiddenPosts().then((data) => {
+        if (data && data.hiddenPostIds) {
+          setHiddenPosts(data.hiddenPostIds.map(id => id.toString()));
+        }
+      }).catch(() => {});
+
+      usersApi.getMutedUsers().then((data) => {
+        if (data && data.mutedUsers) {
+          setMutedUsers(data.mutedUsers.map(u => u._id));
+        }
+      }).catch(() => {});
+
+      usersApi.getBlockedUsers().then((data) => {
+        if (data && data.blockedUsers) {
+          setBlockedUsers(data.blockedUsers.map(u => u._id));
+        }
+      }).catch(() => {});
+    }
+  }, [isAuthed]);
+
+  // Restore scroll position on mount
+  React.useEffect(() => {
+    const savedPosition = sessionStorage.getItem(scrollKey);
+    if (savedPosition && !loadingPosts) {
+      setTimeout(() => {
+        window.scrollTo(0, parseInt(savedPosition, 10));
+      }, 100);
+    }
+  }, [loadingPosts]);
+
+  // Save scroll position on unmount
+  React.useEffect(() => {
+    const handleScroll = () => {
+      sessionStorage.setItem(scrollKey, window.scrollY.toString());
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Fetch bookmarks to know which posts are bookmarked
   React.useEffect(() => {
@@ -877,9 +975,83 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
     }
   }
 
-  // Report handler
+  // Report handler - opens modal
   function handleReport(post) {
-    alert(`Report functionality coming soon. Post ID: ${post.id}`);
+    setReportingPost(post);
+    setReportReason("");
+    setReportDescription("");
+  }
+
+  async function submitReport() {
+    if (!reportReason || !reportingPost) return;
+
+    setReportInProgress(true);
+    try {
+      await reportsApi.create("post", reportingPost.id, reportReason, reportDescription);
+      alert("Report submitted. Thank you for helping keep the community safe.");
+      setReportingPost(null);
+      setReportReason("");
+      setReportDescription("");
+    } catch (err) {
+      console.error("Failed to submit report:", err);
+      alert(err.message || "Failed to submit report. Please try again.");
+    } finally {
+      setReportInProgress(false);
+    }
+  }
+
+  // Block user handler
+  async function handleBlock(post) {
+    if (!post.authorId) return;
+
+    try {
+      await usersApi.blockUser(post.authorId);
+      setBlockedUsers((prev) => [...prev, post.authorId]);
+      alert(`@${post.user?.handle} has been blocked. You won't see their posts anymore.`);
+    } catch (err) {
+      console.error("Failed to block user:", err);
+      alert("Failed to block user. Please try again.");
+    }
+  }
+
+  // Mute user handler
+  async function handleMute(post) {
+    if (!post.authorId) return;
+
+    try {
+      await usersApi.muteUser(post.authorId);
+      setMutedUsers((prev) => [...prev, post.authorId]);
+      alert(`@${post.user?.handle} has been muted. Their posts will be hidden.`);
+    } catch (err) {
+      console.error("Failed to mute user:", err);
+      alert("Failed to mute user. Please try again.");
+    }
+  }
+
+  // Hide post handler
+  async function handleHide(post) {
+    try {
+      await usersApi.hidePost(post.id);
+      setHiddenPosts((prev) => [...prev, post.id]);
+    } catch (err) {
+      console.error("Failed to hide post:", err);
+      alert("Failed to hide post. Please try again.");
+    }
+  }
+
+  // Unhide post handler
+  async function handleUnhide(postId) {
+    try {
+      await usersApi.unhidePost(postId);
+      setHiddenPosts((prev) => prev.filter((id) => id !== postId));
+    } catch (err) {
+      console.error("Failed to unhide post:", err);
+    }
+  }
+
+  // Reveal NSFW image
+  function handleRevealNSFW(postId) {
+    setRevealedNSFW((prev) => [...prev, postId]);
   }
 
   async function submitPost() {
@@ -915,6 +1087,8 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
         type: "post",
         caption: text,
         imageUrl,
+        isSpoiler,
+        isNSFW,
       };
 
       const response = await postsApi.create(postData);
@@ -932,6 +1106,8 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
           meta: { replies: "0", likes: "0" },
           tags: response.post.tags || [],
           authorId: response.post.authorId,
+          isSpoiler: response.post.isSpoiler || isSpoiler,
+          isNSFW: response.post.isNSFW || isNSFW,
         };
 
         setPosts((prev) => [newPost, ...prev]);
@@ -939,6 +1115,8 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
 
       setDraft("");
       setPostType("post");
+      setIsSpoiler(false);
+      setIsNSFW(false);
       removeImage();
     } catch (err) {
       console.error("Failed to create post:", err);
@@ -950,16 +1128,34 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
 
   const filteredPosts = React.useMemo(() => {
     const q = query.trim().toLowerCase();
+
+    // First filter out blocked and muted content, but mark hidden posts
+    let filtered = posts
+      .filter((p) => {
+        // Skip posts from blocked users
+        if (blockedUsers.includes(p.authorId)) return false;
+        // Skip posts from muted users
+        if (mutedUsers.includes(p.authorId)) return false;
+        return true;
+      })
+      .map((p) => ({
+        ...p,
+        isHidden: hiddenPosts.includes(p.id),
+      }));
+
+    // Then apply search filter
     return q
-      ? posts.filter((p) => {
+      ? filtered.filter((p) => {
+          // Skip hidden posts in search
+          if (p.isHidden) return false;
           const hay = [p.title, p.caption, p.user?.handle, p.user?.display, ...(p.tags || [])]
             .filter(Boolean)
             .join(" ")
             .toLowerCase();
           return hay.includes(q);
         })
-      : posts;
-  }, [posts, query]);
+      : filtered;
+  }, [posts, query, hiddenPosts, blockedUsers, mutedUsers]);
 
   // if a post is a work but lacks workId, try to resolve from library mock data by title
   function resolveWorkIdFromTitle(title) {
@@ -1112,6 +1308,24 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                       >
                         🖼️ Image
                       </button>
+                      <button
+                        type="button"
+                        className={`co-attachBtn ${isSpoiler ? "co-attachBtn--active" : ""}`}
+                        onClick={() => setIsSpoiler(!isSpoiler)}
+                        title="Mark as spoiler"
+                      >
+                        ⚠️ Spoiler
+                      </button>
+                      <button
+                        type="button"
+                        className={`co-attachBtn ${isNSFW ? "co-attachBtn--active" : ""}`}
+                        onClick={() => setIsNSFW(!isNSFW)}
+                        title="Mark as NSFW"
+                      >
+                        🔞 NSFW
+                      </button>
+                    </div>
+                    <div className="co-composeActionsRow">
                       <span className="co-composeHint">Tip: Use @username to mention someone</span>
                     </div>
 
@@ -1143,7 +1357,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
           {/* Feed */}
           <section className="co-feed" aria-label="Posts">
             {loadingPosts ? (
-              <div className="co-empty">Loading posts...</div>
+              <SableLoader fullPage={false} />
             ) : postsError ? (
               <div className="co-empty">{postsError}</div>
             ) : filteredPosts.length === 0 ? (
@@ -1152,6 +1366,26 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
               </div>
             ) : (
               filteredPosts.map((p) => {
+                // Show hidden post placeholder
+                if (p.isHidden) {
+                  return (
+                    <article key={p.id} className="co-post co-post--hidden" aria-label="Hidden post">
+                      <div className="co-hiddenPlaceholder">
+                        <span className="co-hiddenText">This post is hidden</span>
+                        <button
+                          type="button"
+                          className="co-hiddenUndo"
+                          onClick={() => handleUnhide(p.id)}
+                        >
+                          Undo
+                        </button>
+                      </div>
+                    </article>
+                  );
+                }
+
+                const isNSFWBlurred = p.isNSFW && p.imageUrl && !revealedNSFW.includes(p.id);
+
                 return (
                   <article key={p.id} className="co-post" aria-label="Post">
                     <div className="co-postTop">
@@ -1172,15 +1406,27 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                       </div>
 
                       <div className="co-postRight">
-                        <div className="co-time">
-                          {p.time}
-                          {p.editedAt && <span className="co-edited">(edited)</span>}
+                        <div className="co-postMeta">
+                          <div className="co-time">
+                            {p.time}
+                            {p.editedAt && <span className="co-edited">(edited)</span>}
+                          </div>
+                          {/* Spoiler/NSFW tags */}
+                          {(p.isSpoiler || p.isNSFW) && (
+                            <div className="co-contentTags">
+                              {p.isSpoiler && <span className="co-contentTag co-contentTag--spoiler">Spoiler</span>}
+                              {p.isNSFW && <span className="co-contentTag co-contentTag--nsfw">NSFW</span>}
+                            </div>
+                          )}
                         </div>
                         <PostMenu
                           post={p}
                           onEdit={handleEditPost}
                           onDelete={handleDeletePost}
                           onReport={handleReport}
+                          onBlock={handleBlock}
+                          onMute={handleMute}
+                          onHide={handleHide}
                           isOwner={currentUser && p.authorId === currentUser._id}
                         />
                       </div>
@@ -1191,10 +1437,25 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
 
                       <div className="co-postCaption">{renderMentions(p.caption)}</div>
 
-                      {/* Post image */}
+                      {/* Post image with NSFW blur */}
                       {p.imageUrl && (
-                        <div className="co-postImage">
+                        <div className={`co-postImage ${isNSFWBlurred ? "co-postImage--blurred" : ""}`}>
                           <img src={p.imageUrl} alt="Post attachment" />
+                          {isNSFWBlurred && (
+                            <div className="co-nsfwOverlay">
+                              <div className="co-nsfwWarning">
+                                <span className="co-nsfwIcon">🔞</span>
+                                <span className="co-nsfwLabel">NSFW Content</span>
+                                <button
+                                  type="button"
+                                  className="co-nsfwReveal"
+                                  onClick={() => handleRevealNSFW(p.id)}
+                                >
+                                  Click to reveal
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1586,6 +1847,84 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                 disabled={deletingInProgress}
               >
                 {deletingInProgress ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {reportingPost && (
+        <div className="co-modal-overlay" onClick={() => !reportInProgress && setReportingPost(null)}>
+          <div className="co-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="co-modal-header">
+              <h3 className="co-modal-title">Report Post</h3>
+              <button
+                type="button"
+                className="co-modal-close"
+                onClick={() => !reportInProgress && setReportingPost(null)}
+                disabled={reportInProgress}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="co-modal-body">
+              <p className="co-modal-text" style={{ marginBottom: 16 }}>
+                Why are you reporting this post?
+              </p>
+              <div className="co-report-options">
+                {[
+                  { value: "spam", label: "Spam or misleading" },
+                  { value: "harassment", label: "Harassment or bullying" },
+                  { value: "hate_speech", label: "Hate speech" },
+                  { value: "violence", label: "Violence or threats" },
+                  { value: "inappropriate_content", label: "Inappropriate content" },
+                  { value: "misinformation", label: "Misinformation" },
+                  { value: "copyright", label: "Copyright violation" },
+                  { value: "other", label: "Other" },
+                ].map((option) => (
+                  <label key={option.value} className="co-report-option">
+                    <input
+                      type="radio"
+                      name="report-reason"
+                      value={option.value}
+                      checked={reportReason === option.value}
+                      onChange={(e) => setReportReason(e.target.value)}
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+              {reportReason && (
+                <div style={{ marginTop: 16 }}>
+                  <label className="co-report-label">Additional details (optional)</label>
+                  <textarea
+                    className="co-report-textarea"
+                    value={reportDescription}
+                    onChange={(e) => setReportDescription(e.target.value)}
+                    placeholder="Provide any additional context..."
+                    maxLength={1000}
+                    rows={3}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="co-modal-footer">
+              <button
+                type="button"
+                className="co-modal-btn co-modal-btn--secondary"
+                onClick={() => setReportingPost(null)}
+                disabled={reportInProgress}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="co-modal-btn co-modal-btn--danger"
+                onClick={submitReport}
+                disabled={reportInProgress || !reportReason}
+              >
+                {reportInProgress ? "Submitting..." : "Submit Report"}
               </button>
             </div>
           </div>

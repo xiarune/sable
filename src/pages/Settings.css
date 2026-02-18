@@ -605,6 +605,43 @@
   background: rgba(180, 60, 60, 0.95);
 }
 
+.st-skinActions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.st-skinTile--custom:hover .st-skinActions {
+  opacity: 1;
+}
+
+.st-skinEditBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(36, 75, 43, 0.85);
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.st-skinEditBtn:hover {
+  background: rgba(36, 75, 43, 0.95);
+}
+
+.st-skinActions .st-skinDeleteBtn {
+  position: static;
+  opacity: 1;
+}
+
 .st-modal--wide {
   max-width: 640px;
 }

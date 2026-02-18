@@ -7,10 +7,11 @@ const { requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
-// POST /likes/work/:workId - Like a work
+// POST /likes/work/:workId - Like or love a work
 router.post("/work/:workId", requireAuth, async (req, res, next) => {
   try {
     const { workId } = req.params;
+    const { type = "like" } = req.body; // "like" or "love"
 
     const work = await Work.findById(workId);
     if (!work) {
@@ -18,20 +19,47 @@ router.post("/work/:workId", requireAuth, async (req, res, next) => {
     }
 
     const existing = await Like.findOne({ userId: req.user._id, workId });
+
     if (existing) {
-      return res.status(400).json({ error: "Already liked" });
+      // If same type, already done
+      if (existing.type === type) {
+        return res.status(400).json({ error: `Already ${type}d` });
+      }
+      // Change type (e.g., from like to love)
+      const oldType = existing.type;
+      existing.type = type;
+      await existing.save();
+
+      // Update counts
+      if (oldType === "like") {
+        await Work.findByIdAndUpdate(workId, { $inc: { likesCount: -1 } });
+      } else {
+        await Work.findByIdAndUpdate(workId, { $inc: { lovesCount: -1 } });
+      }
+      if (type === "like") {
+        await Work.findByIdAndUpdate(workId, { $inc: { likesCount: 1 } });
+      } else {
+        await Work.findByIdAndUpdate(workId, { $inc: { lovesCount: 1 } });
+      }
+
+      return res.json({ message: `Changed to ${type}`, type });
     }
 
-    await Like.create({ userId: req.user._id, workId });
-    await Work.findByIdAndUpdate(workId, { $inc: { likesCount: 1 } });
+    await Like.create({ userId: req.user._id, workId, type });
 
-    res.status(201).json({ message: "Liked" });
+    if (type === "love") {
+      await Work.findByIdAndUpdate(workId, { $inc: { lovesCount: 1 } });
+    } else {
+      await Work.findByIdAndUpdate(workId, { $inc: { likesCount: 1 } });
+    }
+
+    res.status(201).json({ message: type === "love" ? "Loved" : "Liked", type });
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /likes/work/:workId - Unlike a work
+// DELETE /likes/work/:workId - Unlike/unlove a work
 router.delete("/work/:workId", requireAuth, async (req, res, next) => {
   try {
     const { workId } = req.params;
@@ -41,9 +69,32 @@ router.delete("/work/:workId", requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: "Not liked" });
     }
 
-    await Work.findByIdAndUpdate(workId, { $inc: { likesCount: -1 } });
+    if (like.type === "love") {
+      await Work.findByIdAndUpdate(workId, { $inc: { lovesCount: -1 } });
+    } else {
+      await Work.findByIdAndUpdate(workId, { $inc: { likesCount: -1 } });
+    }
 
-    res.json({ message: "Unliked" });
+    res.json({ message: "Removed" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /likes/works - Get all works the user has liked/loved
+router.get("/works", requireAuth, async (req, res, next) => {
+  try {
+    const likes = await Like.find({
+      userId: req.user._id,
+      workId: { $ne: null },
+    }).select("workId type");
+
+    const workLikes = {};
+    likes.forEach((l) => {
+      workLikes[l.workId.toString()] = l.type;
+    });
+
+    res.json({ workLikes });
   } catch (err) {
     next(err);
   }
