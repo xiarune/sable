@@ -38,6 +38,16 @@ const bookmarksApi = {
     if (audioId) params.append("audioId", audioId);
     return api.get(`/bookmarks/check?${params}`);
   },
+
+  // Toggle reading list visibility for a bookmark
+  toggleReadingList: (bookmarkId, showInReadingList) =>
+    api.put(`/bookmarks/${bookmarkId}/reading-list`, { showInReadingList }),
+
+  // Get my reading list (bookmarks marked for reading list)
+  getReadingList: () => api.get("/bookmarks/reading-list"),
+
+  // Get a user's public reading list
+  getUserReadingList: (username) => api.get(`/bookmarks/reading-list/user/${username}`),
 };
 
 export default bookmarksApi;

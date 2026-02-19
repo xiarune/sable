@@ -31,6 +31,9 @@ const bookmarkSchema = new mongoose.Schema(
     title: { type: String },
     authorUsername: { type: String },
     coverUrl: { type: String, default: "" },
+
+    // Whether to show this bookmark in the user's public reading list
+    showInReadingList: { type: Boolean, default: false },
   },
   {
     timestamps: true,

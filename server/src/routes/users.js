@@ -4,6 +4,7 @@ const User = require("../models/User");
 const Work = require("../models/Work");
 const Follow = require("../models/Follow");
 const { requireAuth, optionalAuth } = require("../middleware/auth");
+const { getPeopleRecommendations } = require("../services/recommendation");
 
 const router = express.Router();
 
@@ -77,6 +78,42 @@ router.get("/", optionalAuth, async (req, res, next) => {
     }));
 
     res.json({ users: usersWithFollowStatus });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /users/discover - Get recommended creators
+router.get("/discover", optionalAuth, async (req, res, next) => {
+  try {
+    const { limit = 20 } = req.query;
+
+    const result = await getPeopleRecommendations(req.user, {
+      limit: parseInt(limit),
+    });
+
+    // Add follow status if logged in
+    let usersWithFollowStatus = result.users;
+    if (req.user) {
+      const follows = await Follow.find({ followerId: req.user._id });
+      const followingIds = new Set(follows.map((f) => f.followeeId.toString()));
+
+      usersWithFollowStatus = result.users.map((u) => ({
+        ...u,
+        isFollowing: followingIds.has(u._id.toString()),
+      }));
+    } else {
+      usersWithFollowStatus = result.users.map((u) => ({
+        ...u,
+        isFollowing: false,
+      }));
+    }
+
+    res.json({
+      users: usersWithFollowStatus,
+      mode: result.mode,
+      personalized: result.personalized,
+    });
   } catch (err) {
     next(err);
   }

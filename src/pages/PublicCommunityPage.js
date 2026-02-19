@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import "./PublicCommunityPage.css";
-import { uploadsApi, worksApi, communityApi, followsApi, usersApi, donationsApi } from "../api";
+import { uploadsApi, worksApi, communityApi, followsApi, usersApi, donationsApi, postsApi } from "../api";
 import { SableLoader } from "../components";
 
 function initials(name) {
@@ -70,6 +70,7 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   // Real data state
   const [userWorks, setUserWorks] = React.useState([]);
   const [userAudios, setUserAudios] = React.useState([]);
+  const [userPosts, setUserPosts] = React.useState([]);
 
   // Load community page and user data
   React.useEffect(() => {
@@ -168,6 +169,14 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
         setUserAudios(audiosData.audios || []);
       } catch (err) {
         console.error("Failed to load audios:", err);
+      }
+
+      // Load recent posts
+      try {
+        const postsData = await postsApi.list({ author: normalizedHandle, limit: 5 });
+        setUserPosts(postsData.posts || []);
+      } catch (err) {
+        console.error("Failed to load posts:", err);
       }
 
       setLoading(false);
@@ -697,22 +706,32 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
 
           <aside className="pcp-right" aria-label="Community panels">
             <div className="pcp-panels">
-              <div className="pcp-panel pcp-panel--announcements">
-                <div className="pcp-panelTitle">Announcements</div>
-                <div className="pcp-announcementsBox">
-                  {announcements.length === 0 ? (
-                    <div className="pcp-emptyState pcp-emptyState--small">No announcements yet</div>
+              <div className="pcp-panel pcp-panel--recentPosts">
+                <div className="pcp-panelTitle">Recent Posts</div>
+                <div className="pcp-recentPostsBox">
+                  {userPosts.length === 0 ? (
+                    <div className="pcp-emptyState pcp-emptyState--small">No posts yet</div>
                   ) : (
-                    announcements.map((ann, idx) => (
-                      <div key={idx} className={`pcp-announcementItem ${ann.pinned ? "pcp-announcementItem--pinned" : ""}`}>
-                        {ann.pinned && <span className="pcp-announcementPin">📌</span>}
-                        <div className="pcp-announcementContent">
-                          <div className="pcp-announcementText">{ann.text}</div>
-                          <div className="pcp-announcementDate">
-                            {ann.createdAt ? new Date(ann.createdAt).toLocaleDateString() : ""}
+                    userPosts.map((post) => (
+                      <Link
+                        key={post._id}
+                        to={`/communities?post=${post._id}`}
+                        className="pcp-recentPostItem"
+                      >
+                        <div className="pcp-recentPostContent">
+                          {post.title && <div className="pcp-recentPostTitle">{post.title}</div>}
+                          <div className="pcp-recentPostCaption">
+                            {(post.caption || post.content || "").slice(0, 100)}
+                            {(post.caption || post.content || "").length > 100 && "..."}
+                          </div>
+                          <div className="pcp-recentPostMeta">
+                            {post.likesCount || 0} likes · {post.commentsCount || 0} replies
                           </div>
                         </div>
-                      </div>
+                        {post.imageUrl && (
+                          <img className="pcp-recentPostImage" src={post.imageUrl} alt="" />
+                        )}
+                      </Link>
                     ))
                   )}
                 </div>

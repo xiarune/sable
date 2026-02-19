@@ -122,6 +122,8 @@ export default function App() {
 
           {/* Home */}
           <Route path="/" element={isAuthed ? <HomeLoggedIn /> : <HomeLoggedOut />} />
+          {/* Redirect /sable to home (for dev server with homepage set) */}
+          <Route path="/sable" element={<Navigate to="/" replace />} />
 
           {/* Main nav */}
           <Route path="/browse" element={<Browse />} />

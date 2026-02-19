@@ -569,29 +569,31 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   }, [isAuthed]);
 
   async function handleLike(postId) {
-    if (likeInProgress[postId]) return;
+    const postIdStr = String(postId);
+    if (likeInProgress[postIdStr]) return;
 
-    setLikeInProgress((prev) => ({ ...prev, [postId]: true }));
+    setLikeInProgress((prev) => ({ ...prev, [postIdStr]: true }));
 
     try {
-      if (likedPosts.includes(postId)) {
-        await likesApi.unlikePost(postId);
-        setLikedPosts((prev) => prev.filter((id) => id !== postId));
+      const isLiked = likedPosts.some((id) => String(id) === postIdStr);
+      if (isLiked) {
+        await likesApi.unlikePost(postIdStr);
+        setLikedPosts((prev) => prev.filter((id) => String(id) !== postIdStr));
         // Update post like count
         setPosts((prev) =>
           prev.map((p) =>
-            p.id === postId
+            String(p.id) === postIdStr
               ? { ...p, meta: { ...p.meta, likes: String(Math.max(0, parseInt(p.meta.likes || "0") - 1)) } }
               : p
           )
         );
       } else {
-        await likesApi.likePost(postId);
-        setLikedPosts((prev) => [...prev, postId]);
+        await likesApi.likePost(postIdStr);
+        setLikedPosts((prev) => [...prev, postIdStr]);
         // Update post like count
         setPosts((prev) =>
           prev.map((p) =>
-            p.id === postId
+            String(p.id) === postIdStr
               ? { ...p, meta: { ...p.meta, likes: String(parseInt(p.meta.likes || "0") + 1) } }
               : p
           )
@@ -600,7 +602,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
     } catch (err) {
       console.error("Like action failed:", err);
     } finally {
-      setLikeInProgress((prev) => ({ ...prev, [postId]: false }));
+      setLikeInProgress((prev) => ({ ...prev, [postIdStr]: false }));
     }
   }
 
@@ -1599,11 +1601,11 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                     <div className="co-postActions" aria-label="Post actions">
                       <button
                         type="button"
-                        className={`co-action ${likedPosts.includes(p.id) ? "co-action--active" : ""}`}
+                        className={`co-action ${likedPosts.some((id) => String(id) === String(p.id)) ? "co-action--active" : ""}`}
                         onClick={() => requireAuth(() => handleLike(p.id))}
-                        disabled={likeInProgress[p.id]}
+                        disabled={likeInProgress[String(p.id)]}
                       >
-                        {likedPosts.includes(p.id) ? "♥ Liked" : "♡ Like"} {p.meta?.likes && p.meta.likes !== "0" ? `(${p.meta.likes})` : ""}
+                        {likedPosts.some((id) => String(id) === String(p.id)) ? "♥ Liked" : "♡ Like"} {p.meta?.likes && p.meta.likes !== "0" ? `(${p.meta.likes})` : ""}
                       </button>
                       <button
                         type="button"

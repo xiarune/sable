@@ -8,6 +8,16 @@ const User = require("../models/User");
 const Bookmark = require("../models/Bookmark");
 const Follow = require("../models/Follow");
 const { optionalAuth, requireAuth } = require("../middleware/auth");
+const {
+  getWorkRecommendations,
+  getPostRecommendations,
+} = require("../services/recommendation");
+const {
+  engagementQuality,
+  freshnessScore,
+  diversityRerank,
+  FRESHNESS_HALF_LIVES,
+} = require("../services/scoring");
 
 const router = express.Router();
 
@@ -339,7 +349,7 @@ router.get("/search", optionalAuth, async (req, res, next) => {
 
 // === TRENDING / FEATURED ===
 
-// GET /discovery/trending - Get trending works
+// GET /discovery/trending - Get trending works with engagement-weighted scoring
 router.get("/trending", async (req, res, next) => {
   try {
     const { period = "week", limit = 20 } = req.query;
@@ -350,16 +360,37 @@ router.get("/trending", async (req, res, next) => {
     else if (period === "week") dateThreshold.setDate(dateThreshold.getDate() - 7);
     else if (period === "month") dateThreshold.setMonth(dateThreshold.getMonth() - 1);
 
-    const works = await Work.find({
+    // Get candidates
+    const candidates = await Work.find({
       privacy: "Public",
       status: "published",
       publishedAt: { $gte: dateThreshold },
     })
-      .sort({ views: -1 })
-      .limit(parseInt(limit))
-      .select("-chapters");
+      .limit(parseInt(limit) * 3) // Get more for scoring
+      .select("-chapters")
+      .lean();
 
-    res.json({ works, period });
+    // Score each work using engagement quality + freshness
+    const scoredWorks = candidates.map((work) => {
+      const eqScore = engagementQuality(work, "work");
+      const fScore = freshnessScore(work.publishedAt, FRESHNESS_HALF_LIVES.works);
+
+      // Trending weights: 60% engagement, 40% freshness
+      const score = 0.6 * eqScore + 0.4 * fScore;
+
+      return { work, score };
+    });
+
+    // Sort by score descending
+    scoredWorks.sort((a, b) => b.score - a.score);
+
+    // Apply diversity re-ranking
+    const diverseWorks = diversityRerank(
+      scoredWorks.map((sw) => sw.work),
+      { maxPerAuthor: 2, maxPerGenre: 5, limit: parseInt(limit) }
+    );
+
+    res.json({ works: diverseWorks, period });
   } catch (err) {
     next(err);
   }
@@ -383,19 +414,31 @@ router.get("/featured", async (req, res, next) => {
   }
 });
 
-// GET /discovery/new - Get newest works
+// GET /discovery/new - Get newest works with optional quality filter
 router.get("/new", async (req, res, next) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, quality = "all" } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    // Build query based on quality filter
+    const query = { privacy: "Public", status: "published" };
+
+    // Quality filter: only show works with minimum engagement or quality score
+    if (quality === "quality") {
+      query.$or = [
+        { qualityScore: { $gte: 0.5 } },
+        { likesCount: { $gte: 1 } },
+        { bookmarksCount: { $gte: 1 } },
+      ];
+    }
+
     const [works, total] = await Promise.all([
-      Work.find({ privacy: "Public", status: "published" })
+      Work.find(query)
         .sort({ publishedAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
         .select("-chapters"),
-      Work.countDocuments({ privacy: "Public", status: "published" }),
+      Work.countDocuments(query),
     ]);
 
     res.json({
@@ -414,139 +457,39 @@ router.get("/new", async (req, res, next) => {
 
 // === FOR YOU (Personalized Recommendations) ===
 
-// GET /discovery/for-you - Get personalized recommendations
+// GET /discovery/for-you - Get personalized recommendations using hybrid ranker
 router.get("/for-you", requireAuth, async (req, res, next) => {
   try {
-    const { limit = 12 } = req.query;
-    const userId = req.user._id;
-    const userInterests = req.user.interests || {};
+    const { limit = 20 } = req.query;
 
-    // Get user's bookmarked work IDs to exclude
-    const bookmarkedWorks = await Bookmark.find({ userId, type: "work" }).select("workId");
-    const bookmarkedIds = bookmarkedWorks.map((b) => b.workId).filter(Boolean);
-
-    // Get authors the user follows
-    const follows = await Follow.find({ followerId: userId }).select("followeeId");
-    const followedAuthorIds = follows.map((f) => f.followeeId);
-
-    // Base query for published, public works (excluding own works and bookmarks)
-    const baseQuery = {
-      privacy: "Public",
-      status: "published",
-      authorId: { $ne: userId },
-      _id: { $nin: bookmarkedIds },
-    };
-
-    // Collect works from different sources with scores
-    const worksMap = new Map(); // workId -> { work, score }
-
-    // Helper to add works with score
-    function addWorks(works, baseScore) {
-      works.forEach((work) => {
-        const id = work._id.toString();
-        if (worksMap.has(id)) {
-          // Increase score if work appears in multiple sources
-          worksMap.get(id).score += baseScore;
-        } else {
-          worksMap.set(id, { work, score: baseScore });
-        }
-      });
-    }
-
-    // 1. Works matching user's selected genres (score: 3)
-    const userGenres = userInterests.genres || [];
-    if (userGenres.length > 0) {
-      const genreRegexes = userGenres.map((g) => new RegExp(escapeRegex(g), "i"));
-      const genreWorks = await Work.find({
-        ...baseQuery,
-        genre: { $in: genreRegexes },
-      })
-        .sort({ publishedAt: -1 })
-        .limit(20)
-        .select("-chapters");
-      addWorks(genreWorks, 3);
-    }
-
-    // 2. Works matching user's selected fandoms (score: 3)
-    const userFandoms = userInterests.fandoms || [];
-    if (userFandoms.length > 0) {
-      const fandomRegexes = userFandoms.map((f) => new RegExp(escapeRegex(f), "i"));
-      const fandomWorks = await Work.find({
-        ...baseQuery,
-        fandom: { $in: fandomRegexes },
-      })
-        .sort({ publishedAt: -1 })
-        .limit(20)
-        .select("-chapters");
-      addWorks(fandomWorks, 3);
-    }
-
-    // 3. Works from authors the user follows (score: 4)
-    if (followedAuthorIds.length > 0) {
-      const followedWorks = await Work.find({
-        ...baseQuery,
-        authorId: { $in: followedAuthorIds },
-      })
-        .sort({ publishedAt: -1 })
-        .limit(15)
-        .select("-chapters");
-      addWorks(followedWorks, 4);
-    }
-
-    // 4. Works with similar tags to user's bookmarked works (score: 2)
-    if (bookmarkedIds.length > 0) {
-      // Get tags from bookmarked works
-      const bookmarkedWorksData = await Work.find({
-        _id: { $in: bookmarkedIds.slice(0, 10) }, // Limit to recent bookmarks
-      }).select("tags genre fandom");
-
-      const tagSet = new Set();
-      bookmarkedWorksData.forEach((w) => {
-        (w.tags || []).forEach((t) => tagSet.add(t));
-      });
-
-      if (tagSet.size > 0) {
-        const tagArray = Array.from(tagSet).slice(0, 20);
-        const similarWorks = await Work.find({
-          ...baseQuery,
-          tags: { $in: tagArray },
-        })
-          .sort({ publishedAt: -1 })
-          .limit(15)
-          .select("-chapters");
-        addWorks(similarWorks, 2);
-      }
-    }
-
-    // Sort by score (descending) then by recency
-    let recommendations = Array.from(worksMap.values())
-      .sort((a, b) => {
-        if (b.score !== a.score) return b.score - a.score;
-        return new Date(b.work.publishedAt) - new Date(a.work.publishedAt);
-      })
-      .map((item) => item.work)
-      .slice(0, parseInt(limit));
-
-    // If no personalized recommendations, fall back to trending
-    if (recommendations.length === 0) {
-      const dateThreshold = new Date();
-      dateThreshold.setDate(dateThreshold.getDate() - 7);
-
-      recommendations = await Work.find({
-        privacy: "Public",
-        status: "published",
-        authorId: { $ne: userId },
-        _id: { $nin: bookmarkedIds },
-        publishedAt: { $gte: dateThreshold },
-      })
-        .sort({ views: -1 })
-        .limit(parseInt(limit))
-        .select("-chapters");
-    }
+    const result = await getWorkRecommendations(req.user, {
+      limit: parseInt(limit),
+    });
 
     res.json({
-      works: recommendations,
-      personalized: worksMap.size > 0,
+      works: result.works,
+      personalized: result.personalized,
+      mode: result.mode,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /discovery/logged-out - Non-personalized recommendations for logged-out users
+router.get("/logged-out", async (req, res, next) => {
+  try {
+    const { limit = 20, period = "week" } = req.query;
+
+    const result = await getWorkRecommendations(null, {
+      limit: parseInt(limit),
+      period,
+    });
+
+    res.json({
+      works: result.works,
+      personalized: false,
+      mode: "logged_out",
     });
   } catch (err) {
     next(err);

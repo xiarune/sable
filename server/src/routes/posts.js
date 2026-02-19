@@ -4,6 +4,7 @@ const Post = require("../models/Post");
 const { requireAuth, optionalAuth } = require("../middleware/auth");
 const { MAX_POST_LENGTH } = require("../config/limits");
 const { notifyNewPost, notifyMentions } = require("../services/notificationService");
+const { getPostRecommendations } = require("../services/recommendation");
 
 const router = express.Router();
 
@@ -61,6 +62,67 @@ router.get("/", optionalAuth, async (req, res, next) => {
         total,
         pages: Math.ceil(total / parseInt(limit)),
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /posts/feed - Get ranked/personalized post feed
+router.get("/feed", optionalAuth, async (req, res, next) => {
+  try {
+    const { limit = 20, mode = "ranked" } = req.query;
+
+    // If mode is "chronological", use the existing logic
+    if (mode === "chronological") {
+      const posts = await Post.find({})
+        .populate("authorId", "username displayName avatarUrl")
+        .sort({ createdAt: -1 })
+        .limit(parseInt(limit));
+
+      const transformedPosts = posts.map((post) => {
+        const p = post.toObject();
+        p.author = p.authorId
+          ? {
+              _id: p.authorId._id,
+              username: p.authorId.username,
+              displayName: p.authorId.displayName,
+              avatarUrl: p.authorId.avatarUrl,
+            }
+          : null;
+        return p;
+      });
+
+      return res.json({
+        posts: transformedPosts,
+        mode: "chronological",
+        personalized: false,
+      });
+    }
+
+    // Use recommendation service for ranked feed
+    const result = await getPostRecommendations(req.user, {
+      limit: parseInt(limit),
+    });
+
+    // Transform posts to include author info
+    const transformedPosts = result.posts.map((post) => {
+      const p = { ...post };
+      if (post.authorId && typeof post.authorId === "object") {
+        p.author = {
+          _id: post.authorId._id,
+          username: post.authorId.username,
+          displayName: post.authorId.displayName,
+          avatarUrl: post.authorId.avatarUrl,
+        };
+      }
+      return p;
+    });
+
+    res.json({
+      posts: transformedPosts,
+      mode: result.mode,
+      personalized: result.personalized,
     });
   } catch (err) {
     next(err);
