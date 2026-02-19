@@ -96,6 +96,17 @@ const workSchema = new mongoose.Schema(
     // Loves count (separate from likes)
     lovesCount: { type: Number, default: 0 },
     publishedAt: { type: Date, default: Date.now },
+
+    // Quality scoring for recommendations
+    qualityScore: { type: Number, default: 1.0, min: 0, max: 1 },
+
+    // Content flagging
+    flaggedAt: { type: Date, default: null },
+    flagReason: { type: String, default: null },
+
+    // Featured/editorial status
+    featured: { type: Boolean, default: false },
+    featuredAt: { type: Date, default: null },
   },
   {
     timestamps: true,

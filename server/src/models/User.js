@@ -191,6 +191,41 @@ const userSchema = new mongoose.Schema(
       readReceipts: { type: Boolean, default: true },
       showSeenIndicators: { type: Boolean, default: true },
     },
+
+    // Recommendation data (computed for personalization)
+    recommendationData: {
+      // Recently seen works for deduplication
+      recentlySeenWorks: [
+        {
+          workId: { type: mongoose.Schema.Types.ObjectId, ref: "Work" },
+          seenAt: { type: Date, default: Date.now },
+        },
+      ],
+      // Recently seen authors for exposure control
+      recentlySeenAuthors: [
+        {
+          authorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+          count: { type: Number, default: 1 },
+          lastSeen: { type: Date, default: Date.now },
+        },
+      ],
+      // Tag affinities derived from engagement
+      tagAffinities: [
+        {
+          tag: { type: String },
+          weight: { type: Number, default: 1.0 },
+        },
+      ],
+      // Author affinities derived from engagement
+      authorAffinities: [
+        {
+          authorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+          weight: { type: Number, default: 1.0 },
+        },
+      ],
+      // Last time recommendation data was computed
+      computedAt: { type: Date },
+    },
   },
   {
     timestamps: true,

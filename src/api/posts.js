@@ -4,7 +4,7 @@ import api from "./client";
  * Posts API - Community posts
  */
 const postsApi = {
-  // Get posts feed
+  // Get posts feed (chronological, legacy)
   list: (params = {}) => {
     const query = new URLSearchParams();
     if (params.page) query.set("page", params.page);
@@ -13,6 +13,15 @@ const postsApi = {
     if (params.author) query.set("author", params.author);
     const qs = query.toString();
     return api.get(`/posts${qs ? `?${qs}` : ""}`);
+  },
+
+  // Get ranked/personalized feed
+  feed: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.limit) query.set("limit", params.limit);
+    if (params.mode) query.set("mode", params.mode); // 'ranked' or 'chronological'
+    const qs = query.toString();
+    return api.get(`/posts/feed${qs ? `?${qs}` : ""}`);
   },
 
   // Get my posts

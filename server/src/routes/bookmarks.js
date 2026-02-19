@@ -222,4 +222,91 @@ router.get("/check", async (req, res, next) => {
   }
 });
 
+// PUT /bookmarks/:bookmarkId/reading-list - Toggle reading list visibility
+router.put("/:bookmarkId/reading-list", async (req, res, next) => {
+  try {
+    const { bookmarkId } = req.params;
+    const { showInReadingList } = req.body;
+
+    const bookmark = await Bookmark.findById(bookmarkId);
+    if (!bookmark) {
+      return res.status(404).json({ error: "Bookmark not found" });
+    }
+
+    if (bookmark.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    bookmark.showInReadingList = showInReadingList === true;
+    await bookmark.save();
+
+    res.json({ message: "Reading list updated", bookmark });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /bookmarks/reading-list - Get my reading list (bookmarks marked for reading list)
+router.get("/reading-list", async (req, res, next) => {
+  try {
+    const { page = 1, limit = 50 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [bookmarks, total] = await Promise.all([
+      Bookmark.find({
+        userId: req.user._id,
+        type: "work",
+        showInReadingList: true,
+      })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      Bookmark.countDocuments({
+        userId: req.user._id,
+        type: "work",
+        showInReadingList: true,
+      }),
+    ]);
+
+    res.json({
+      bookmarks,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /bookmarks/reading-list/user/:username - Get a user's public reading list
+router.get("/reading-list/user/:username", async (req, res, next) => {
+  try {
+    const User = require("../models/User");
+    const user = await User.findOne({ username: req.params.username.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const bookmarks = await Bookmark.find({
+      userId: user._id,
+      type: "work",
+      showInReadingList: true,
+    })
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    res.json({
+      bookmarks,
+      user: { username: user.username, displayName: user.displayName },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

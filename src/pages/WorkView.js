@@ -272,14 +272,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     checkLikeStatus();
   }, [isAuthed, decodedId]);
 
-  // Update counts when work loads
-  React.useEffect(() => {
-    if (work) {
-      setLikesCount(work.likesCount || 0);
-      setLovesCount(work.lovesCount || 0);
-    }
-  }, [work]);
-
   // Load bookmarked audio tracks
   React.useEffect(() => {
     if (!isAuthed) return;
@@ -396,6 +388,14 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
     loadWork();
   }, [decodedId]);
+
+  // Update counts when work loads
+  React.useEffect(() => {
+    if (work) {
+      setLikesCount(work.likesCount || 0);
+      setLovesCount(work.lovesCount || 0);
+    }
+  }, [work]);
 
   // Custom skin CSS
   const [customSkinCss, setCustomSkinCss] = React.useState("");
@@ -1240,119 +1240,134 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   )}
                 </div>
 
-                <div className="wv-headerRight">
-                  {/* Edit - only for author */}
-                  {normalizedUser === authorHandle.toLowerCase() && (
-                    <button
-                      type="button"
-                      className="wv-iconBtn wv-iconBtn--edit"
-                      onClick={handleEdit}
-                      aria-label="Edit this work"
-                      title="Edit"
-                    >
-                      <span style={{ fontSize: 16 }}>&#9998;</span>
-                    </button>
-                  )}
-
-                  {/* Like */}
-                  <button
-                    type="button"
-                    className={`wv-iconBtn ${likeStatus === "like" ? "wv-iconBtn--liked" : ""}`}
-                    onClick={handleLike}
-                    aria-label={likeStatus === "like" ? "Unlike" : "Like"}
-                    title={`Like (${likesCount})`}
-                  >
-                    <span style={{ fontSize: 16 }}>{likeStatus === "like" ? "👍" : "👍"}</span>
-                    {likesCount > 0 && <span className="wv-iconCount">{likesCount}</span>}
-                  </button>
-
-                  {/* Love */}
-                  <button
-                    type="button"
-                    className={`wv-iconBtn ${likeStatus === "love" ? "wv-iconBtn--loved" : ""}`}
-                    onClick={handleLove}
-                    aria-label={likeStatus === "love" ? "Unlove" : "Love"}
-                    title={`Love (${lovesCount})`}
-                  >
-                    <span style={{ fontSize: 16 }}>{likeStatus === "love" ? "❤️" : "🤍"}</span>
-                    {lovesCount > 0 && <span className="wv-iconCount">{lovesCount}</span>}
-                  </button>
-
-                  {/* Music */}
-                  <button
-                    type="button"
-                    className={`wv-iconBtn ${musicBarOpen ? "wv-iconBtn--active" : ""}`}
-                    onClick={toggleMusicBar}
-                    aria-label="Toggle music bar"
-                    title="Music"
-                  >
-                    <img src={musicIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
-                  </button>
-
-                  {/* Audio (to be changed later) */}
-                  <button
-                    type="button"
-                    className={`wv-iconBtn ${audioBarOpen ? "wv-iconBtn--active" : ""}`}
-                    onClick={toggleAudioBar}
-                    aria-label="Toggle audio bar"
-                    title="Audio"
-                  >
-                    🎧
-                  </button>
-
-                  {/* Settings */}
-                  <button
-                    type="button"
-                    className={`wv-iconBtn ${panel === "settings" ? "wv-iconBtn--active" : ""}`}
-                    onClick={() => openPanel("settings")}
-                    aria-label="Open settings"
-                    title="Settings"
-                  >
-                    <img src={settingsIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
-                  </button>
-
-                  {/* Bookmark */}
-                  <button
-                    type="button"
-                    className={`wv-iconBtn ${isBookmarked ? "wv-iconBtn--bookmarkOn" : ""}`}
-                    onClick={toggleBookmark}
-                    aria-label={isBookmarked ? "Remove bookmark" : "Bookmark this work"}
-                    title={isBookmarked ? "Bookmarked" : "Bookmark"}
-                  >
-                    {isBookmarked ? (
-                      <img src={bookmarkOnIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
-                    ) : (
-                      <img src={bookmarkOffIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
-                    )}
-                  </button>
-
-                  {/* Comments */}
-                  <button
-                    type="button"
-                    className={`wv-iconBtn ${commentsOpen ? "wv-iconBtn--active" : ""}`}
-                    onClick={toggleComments}
-                    aria-label="Toggle comments"
-                    title="Comments"
-                  >
-                    <img src={commentsIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
-                  </button>
-
-                  {/* Report - only show for non-authors */}
-                  {normalizedUser !== authorHandle.toLowerCase() && (
-                    <button
-                      type="button"
-                      className="wv-iconBtn"
-                      onClick={openReportModal}
-                      aria-label="Report this work"
-                      title="Report"
-                    >
-                      <span style={{ fontSize: 16 }}>&#9888;</span>
-                    </button>
-                  )}
-                </div>
               </div>
 
               <div className="wv-sep" />
+
+              {/* Action bar - likes, bookmark, comments, report */}
+              <div className="wv-actionBar">
+                {/* Edit - only for author */}
+                {normalizedUser === authorHandle.toLowerCase() && (
+                  <button
+                    type="button"
+                    className="wv-iconBtn wv-iconBtn--edit"
+                    onClick={handleEdit}
+                    aria-label="Edit this work"
+                    title="Edit"
+                  >
+                    <span style={{ fontSize: 16 }}>&#9998;</span>
+                  </button>
+                )}
+
+                {/* Like */}
+                <button
+                  type="button"
+                  className={`wv-iconBtn ${likeStatus === "like" ? "wv-iconBtn--liked" : ""}`}
+                  onClick={handleLike}
+                  aria-label={likeStatus === "like" ? "Unlike" : "Like"}
+                  title={`Like (${likesCount})`}
+                >
+                  <span style={{ fontSize: 16 }}>{likeStatus === "like" ? "👍" : "👍"}</span>
+                  {likesCount > 0 && <span className="wv-iconCount">{likesCount}</span>}
+                </button>
+
+                {/* Love */}
+                <button
+                  type="button"
+                  className={`wv-iconBtn ${likeStatus === "love" ? "wv-iconBtn--loved" : ""}`}
+                  onClick={handleLove}
+                  aria-label={likeStatus === "love" ? "Unlove" : "Love"}
+                  title={`Love (${lovesCount})`}
+                >
+                  <span style={{ fontSize: 16 }}>{likeStatus === "love" ? "❤️" : "🤍"}</span>
+                  {lovesCount > 0 && <span className="wv-iconCount">{lovesCount}</span>}
+                </button>
+
+                {/* Bookmark */}
+                <button
+                  type="button"
+                  className={`wv-iconBtn ${isBookmarked ? "wv-iconBtn--bookmarkOn" : ""}`}
+                  onClick={toggleBookmark}
+                  aria-label={isBookmarked ? "Remove bookmark" : "Bookmark this work"}
+                  title={isBookmarked ? "Bookmarked" : "Bookmark"}
+                >
+                  {isBookmarked ? (
+                    <img src={bookmarkOnIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                  ) : (
+                    <img src={bookmarkOffIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                  )}
+                </button>
+
+                {/* Comments */}
+                <button
+                  type="button"
+                  className={`wv-iconBtn ${commentsOpen ? "wv-iconBtn--active" : ""}`}
+                  onClick={toggleComments}
+                  aria-label="Toggle comments"
+                  title="Comments"
+                >
+                  <img src={commentsIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                </button>
+
+                {/* Report - only show for non-authors */}
+                {normalizedUser !== authorHandle.toLowerCase() && (
+                  <button
+                    type="button"
+                    className="wv-iconBtn"
+                    onClick={openReportModal}
+                    aria-label="Report this work"
+                    title="Report"
+                  >
+                    <span style={{ fontSize: 16 }}>&#9888;</span>
+                  </button>
+                )}
+
+                <span className="wv-actionDivider" />
+
+                {/* Music */}
+                <button
+                  type="button"
+                  className={`wv-iconBtn ${musicBarOpen ? "wv-iconBtn--active" : ""}`}
+                  onClick={toggleMusicBar}
+                  aria-label="Toggle music bar"
+                  title="Music"
+                >
+                  <img src={musicIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                </button>
+
+                {/* Audio */}
+                <button
+                  type="button"
+                  className={`wv-iconBtn ${audioBarOpen ? "wv-iconBtn--active" : ""}`}
+                  onClick={toggleAudioBar}
+                  aria-label="Toggle audio bar"
+                  title="Audio"
+                >
+                  🎧
+                </button>
+
+                {/* Settings */}
+                <button
+                  type="button"
+                  className={`wv-iconBtn ${panel === "settings" ? "wv-iconBtn--active" : ""}`}
+                  onClick={() => openPanel("settings")}
+                  aria-label="Open settings"
+                  title="Settings"
+                >
+                  <img src={settingsIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                </button>
+              </div>
+
+              {/* Current chapter indicator */}
+              {chapters.length > 0 && (
+                <div className="wv-currentChapter">
+                  <span className="wv-currentChapterLabel">Currently Reading:</span>
+                  <span className="wv-currentChapterTitle">{activeChapter?.title || "Chapter 1"}</span>
+                  <span className="wv-currentChapterCount">
+                    ({chapters.findIndex((c) => c.id === activeChapterId) + 1} of {chapters.length})
+                  </span>
+                </div>
+              )}
 
               {/* Audio from author - chapter audio takes priority */}
               {(activeChapter?.audioUrl || work?.audioUrl) && (
@@ -1374,19 +1389,6 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   >
                     Play in Audio Player
                   </button>
-                </div>
-              )}
-
-              <div className="wv-sep wv-sep--soft" />
-
-              {/* Current chapter indicator */}
-              {chapters.length > 0 && (
-                <div className="wv-currentChapter">
-                  <span className="wv-currentChapterLabel">Currently Reading:</span>
-                  <span className="wv-currentChapterTitle">{activeChapter?.title || "Chapter 1"}</span>
-                  <span className="wv-currentChapterCount">
-                    ({chapters.findIndex((c) => c.id === activeChapterId) + 1} of {chapters.length})
-                  </span>
                 </div>
               )}
 

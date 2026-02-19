@@ -839,9 +839,9 @@
 
 .wv-header {
   display: grid;
-  grid-template-columns: 1fr minmax(0, 1fr) 1fr;
+  grid-template-columns: auto 1fr;
   gap: 12px;
-  align-items: center;
+  align-items: start;
 }
 
 @media (max-width: 980px) {
@@ -862,11 +862,12 @@
 .wv-headerMid {
   text-align: center;
   min-width: 0;
+  transform: translateX(-40px);
 }
 
 @media (max-width: 980px) {
   .wv-headerMid {
-    text-align: left;
+    transform: none;
   }
 }
 
@@ -1167,6 +1168,7 @@
   justify-content: center;
   gap: 6px;
   flex-wrap: wrap;
+  max-width: 100%;
 }
 
 .wv-tag {
@@ -1181,6 +1183,15 @@
   text-decoration: none;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
+  max-width: calc(33% - 8px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 480px) {
+  .wv-tag {
+    max-width: calc(50% - 6px);
+  }
 }
 
 .wv-tag:hover {
@@ -1840,6 +1851,43 @@
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.14);
   color: rgba(245, 240, 228, 0.86);
+}
+
+/* Action bar - icons above chapter */
+.wv-actionBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  margin-bottom: 14px;
+}
+
+.wv-actionDivider {
+  width: 1px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.12);
+  margin: 0 4px;
+}
+
+.wv-themeDark .wv-actionDivider {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+@media (max-width: 480px) {
+  .wv-actionBar {
+    gap: 8px;
+  }
+
+  .wv-actionBar .wv-iconBtn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .wv-actionDivider {
+    display: none;
+  }
 }
 
 /* Current chapter indicator */

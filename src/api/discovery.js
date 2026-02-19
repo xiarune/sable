@@ -48,7 +48,11 @@ const discoveryApi = {
   sync: () => api.post("/discovery/sync"),
 
   // For You - personalized recommendations
-  forYou: (limit = 12) => api.get(`/discovery/for-you?limit=${limit}`),
+  forYou: (limit = 20) => api.get(`/discovery/for-you?limit=${limit}`),
+
+  // Logged-out recommendations (non-personalized)
+  loggedOut: (limit = 20, period = "week") =>
+    api.get(`/discovery/logged-out?limit=${limit}&period=${period}`),
 };
 
 export default discoveryApi;

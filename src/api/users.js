@@ -13,6 +13,11 @@ const usersApi = {
    */
   getDiscoverable: (limit = 10) => api.get(`/users?limit=${limit}`),
 
+  /**
+   * Get recommended creators (personalized discovery)
+   */
+  discover: (limit = 20) => api.get(`/users/discover?limit=${limit}`),
+
   // ============================================
   // PROFILE
   // ============================================

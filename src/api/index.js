@@ -22,4 +22,5 @@ export { default as reportsApi } from "./reports";
 export { default as readingListsApi } from "./readingLists";
 export { default as donationsApi } from "./donations";
 export { default as adminApi } from "./admin";
+export { default as impressionsApi, ImpressionTracker, getOrCreateSessionId } from "./impressions";
 export { default as API_BASE_URL } from "./config";

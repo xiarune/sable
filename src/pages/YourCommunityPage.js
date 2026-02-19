@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import "./YourCommunityPage.css";
-import { uploadsApi, worksApi, communityApi, bookmarksApi, followsApi, usersApi, authApi } from "../api";
+import { uploadsApi, worksApi, communityApi, bookmarksApi, followsApi, usersApi, authApi, postsApi } from "../api";
 import { SableLoader } from "../components";
 
 import editBannerIcon from "../assets/images/edit_banner.png";
@@ -68,11 +68,7 @@ export default function YourCommunityPage({ username }) {
   const [userWorks, setUserWorks] = React.useState([]);
   const [userAudios, setUserAudios] = React.useState([]);
   const [readingList, setReadingList] = React.useState([]);
-  const [announcements, setAnnouncements] = React.useState([]);
-
-  // New announcement input
-  const [newAnnouncementText, setNewAnnouncementText] = React.useState("");
-  const [newAnnouncementPinned, setNewAnnouncementPinned] = React.useState(false);
+  const [userPosts, setUserPosts] = React.useState([]);
 
   // Image upload state
   const [uploadingBanner, setUploadingBanner] = React.useState(false);
@@ -109,7 +105,7 @@ export default function YourCommunityPage({ username }) {
           const userAvatar = userData?.user?.avatarUrl || "";
           const pageAvatar = communityData.page.profileImageUrl || "";
           setProfileUrl(userAvatar || pageAvatar);
-          setAnnouncements(communityData.page.announcements || []);
+          // Announcements removed - now using recent posts instead
           if (communityData.page.widgets) {
             setWidgets({ ...DEFAULT_WIDGETS, ...communityData.page.widgets });
           }
@@ -142,18 +138,27 @@ export default function YourCommunityPage({ username }) {
       }
 
       try {
-        const bookmarksData = await bookmarksApi.list("work");
-        // Convert bookmarks to reading list format
+        const bookmarksData = await bookmarksApi.getReadingList();
+        // Convert bookmarks to reading list format (only those marked for reading list)
         const reading = (bookmarksData.bookmarks || []).map((b) => ({
           id: b._id,
           workId: b.workId,
           title: b.title || "Unknown",
           author: b.authorUsername || "Unknown",
-          progress: "—", // Progress tracking not yet implemented
+          coverUrl: b.coverUrl || "",
+          showInReadingList: b.showInReadingList,
         }));
         setReadingList(reading);
       } catch (err) {
         console.error("Failed to load reading list:", err);
+      }
+
+      // Fetch my recent posts
+      try {
+        const postsData = await postsApi.getMine();
+        setUserPosts((postsData.posts || []).slice(0, 5));
+      } catch (err) {
+        console.error("Failed to load posts:", err);
       }
     }
 
@@ -256,27 +261,6 @@ export default function YourCommunityPage({ username }) {
       await communityApi.update({ widgets: updated });
     } catch (err) {
       console.error("Failed to save widget settings:", err);
-    }
-  }
-
-  async function handleAddAnnouncement() {
-    if (!newAnnouncementText.trim()) return;
-    try {
-      const data = await communityApi.addAnnouncement(newAnnouncementText.trim(), newAnnouncementPinned);
-      setAnnouncements(data.announcements || []);
-      setNewAnnouncementText("");
-      setNewAnnouncementPinned(false);
-    } catch (err) {
-      console.error("Failed to add announcement:", err);
-    }
-  }
-
-  async function handleDeleteAnnouncement(index) {
-    try {
-      const data = await communityApi.deleteAnnouncement(index);
-      setAnnouncements(data.announcements || []);
-    } catch (err) {
-      console.error("Failed to delete announcement:", err);
     }
   }
 
@@ -694,59 +678,37 @@ export default function YourCommunityPage({ username }) {
             <aside className="ycp-right" aria-label="Community panels">
               <div className="ycp-panels">
                 {widgets.announcements && (
-                  <div className="ycp-panel ycp-panel--announcements">
-                    <div className="ycp-panelTitle">Announcements</div>
-                    <div className="ycp-announcementsBox">
-                      {announcements.length === 0 ? (
-                        <div className="ycp-emptyState ycp-emptyState--small">No announcements yet</div>
+                  <div className="ycp-panel ycp-panel--recentPosts">
+                    <div className="ycp-panelTitle">Recent Posts</div>
+                    <div className="ycp-recentPostsBox">
+                      {userPosts.length === 0 ? (
+                        <div className="ycp-emptyState ycp-emptyState--small">No posts yet</div>
                       ) : (
-                        announcements.map((ann, idx) => (
-                          <div key={idx} className={`ycp-announcementItem ${ann.pinned ? "ycp-announcementItem--pinned" : ""}`}>
-                            {ann.pinned && <span className="ycp-announcementPin">📌</span>}
-                            <div className="ycp-announcementContent">
-                              <div className="ycp-announcementText">{ann.text}</div>
-                              <div className="ycp-announcementDate">
-                                {ann.createdAt ? new Date(ann.createdAt).toLocaleDateString() : ""}
+                        userPosts.map((post) => (
+                          <Link
+                            key={post._id}
+                            to={`/communities?post=${post._id}`}
+                            className="ycp-recentPostItem"
+                          >
+                            <div className="ycp-recentPostContent">
+                              {post.title && <div className="ycp-recentPostTitle">{post.title}</div>}
+                              <div className="ycp-recentPostCaption">
+                                {(post.caption || post.content || "").slice(0, 100)}
+                                {(post.caption || post.content || "").length > 100 && "..."}
+                              </div>
+                              <div className="ycp-recentPostMeta">
+                                {post.likesCount || 0} likes · {post.commentsCount || 0} replies
                               </div>
                             </div>
-                            <button
-                              type="button"
-                              className="ycp-announcementDelete"
-                              onClick={() => handleDeleteAnnouncement(idx)}
-                              aria-label="Delete announcement"
-                              title="Delete"
-                            >
-                              ✕
-                            </button>
-                          </div>
+                            {post.imageUrl && (
+                              <img className="ycp-recentPostImage" src={post.imageUrl} alt="" />
+                            )}
+                          </Link>
                         ))
                       )}
-                      <div className="ycp-addAnnouncement">
-                        <input
-                          type="text"
-                          className="ycp-addAnnouncementInput"
-                          placeholder="New announcement..."
-                          value={newAnnouncementText}
-                          onChange={(e) => setNewAnnouncementText(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && handleAddAnnouncement()}
-                        />
-                        <label className="ycp-addAnnouncementPin">
-                          <input
-                            type="checkbox"
-                            checked={newAnnouncementPinned}
-                            onChange={(e) => setNewAnnouncementPinned(e.target.checked)}
-                          />
-                          Pin
-                        </label>
-                        <button
-                          type="button"
-                          className="ycp-addAnnouncementBtn"
-                          onClick={handleAddAnnouncement}
-                          disabled={!newAnnouncementText.trim()}
-                        >
-                          Add
-                        </button>
-                      </div>
+                      <Link to="/communities" className="ycp-viewAllPosts">
+                        View all posts →
+                      </Link>
                     </div>
                   </div>
                 )}
@@ -941,9 +903,9 @@ export default function YourCommunityPage({ username }) {
               <div className="ycp-panels ycp-panels--edit">
                 {widgets.announcements && (
                   <div className="ycp-panel ycp-panel--edit">
-                    <div className="ycp-panelTitle">Announcements</div>
+                    <div className="ycp-panelTitle">Recent Posts</div>
                     <div className="ycp-panelBox ycp-panelBox--edit">
-                      <button type="button" className="ycp-subtractBtn" aria-label="Remove Announcements widget" title="Remove" onClick={() => toggleWidget("announcements")}>
+                      <button type="button" className="ycp-subtractBtn" aria-label="Remove Recent Posts widget" title="Remove" onClick={() => toggleWidget("announcements")}>
                         <img src={subtractWidgetIcon} alt="" aria-hidden="true" />
                       </button>
                     </div>
@@ -991,7 +953,7 @@ export default function YourCommunityPage({ username }) {
                   <div className="ycp-addWidgetList">
                     {!widgets.announcements && (
                       <button type="button" className="ycp-addWidgetBtn" onClick={() => toggleWidget("announcements")}>
-                        + Announcements
+                        + Recent Posts
                       </button>
                     )}
                     {!widgets.donations && (
