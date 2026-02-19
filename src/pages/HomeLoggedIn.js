@@ -9,15 +9,18 @@ import defaultCover from "../assets/images/sable_default_cover.png";
 export default function HomeLoggedIn() {
   const navigate = useNavigate();
 
+  const [forYou, setForYou] = React.useState([]);
   const [trending, setTrending] = React.useState([]);
   const [featured, setFeatured] = React.useState([]);
   const [newest, setNewest] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [hasPersonalized, setHasPersonalized] = React.useState(false);
 
   React.useEffect(() => {
     async function loadData() {
       try {
-        const [trendingData, featuredData, newestData] = await Promise.all([
+        const [forYouData, trendingData, featuredData, newestData] = await Promise.all([
+          discoveryApi.forYou(12).catch(() => ({ works: [], personalized: false })),
           discoveryApi.trending("week", 12).catch(() => ({ works: [] })),
           discoveryApi.featured().catch(() => ({ works: [] })),
           discoveryApi.newest(1, 12).catch(() => ({ works: [] })),
@@ -31,23 +34,33 @@ export default function HomeLoggedIn() {
           cover: w.coverImageUrl || defaultCover,
         });
 
+        const forYouWorks = (forYouData.works || []).map(transformWork);
         const trendingWorks = (trendingData.works || []).map(transformWork);
         const featuredWorks = (featuredData.works || []).map(transformWork);
         const newestWorks = (newestData.works || []).map(transformWork);
 
+        // Track if we have personalized recommendations
+        setHasPersonalized(forYouData.personalized === true && forYouWorks.length > 0);
+
         // Deduplicate: remove works that appear in earlier sections
         // Convert IDs to strings for proper Set comparison
+        const forYouIds = new Set(forYouWorks.map((w) => String(w.id)));
         const trendingIds = new Set(trendingWorks.map((w) => String(w.id)));
         const featuredIds = new Set(featuredWorks.map((w) => String(w.id)));
 
-        // Featured excludes trending
-        const dedupedFeatured = featuredWorks.filter((w) => !trendingIds.has(String(w.id)));
+        // Trending excludes For You
+        const dedupedTrending = trendingWorks.filter((w) => !forYouIds.has(String(w.id)));
 
-        // Newest excludes both trending and featured
-        const usedIds = new Set([...trendingIds, ...featuredIds]);
+        // Featured excludes For You and trending
+        const usedIdsForFeatured = new Set([...forYouIds, ...trendingIds]);
+        const dedupedFeatured = featuredWorks.filter((w) => !usedIdsForFeatured.has(String(w.id)));
+
+        // Newest excludes all above
+        const usedIds = new Set([...forYouIds, ...trendingIds, ...featuredIds]);
         const dedupedNewest = newestWorks.filter((w) => !usedIds.has(String(w.id)));
 
-        setTrending(trendingWorks);
+        setForYou(forYouWorks);
+        setTrending(dedupedTrending);
         setFeatured(dedupedFeatured);
         setNewest(dedupedNewest);
       } catch (err) {
@@ -70,7 +83,7 @@ export default function HomeLoggedIn() {
   }
 
   // Show placeholder message if no works exist yet
-  const hasContent = trending.length > 0 || featured.length > 0 || newest.length > 0;
+  const hasContent = forYou.length > 0 || trending.length > 0 || featured.length > 0 || newest.length > 0;
 
   if (!hasContent) {
     return (
@@ -97,6 +110,17 @@ export default function HomeLoggedIn() {
 
   return (
     <div>
+      {forYou.length > 0 && hasPersonalized && (
+        <WorkCarousel
+          title="For You"
+          subtitle="Personalized picks based on your interests"
+          items={forYou}
+          ariaLabel="Personalized recommendations"
+          titleIcon={homeIcon}
+          onItemClick={openWork}
+        />
+      )}
+
       {trending.length > 0 && (
         <WorkCarousel
           title="Trending"

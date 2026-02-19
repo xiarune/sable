@@ -1,6 +1,7 @@
 const express = require("express");
 const { z } = require("zod");
 const { sendEmail } = require("../utils/email");
+const Contact = require("../models/Contact");
 
 const router = express.Router();
 
@@ -15,6 +16,16 @@ const contactSchema = z.object({
 router.post("/", async (req, res, next) => {
   try {
     const data = contactSchema.parse(req.body);
+
+    // Save to database for admin dashboard
+    const contact = new Contact({
+      name: data.name,
+      email: data.email,
+      subject: data.subject,
+      message: data.message,
+      status: "new",
+    });
+    await contact.save();
 
     // Email to support
     const supportEmail = process.env.SUPPORT_EMAIL || "cecboo2@gmail.com";

@@ -46,6 +46,9 @@ const discoveryApi = {
 
   // Sync genres, fandoms, and tags from existing works
   sync: () => api.post("/discovery/sync"),
+
+  // For You - personalized recommendations
+  forYou: (limit = 12) => api.get(`/discovery/for-you?limit=${limit}`),
 };
 
 export default discoveryApi;

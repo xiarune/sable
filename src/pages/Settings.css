@@ -873,5 +873,82 @@
   }
 }
 
+/* Interests / Reading Preferences */
+.st-cardCount {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.45);
+  font-weight: 400;
+}
 
+.st-interestGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 
+.st-interestChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f9f7f4;
+  border: 2px solid transparent;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.st-interestChip:hover {
+  background: #f0ebe3;
+  border-color: #d4cfc5;
+}
+
+.st-interestChip--selected {
+  background: #e8f5e9;
+  border-color: #1f4a29;
+  color: #1f4a29;
+}
+
+.st-interestChip--selected:hover {
+  background: #dcf0de;
+}
+
+.st-interestChip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.st-interestIcon {
+  font-size: 16px;
+}
+
+.st-interestChip--fandom {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  min-width: 110px;
+}
+
+.st-interestCategory {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.45);
+  font-weight: 400;
+}
+
+.st-interestChip--fandom.st-interestChip--selected .st-interestCategory {
+  color: rgba(31, 74, 41, 0.7);
+}
+
+@media (max-width: 760px) {
+  .st-interestChip {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .st-interestChip--fandom {
+    min-width: 100px;
+  }
+}

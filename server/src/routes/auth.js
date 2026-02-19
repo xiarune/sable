@@ -204,6 +204,9 @@ router.get(
 
     if (user.needsUsername) {
       res.redirect(`${clientOrigin}/onboarding/username`);
+    } else if (!user.interests?.completedOnboarding) {
+      // Existing user who hasn't completed onboarding
+      res.redirect(`${clientOrigin}/onboarding/interests`);
     } else {
       res.redirect(clientOrigin);
     }
@@ -717,6 +720,110 @@ router.post("/2fa/validate", authLimiter, async (req, res, next) => {
       user: user.toPublicJSON(),
       usedBackupCode,
       remainingBackupCodes: user.twoFactor.backupCodes.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ============================================
+// Onboarding Routes (Interest Selection)
+// ============================================
+
+// Predefined genres and fandoms for selection
+const ONBOARDING_GENRES = [
+  { slug: "fantasy", name: "Fantasy", icon: "🐉" },
+  { slug: "romance", name: "Romance", icon: "💕" },
+  { slug: "sci-fi", name: "Sci-Fi", icon: "🚀" },
+  { slug: "horror", name: "Horror", icon: "👻" },
+  { slug: "mystery", name: "Mystery", icon: "🔍" },
+  { slug: "thriller", name: "Thriller", icon: "😱" },
+  { slug: "adventure", name: "Adventure", icon: "🗺️" },
+  { slug: "drama", name: "Drama", icon: "🎭" },
+  { slug: "comedy", name: "Comedy", icon: "😂" },
+  { slug: "historical", name: "Historical", icon: "🏰" },
+  { slug: "slice-of-life", name: "Slice of Life", icon: "☕" },
+  { slug: "action", name: "Action", icon: "💥" },
+  { slug: "supernatural", name: "Supernatural", icon: "✨" },
+  { slug: "dystopian", name: "Dystopian", icon: "🏚️" },
+  { slug: "poetry", name: "Poetry", icon: "📝" },
+];
+
+const ONBOARDING_FANDOMS = [
+  { slug: "harry-potter", name: "Harry Potter", category: "Books" },
+  { slug: "marvel", name: "Marvel", category: "Comics" },
+  { slug: "dc", name: "DC", category: "Comics" },
+  { slug: "star-wars", name: "Star Wars", category: "Movies" },
+  { slug: "lord-of-the-rings", name: "Lord of the Rings", category: "Books" },
+  { slug: "percy-jackson", name: "Percy Jackson", category: "Books" },
+  { slug: "hunger-games", name: "Hunger Games", category: "Books" },
+  { slug: "twilight", name: "Twilight", category: "Books" },
+  { slug: "anime-manga", name: "Anime & Manga", category: "Anime" },
+  { slug: "k-pop", name: "K-Pop", category: "Music" },
+  { slug: "supernatural-tv", name: "Supernatural (TV)", category: "TV" },
+  { slug: "sherlock", name: "Sherlock", category: "TV" },
+  { slug: "doctor-who", name: "Doctor Who", category: "TV" },
+  { slug: "game-of-thrones", name: "Game of Thrones", category: "TV" },
+  { slug: "stranger-things", name: "Stranger Things", category: "TV" },
+  { slug: "bts", name: "BTS", category: "Music" },
+  { slug: "taylor-swift", name: "Taylor Swift", category: "Music" },
+  { slug: "original-fiction", name: "Original Fiction", category: "Original" },
+  { slug: "video-games", name: "Video Games", category: "Games" },
+  { slug: "disney", name: "Disney", category: "Movies" },
+];
+
+// GET /auth/onboarding/options - Get available genres and fandoms
+router.get("/onboarding/options", (req, res) => {
+  res.json({
+    genres: ONBOARDING_GENRES,
+    fandoms: ONBOARDING_FANDOMS,
+  });
+});
+
+// POST /auth/onboarding/interests - Save user's selected interests
+router.post("/onboarding/interests", requireAuth, async (req, res, next) => {
+  try {
+    const { genres = [], fandoms = [] } = req.body;
+
+    // Validate arrays
+    if (!Array.isArray(genres) || !Array.isArray(fandoms)) {
+      return res.status(400).json({ error: "Genres and fandoms must be arrays" });
+    }
+
+    // Limit selections (soft limits)
+    const selectedGenres = genres.slice(0, 5);
+    const selectedFandoms = fandoms.slice(0, 10);
+
+    // Update user interests
+    req.user.interests = {
+      genres: selectedGenres,
+      fandoms: selectedFandoms,
+      completedOnboarding: true,
+    };
+    await req.user.save();
+
+    res.json({
+      message: "Interests saved successfully",
+      user: req.user.toPublicJSON(),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/onboarding/skip - Skip interest selection
+router.post("/onboarding/skip", requireAuth, async (req, res, next) => {
+  try {
+    // Mark onboarding as completed without setting interests
+    if (!req.user.interests) {
+      req.user.interests = {};
+    }
+    req.user.interests.completedOnboarding = true;
+    await req.user.save();
+
+    res.json({
+      message: "Onboarding skipped",
+      user: req.user.toPublicJSON(),
     });
   } catch (err) {
     next(err);

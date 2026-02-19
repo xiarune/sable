@@ -173,6 +173,35 @@ export default function Notifications() {
     }
   }, []);
 
+  // Delete a single notification
+  const handleDeleteNotification = useCallback(async (notificationId, e) => {
+    e.stopPropagation();
+    try {
+      await notificationsApi.delete(notificationId);
+      setNotifications((prev) => {
+        const notif = prev.find((n) => n._id === notificationId);
+        if (notif && !notif.read) {
+          setUnreadCount((c) => Math.max(0, c - 1));
+        }
+        return prev.filter((n) => n._id !== notificationId);
+      });
+    } catch (err) {
+      console.error("Failed to delete notification:", err);
+    }
+  }, []);
+
+  // Clear all notifications
+  const handleClearAll = useCallback(async () => {
+    if (!window.confirm("Are you sure you want to clear all notifications?")) return;
+    try {
+      await notificationsApi.clearAll();
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("Failed to clear notifications:", err);
+    }
+  }, []);
+
   // Accept follow request
   const handleAcceptRequest = useCallback(async (notification, e) => {
     e.stopPropagation();
@@ -344,6 +373,15 @@ export default function Notifications() {
             >
               Mark all read
             </button>
+
+            <button
+              type="button"
+              className="no-cta no-cta--danger"
+              onClick={handleClearAll}
+              disabled={notifications.length === 0}
+            >
+              Clear all
+            </button>
           </div>
         </header>
 
@@ -475,6 +513,16 @@ export default function Notifications() {
                           <div className="no-chevron" aria-hidden="true">
                             {n.type !== "follow_request" && ">"}
                           </div>
+
+                          <button
+                            type="button"
+                            className="no-deleteBtn"
+                            onClick={(e) => handleDeleteNotification(n._id, e)}
+                            aria-label="Delete notification"
+                            title="Delete"
+                          >
+                            &times;
+                          </button>
                         </div>
                       );
                     })}

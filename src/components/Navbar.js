@@ -8,6 +8,11 @@
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { authApi } from "../api";
+
+// Helper to check if user needs onboarding
+function needsOnboarding(user) {
+  return user && !user.interests?.completedOnboarding;
+}
 import notificationsApi from "../api/notifications";
 import messagesApi from "../api/messages";
 import { initSocket, onNotification, onNotificationsRead, onNewMessage } from "../api/socket";
@@ -188,6 +193,11 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
       setForm2FACode("");
       setPending2FAUserId(null);
       setAuthError("");
+
+      // Check if user needs onboarding (new signup or existing user without completed onboarding)
+      if (needsOnboarding(data.user)) {
+        navigate("/onboarding/interests");
+      }
     } catch (err) {
       setAuthError(err.message || "Authentication failed. Please try again.");
     } finally {
@@ -220,6 +230,11 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
       setForm2FACode("");
       setPending2FAUserId(null);
       setAuthError("");
+
+      // Check if user needs onboarding
+      if (needsOnboarding(data.user)) {
+        navigate("/onboarding/interests");
+      }
     } catch (err) {
       setAuthError(err.message || "Invalid 2FA code. Please try again.");
     } finally {
@@ -977,6 +992,21 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
               <button type="submit" className="loginPrimary" disabled={authLoading}>
                 {authLoading ? "Please wait..." : authMode === "login" ? "Log In" : "Create Account"}
               </button>
+
+              {authMode === "login" && (
+                <div className="adminLoginLink">
+                  <button
+                    type="button"
+                    className="authLink authLink--subtle"
+                    onClick={() => {
+                      closeAuthModal();
+                      navigate("/admin/login");
+                    }}
+                  >
+                    Sable Admin
+                  </button>
+                </div>
+              )}
             </form>
             )}
           </div>

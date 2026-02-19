@@ -38,6 +38,11 @@ export const authApi = {
   disable2FA: (password, token) => api.post("/auth/2fa/disable", { password, token }),
   regenerateBackupCodes: (password) => api.post("/auth/2fa/backup-codes", { password }),
   validate2FA: (userId, token) => api.post("/auth/2fa/validate", { userId, token }),
+
+  // Onboarding
+  getOnboardingOptions: () => api.get("/auth/onboarding/options"),
+  saveInterests: (interests) => api.post("/auth/onboarding/interests", interests),
+  skipOnboarding: () => api.post("/auth/onboarding/skip"),
 };
 
 export default authApi;

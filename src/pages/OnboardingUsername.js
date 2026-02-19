@@ -52,7 +52,8 @@ export default function OnboardingUsername({ onLogin }) {
     try {
       const data = await authApi.setUsername(username);
       onLogin(data.user);
-      navigate("/");
+      // Navigate to interests page to complete onboarding
+      navigate("/onboarding/interests");
     } catch (err) {
       setError(err.message || "Failed to set username. Please try again.");
     } finally {

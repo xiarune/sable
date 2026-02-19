@@ -1,0 +1,229 @@
+.oi-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f5f0e8 0%, #e8e2d6 100%);
+  padding: 40px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.oi-shell {
+  width: 100%;
+  max-width: 720px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.oi-title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #1f4a29;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+.oi-subtitle {
+  font-size: 15px;
+  color: rgba(0, 0, 0, 0.6);
+  text-align: center;
+  margin: 0 0 32px;
+  line-height: 1.5;
+}
+
+.oi-loading {
+  text-align: center;
+  color: rgba(0, 0, 0, 0.5);
+  padding: 60px 0;
+}
+
+.oi-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+/* Sections */
+.oi-section {
+  margin-bottom: 32px;
+}
+
+.oi-sectionTitle {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.oi-count {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* Grid */
+.oi-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.oi-grid--fandoms {
+  gap: 8px;
+}
+
+/* Chips */
+.oi-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f9f7f4;
+  border: 2px solid transparent;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.oi-chip:hover {
+  background: #f0ebe3;
+  border-color: #d4cfc5;
+}
+
+.oi-chip--selected {
+  background: #e8f5e9;
+  border-color: #1f4a29;
+  color: #1f4a29;
+}
+
+.oi-chip--selected:hover {
+  background: #dcf0de;
+}
+
+.oi-chip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.oi-chipIcon {
+  font-size: 16px;
+}
+
+.oi-chipLabel {
+  font-weight: 500;
+}
+
+/* Fandom chips */
+.oi-chip--fandom {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  min-width: 120px;
+}
+
+.oi-chipCategory {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.45);
+  font-weight: 400;
+}
+
+.oi-chip--fandom.oi-chip--selected .oi-chipCategory {
+  color: rgba(31, 74, 41, 0.7);
+}
+
+/* Actions */
+.oi-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.oi-skipBtn {
+  background: transparent;
+  border: none;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 12px 20px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.oi-skipBtn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.oi-skipBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.oi-continueBtn {
+  background: #1f4a29;
+  color: #fff;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.oi-continueBtn:hover {
+  background: #163d21;
+}
+
+.oi-continueBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .oi-shell {
+    padding: 24px 20px;
+  }
+
+  .oi-title {
+    font-size: 24px;
+  }
+
+  .oi-chip {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .oi-chip--fandom {
+    min-width: 100px;
+  }
+
+  .oi-actions {
+    flex-direction: column-reverse;
+    gap: 12px;
+  }
+
+  .oi-continueBtn {
+    width: 100%;
+  }
+
+  .oi-skipBtn {
+    width: 100%;
+  }
+}

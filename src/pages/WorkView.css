@@ -940,6 +940,108 @@
   background: rgba(214, 168, 64, 0.16);
 }
 
+.wv-iconBtn--liked {
+  border-color: rgba(59, 130, 246, 0.42);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.wv-iconBtn--loved {
+  border-color: rgba(239, 68, 68, 0.42);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.wv-iconBtn--edit {
+  border-color: rgba(36, 75, 43, 0.35);
+  background: rgba(36, 75, 43, 0.08);
+}
+
+.wv-iconCount {
+  font-size: 11px;
+  margin-left: 2px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* Report Success Box */
+.wv-reportSuccess {
+  text-align: center;
+  padding: 32px 24px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(16, 185, 129, 0.04) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.wv-reportSuccess-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.3);
+  animation: wv-successPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.wv-reportSuccess-icon svg {
+  width: 32px;
+  height: 32px;
+  color: #fff;
+}
+
+.wv-reportSuccess-title {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #166534;
+  margin-bottom: 8px;
+}
+
+.wv-reportSuccess-message {
+  font-size: 15px;
+  color: rgba(0, 0, 0, 0.75);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.wv-reportSuccess-note {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.5);
+  line-height: 1.5;
+}
+
+@keyframes wv-successPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.wv-themeDark .wv-reportSuccess {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(16, 185, 129, 0.06) 100%);
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.wv-themeDark .wv-reportSuccess-title {
+  color: #4ade80;
+}
+
+.wv-themeDark .wv-reportSuccess-message {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.wv-themeDark .wv-reportSuccess-note {
+  color: rgba(255, 255, 255, 0.55);
+}
+
 .wv-themeDark .wv-iconBtn {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.14);

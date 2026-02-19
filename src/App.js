@@ -1,8 +1,12 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { authApi } from "./api";
+
+// Admin pages
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 import HomeLoggedIn from "./pages/HomeLoggedIn";
 import HomeLoggedOut from "./pages/HomeLoggedOut";
@@ -39,6 +43,7 @@ import DraftEditor from "./pages/DraftEditor";
 
 import SupportSable from "./pages/SupportSable";
 import OnboardingUsername from "./pages/OnboardingUsername";
+import OnboardingInterests from "./pages/OnboardingInterests";
 import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -47,9 +52,13 @@ import FAQ from "./pages/FAQ";
 import ErrorPage from "./pages/ErrorPage";
 
 export default function App() {
+  const location = useLocation();
   const [isAuthed, setIsAuthed] = React.useState(false);
   const [user, setUser] = React.useState(null);
   const [authLoading, setAuthLoading] = React.useState(true);
+
+  // Check if we're on an admin route (hide regular navbar/footer)
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   // Check if user is already logged in on mount
   React.useEffect(() => {
@@ -101,10 +110,16 @@ export default function App() {
 
   return (
     <>
-      <Navbar isAuthed={isAuthed} user={user} username={effectiveUsername} onLogin={handleLogin} onLogout={handleLogout} />
+      {!isAdminRoute && (
+        <Navbar isAuthed={isAuthed} user={user} username={effectiveUsername} onLogin={handleLogin} onLogout={handleLogout} />
+      )}
 
       <main>
         <Routes>
+          {/* Admin routes (separate auth system) */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/*" element={<AdminDashboard />} />
+
           {/* Home */}
           <Route path="/" element={isAuthed ? <HomeLoggedIn /> : <HomeLoggedOut />} />
 
@@ -119,6 +134,8 @@ export default function App() {
 
           {/* Username onboarding for Google OAuth users */}
           <Route path="/onboarding/username" element={<OnboardingUsername onLogin={handleLogin} />} />
+          {/* Interest selection onboarding */}
+          <Route path="/onboarding/interests" element={<OnboardingInterests onLogin={handleLogin} />} />
 
           {/* Email verification and password reset */}
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
@@ -173,7 +190,7 @@ export default function App() {
         </Routes>
       </main>
 
-      <Footer />
+      {!isAdminRoute && <Footer />}
     </>
   );
 }
