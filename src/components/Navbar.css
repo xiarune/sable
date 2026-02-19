@@ -438,6 +438,22 @@
   filter: brightness(1.05);
 }
 
+.adminLoginLink {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.authLink--subtle {
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: none;
+}
+
+.authLink--subtle:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .loginForm {
   width: 100%;
   max-width: 360px;

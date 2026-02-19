@@ -5,7 +5,9 @@ const Fandom = require("../models/Fandom");
 const Tag = require("../models/Tag");
 const Work = require("../models/Work");
 const User = require("../models/User");
-const { optionalAuth } = require("../middleware/auth");
+const Bookmark = require("../models/Bookmark");
+const Follow = require("../models/Follow");
+const { optionalAuth, requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -404,6 +406,147 @@ router.get("/new", async (req, res, next) => {
         total,
         pages: Math.ceil(total / parseInt(limit)),
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// === FOR YOU (Personalized Recommendations) ===
+
+// GET /discovery/for-you - Get personalized recommendations
+router.get("/for-you", requireAuth, async (req, res, next) => {
+  try {
+    const { limit = 12 } = req.query;
+    const userId = req.user._id;
+    const userInterests = req.user.interests || {};
+
+    // Get user's bookmarked work IDs to exclude
+    const bookmarkedWorks = await Bookmark.find({ userId, type: "work" }).select("workId");
+    const bookmarkedIds = bookmarkedWorks.map((b) => b.workId).filter(Boolean);
+
+    // Get authors the user follows
+    const follows = await Follow.find({ followerId: userId }).select("followeeId");
+    const followedAuthorIds = follows.map((f) => f.followeeId);
+
+    // Base query for published, public works (excluding own works and bookmarks)
+    const baseQuery = {
+      privacy: "Public",
+      status: "published",
+      authorId: { $ne: userId },
+      _id: { $nin: bookmarkedIds },
+    };
+
+    // Collect works from different sources with scores
+    const worksMap = new Map(); // workId -> { work, score }
+
+    // Helper to add works with score
+    function addWorks(works, baseScore) {
+      works.forEach((work) => {
+        const id = work._id.toString();
+        if (worksMap.has(id)) {
+          // Increase score if work appears in multiple sources
+          worksMap.get(id).score += baseScore;
+        } else {
+          worksMap.set(id, { work, score: baseScore });
+        }
+      });
+    }
+
+    // 1. Works matching user's selected genres (score: 3)
+    const userGenres = userInterests.genres || [];
+    if (userGenres.length > 0) {
+      const genreRegexes = userGenres.map((g) => new RegExp(escapeRegex(g), "i"));
+      const genreWorks = await Work.find({
+        ...baseQuery,
+        genre: { $in: genreRegexes },
+      })
+        .sort({ publishedAt: -1 })
+        .limit(20)
+        .select("-chapters");
+      addWorks(genreWorks, 3);
+    }
+
+    // 2. Works matching user's selected fandoms (score: 3)
+    const userFandoms = userInterests.fandoms || [];
+    if (userFandoms.length > 0) {
+      const fandomRegexes = userFandoms.map((f) => new RegExp(escapeRegex(f), "i"));
+      const fandomWorks = await Work.find({
+        ...baseQuery,
+        fandom: { $in: fandomRegexes },
+      })
+        .sort({ publishedAt: -1 })
+        .limit(20)
+        .select("-chapters");
+      addWorks(fandomWorks, 3);
+    }
+
+    // 3. Works from authors the user follows (score: 4)
+    if (followedAuthorIds.length > 0) {
+      const followedWorks = await Work.find({
+        ...baseQuery,
+        authorId: { $in: followedAuthorIds },
+      })
+        .sort({ publishedAt: -1 })
+        .limit(15)
+        .select("-chapters");
+      addWorks(followedWorks, 4);
+    }
+
+    // 4. Works with similar tags to user's bookmarked works (score: 2)
+    if (bookmarkedIds.length > 0) {
+      // Get tags from bookmarked works
+      const bookmarkedWorksData = await Work.find({
+        _id: { $in: bookmarkedIds.slice(0, 10) }, // Limit to recent bookmarks
+      }).select("tags genre fandom");
+
+      const tagSet = new Set();
+      bookmarkedWorksData.forEach((w) => {
+        (w.tags || []).forEach((t) => tagSet.add(t));
+      });
+
+      if (tagSet.size > 0) {
+        const tagArray = Array.from(tagSet).slice(0, 20);
+        const similarWorks = await Work.find({
+          ...baseQuery,
+          tags: { $in: tagArray },
+        })
+          .sort({ publishedAt: -1 })
+          .limit(15)
+          .select("-chapters");
+        addWorks(similarWorks, 2);
+      }
+    }
+
+    // Sort by score (descending) then by recency
+    let recommendations = Array.from(worksMap.values())
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return new Date(b.work.publishedAt) - new Date(a.work.publishedAt);
+      })
+      .map((item) => item.work)
+      .slice(0, parseInt(limit));
+
+    // If no personalized recommendations, fall back to trending
+    if (recommendations.length === 0) {
+      const dateThreshold = new Date();
+      dateThreshold.setDate(dateThreshold.getDate() - 7);
+
+      recommendations = await Work.find({
+        privacy: "Public",
+        status: "published",
+        authorId: { $ne: userId },
+        _id: { $nin: bookmarkedIds },
+        publishedAt: { $gte: dateThreshold },
+      })
+        .sort({ views: -1 })
+        .limit(parseInt(limit))
+        .select("-chapters");
+    }
+
+    res.json({
+      works: recommendations,
+      personalized: worksMap.size > 0,
     });
   } catch (err) {
     next(err);

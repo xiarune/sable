@@ -34,6 +34,15 @@ const Tag = require("./Tag");
 // Monetization
 const Donation = require("./Donation");
 
+// Admin
+const Admin = require("./Admin");
+const AdminSession = require("./AdminSession");
+const Contact = require("./Contact");
+const Warning = require("./Warning");
+
+// Reports
+const Report = require("./Report");
+
 module.exports = {
   // Core
   User,
@@ -70,4 +79,13 @@ module.exports = {
 
   // Monetization
   Donation,
+
+  // Admin
+  Admin,
+  AdminSession,
+  Contact,
+  Warning,
+
+  // Reports
+  Report,
 };

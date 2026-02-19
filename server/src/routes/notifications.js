@@ -5,6 +5,30 @@ const { emitToUser } = require("../config/socket");
 
 const router = express.Router();
 
+// Clean up old notifications (older than 1 week) - runs on startup and periodically
+async function cleanupOldNotifications() {
+  try {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const result = await Notification.deleteMany({
+      createdAt: { $lt: oneWeekAgo },
+    });
+
+    if (result.deletedCount > 0) {
+      console.log(`Cleaned up ${result.deletedCount} old notifications`);
+    }
+  } catch (err) {
+    console.error("Failed to cleanup old notifications:", err);
+  }
+}
+
+// Run cleanup on startup
+cleanupOldNotifications();
+
+// Run cleanup every hour
+setInterval(cleanupOldNotifications, 60 * 60 * 1000);
+
 // All routes require auth
 router.use(requireAuth);
 

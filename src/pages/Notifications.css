@@ -110,6 +110,50 @@
   filter: brightness(0.99);
 }
 
+.no-cta--danger {
+  background: rgba(185, 28, 28, 0.12);
+  color: rgba(185, 28, 28, 0.9);
+}
+
+.no-cta--danger:hover {
+  background: rgba(185, 28, 28, 0.18);
+}
+
+.no-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Delete button on notification */
+.no-deleteBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 150ms ease, background 150ms ease;
+}
+
+.no-item:hover .no-deleteBtn {
+  opacity: 1;
+}
+
+.no-deleteBtn:hover {
+  background: rgba(185, 28, 28, 0.15);
+  color: rgba(185, 28, 28, 0.9);
+}
+
 /* Card */
 .no-card {
   border-radius: 10px;
@@ -249,6 +293,7 @@
 }
 
 .no-item {
+  position: relative;
   width: 100%;
   border: 0;
   cursor: pointer;

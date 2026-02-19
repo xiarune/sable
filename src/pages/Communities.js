@@ -6,6 +6,7 @@ import { works as libraryWorks } from "../data/libraryWorks";
 import { authApi, usersApi, followsApi, uploadsApi, likesApi, bookmarksApi, commentsApi, reportsApi } from "../api";
 import postsApi from "../api/posts";
 import { SableLoader } from "../components";
+import sableLogo from "../assets/images/Sable_Logo.png";
 
 // Mention input component with highlighting and suggestions
 function MentionInput({ value, onChange, placeholder, rows = 2, followingList = [] }) {
@@ -281,9 +282,6 @@ const COMMUNITY_INFO = {
     "Credit original creators when sharing",
     "Keep discussions on-topic",
   ],
-  moderators: [
-    { username: "sable_admin", displayName: "Sable Admin" },
-  ],
 };
 
 function initials(name) {
@@ -494,6 +492,9 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   // Spoiler/NSFW toggles for new posts
   const [isSpoiler, setIsSpoiler] = React.useState(false);
   const [isNSFW, setIsNSFW] = React.useState(false);
+
+  // Report success state
+  const [reportSubmitted, setReportSubmitted] = React.useState(false);
 
   // Track revealed NSFW images (by post ID)
   const [revealedNSFW, setRevealedNSFW] = React.useState([]);
@@ -1000,10 +1001,14 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
     setReportInProgress(true);
     try {
       await reportsApi.create("post", reportingPost.id, reportReason, reportDescription);
-      alert("Report submitted. Thank you for helping keep the community safe.");
-      setReportingPost(null);
-      setReportReason("");
-      setReportDescription("");
+      setReportSubmitted(true);
+      // Auto-close after showing success
+      setTimeout(() => {
+        setReportingPost(null);
+        setReportReason("");
+        setReportDescription("");
+        setReportSubmitted(false);
+      }, 2500);
     } catch (err) {
       console.error("Failed to submit report:", err);
       alert(err.message || "Failed to submit report. Please try again.");
@@ -1064,6 +1069,11 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   // Reveal NSFW image
   function handleRevealNSFW(postId) {
     setRevealedNSFW((prev) => [...prev, postId]);
+  }
+
+  // Hide NSFW image (re-blur)
+  function handleHideNSFW(postId) {
+    setRevealedNSFW((prev) => prev.filter((id) => id !== postId));
   }
 
   async function submitPost() {
@@ -1236,18 +1246,27 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
               </ol>
             </div>
 
-            <div className="co-moderatorsSection">
-              <div className="co-rulesSectionTitle">Moderators</div>
-              <div className="co-moderatorsList">
-                {COMMUNITY_INFO.moderators.map((mod) => (
-                  <Link
-                    key={mod.username}
-                    to={`/communities/${mod.username}`}
-                    className="co-moderator"
-                  >
-                    @{mod.username}
+            <div className="co-contactSection">
+              <div className="co-rulesSectionTitle">Need Help?</div>
+              <div className="co-contactInfo">
+                <p className="co-contactText">
+                  For community issues, content concerns, or to report violations, please contact the Sable Admin team.
+                </p>
+                <div className="co-contactMethods">
+                  <Link to="/faq#contact" className="co-contactLink">
+                    <span className="co-contactIcon">✉️</span>
+                    <span>Contact Us</span>
                   </Link>
-                ))}
+                </div>
+                <p className="co-contactText" style={{ marginTop: 8 }}>
+                  Want to support us?
+                </p>
+                <div className="co-contactMethods">
+                  <Link to="/support" className="co-contactLink">
+                    <img src={sableLogo} alt="" className="co-contactLogo" />
+                    <span>Support Sable</span>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -1545,6 +1564,17 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                                 </button>
                               </div>
                             </div>
+                          )}
+                          {/* Toggle to re-blur NSFW content */}
+                          {p.isNSFW && !isNSFWBlurred && (
+                            <button
+                              type="button"
+                              className="co-nsfwToggle"
+                              onClick={() => handleHideNSFW(p.id)}
+                              title="Hide NSFW content"
+                            >
+                              🔞 Hide
+                            </button>
                           )}
                         </div>
                       )}
@@ -1894,78 +1924,97 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
 
       {/* Report Modal */}
       {reportingPost && (
-        <div className="co-modal-overlay" onClick={() => !reportInProgress && setReportingPost(null)}>
+        <div className="co-modal-overlay" onClick={() => !reportInProgress && !reportSubmitted && setReportingPost(null)}>
           <div className="co-modal" onClick={(e) => e.stopPropagation()}>
             <div className="co-modal-header">
-              <h3 className="co-modal-title">Report Post</h3>
-              <button
-                type="button"
-                className="co-modal-close"
-                onClick={() => !reportInProgress && setReportingPost(null)}
-                disabled={reportInProgress}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="co-modal-body">
-              <p className="co-modal-text" style={{ marginBottom: 16 }}>
-                Why are you reporting this post?
-              </p>
-              <div className="co-report-options">
-                {[
-                  { value: "spam", label: "Spam or misleading" },
-                  { value: "harassment", label: "Harassment or bullying" },
-                  { value: "hate_speech", label: "Hate speech" },
-                  { value: "violence", label: "Violence or threats" },
-                  { value: "inappropriate_content", label: "Inappropriate content" },
-                  { value: "misinformation", label: "Misinformation" },
-                  { value: "copyright", label: "Copyright violation" },
-                  { value: "other", label: "Other" },
-                ].map((option) => (
-                  <label key={option.value} className="co-report-option">
-                    <input
-                      type="radio"
-                      name="report-reason"
-                      value={option.value}
-                      checked={reportReason === option.value}
-                      onChange={(e) => setReportReason(e.target.value)}
-                    />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-              {reportReason && (
-                <div style={{ marginTop: 16 }}>
-                  <label className="co-report-label">Additional details (optional)</label>
-                  <textarea
-                    className="co-report-textarea"
-                    value={reportDescription}
-                    onChange={(e) => setReportDescription(e.target.value)}
-                    placeholder="Provide any additional context..."
-                    maxLength={1000}
-                    rows={3}
-                  />
-                </div>
+              <h3 className="co-modal-title">{reportSubmitted ? "" : "Report Post"}</h3>
+              {!reportSubmitted && (
+                <button
+                  type="button"
+                  className="co-modal-close"
+                  onClick={() => !reportInProgress && setReportingPost(null)}
+                  disabled={reportInProgress}
+                >
+                  ✕
+                </button>
               )}
             </div>
-            <div className="co-modal-footer">
-              <button
-                type="button"
-                className="co-modal-btn co-modal-btn--secondary"
-                onClick={() => setReportingPost(null)}
-                disabled={reportInProgress}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="co-modal-btn co-modal-btn--danger"
-                onClick={submitReport}
-                disabled={reportInProgress || !reportReason}
-              >
-                {reportInProgress ? "Submitting..." : "Submit Report"}
-              </button>
+            <div className="co-modal-body">
+              {reportSubmitted ? (
+                <div className="co-reportSuccess">
+                  <div className="co-reportSuccess-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <div className="co-reportSuccess-title">Report Submitted</div>
+                  <div className="co-reportSuccess-message">Thank you for helping keep the community safe.</div>
+                  <div className="co-reportSuccess-note">Our team will review this report and take appropriate action.</div>
+                </div>
+              ) : (
+                <>
+                  <p className="co-modal-text" style={{ marginBottom: 16 }}>
+                    Why are you reporting this post?
+                  </p>
+                  <div className="co-report-options">
+                    {[
+                      { value: "spam", label: "Spam or misleading" },
+                      { value: "harassment", label: "Harassment or bullying" },
+                      { value: "hate_speech", label: "Hate speech" },
+                      { value: "violence", label: "Violence or threats" },
+                      { value: "inappropriate_content", label: "Inappropriate content" },
+                      { value: "misinformation", label: "Misinformation" },
+                      { value: "copyright", label: "Copyright violation" },
+                      { value: "other", label: "Other" },
+                    ].map((option) => (
+                      <label key={option.value} className="co-report-option">
+                        <input
+                          type="radio"
+                          name="report-reason"
+                          value={option.value}
+                          checked={reportReason === option.value}
+                          onChange={(e) => setReportReason(e.target.value)}
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {reportReason && (
+                    <div style={{ marginTop: 16 }}>
+                      <label className="co-report-label">Additional details (optional)</label>
+                      <textarea
+                        className="co-report-textarea"
+                        value={reportDescription}
+                        onChange={(e) => setReportDescription(e.target.value)}
+                        placeholder="Provide any additional context..."
+                        maxLength={1000}
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
             </div>
+            {!reportSubmitted && (
+              <div className="co-modal-footer">
+                <button
+                  type="button"
+                  className="co-modal-btn co-modal-btn--secondary"
+                  onClick={() => setReportingPost(null)}
+                  disabled={reportInProgress}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="co-modal-btn co-modal-btn--danger"
+                  onClick={submitReport}
+                  disabled={reportInProgress || !reportReason}
+                >
+                  {reportInProgress ? "Submitting..." : "Submit Report"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

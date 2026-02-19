@@ -32,6 +32,12 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // User interests for personalized recommendations
+    interests: {
+      genres: [{ type: String }],
+      fandoms: [{ type: String }],
+      completedOnboarding: { type: Boolean, default: false },
+    },
     providers: {
       google: {
         googleId: { type: String, unique: true, sparse: true },
@@ -172,6 +178,14 @@ const userSchema = new mongoose.Schema(
     // Admin privileges
     isAdmin: { type: Boolean, default: false },
 
+    // Moderation
+    isBanned: { type: Boolean, default: false },
+    banReason: { type: String },
+    bannedAt: { type: Date },
+    bannedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
+    banExpiresAt: { type: Date }, // null = permanent
+    warningCount: { type: Number, default: 0 },
+
     // Inbox settings
     inboxSettings: {
       readReceipts: { type: Boolean, default: true },
@@ -206,6 +220,7 @@ userSchema.methods.toPublicJSON = function () {
     link: this.link,
     pronouns: this.pronouns,
     needsUsername: this.needsUsername,
+    interests: this.interests || { genres: [], fandoms: [], completedOnboarding: false },
     stats: this.stats,
     createdAt: this.createdAt,
   };

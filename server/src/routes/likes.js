@@ -196,7 +196,10 @@ router.get("/check", requireAuth, async (req, res, next) => {
 
     const like = await Like.findOne(query);
 
-    res.json({ liked: !!like });
+    res.json({
+      liked: !!like,
+      type: like?.type || null,
+    });
   } catch (err) {
     next(err);
   }

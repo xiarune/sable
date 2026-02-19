@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import "./WorkView.css";
 import "../styles/skins.css";
 
-import { worksApi, bookmarksApi, commentsApi, skinsApi } from "../api";
+import { worksApi, bookmarksApi, commentsApi, skinsApi, likesApi, reportsApi } from "../api";
 import { works as libraryWorks } from "../data/libraryWorks";
 import { SableLoader } from "../components";
 
@@ -235,6 +235,11 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   const [reportSubmitting, setReportSubmitting] = React.useState(false);
   const [reportSubmitted, setReportSubmitted] = React.useState(false);
 
+  // Like/Love state
+  const [likeStatus, setLikeStatus] = React.useState(null); // null, "like", or "love"
+  const [likesCount, setLikesCount] = React.useState(0);
+  const [lovesCount, setLovesCount] = React.useState(0);
+
   // Check bookmark status on load
   React.useEffect(() => {
     if (!isAuthed || !decodedId) return;
@@ -250,6 +255,30 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
     checkBookmarkStatus();
   }, [isAuthed, decodedId]);
+
+  // Check like/love status on load
+  React.useEffect(() => {
+    if (!isAuthed || !decodedId) return;
+
+    async function checkLikeStatus() {
+      try {
+        const data = await likesApi.check(decodedId, null, null);
+        setLikeStatus(data.type || null);
+      } catch {
+        // Ignore errors
+      }
+    }
+
+    checkLikeStatus();
+  }, [isAuthed, decodedId]);
+
+  // Update counts when work loads
+  React.useEffect(() => {
+    if (work) {
+      setLikesCount(work.likesCount || 0);
+      setLovesCount(work.lovesCount || 0);
+    }
+  }, [work]);
 
   // Load bookmarked audio tracks
   React.useEffect(() => {
@@ -728,6 +757,80 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     }
   }
 
+  async function handleLike() {
+    if (!isAuthed) {
+      openLoginModal();
+      return;
+    }
+
+    const prevStatus = likeStatus;
+    const prevLikes = likesCount;
+    const prevLoves = lovesCount;
+
+    // Optimistic update
+    if (likeStatus === "like") {
+      setLikeStatus(null);
+      setLikesCount((c) => Math.max(0, c - 1));
+    } else {
+      if (likeStatus === "love") {
+        setLovesCount((c) => Math.max(0, c - 1));
+      }
+      setLikeStatus("like");
+      setLikesCount((c) => c + 1);
+    }
+
+    try {
+      if (prevStatus === "like") {
+        await likesApi.unlikeWork(decodedId);
+      } else {
+        await likesApi.likeWork(decodedId);
+      }
+    } catch (err) {
+      // Revert on error
+      setLikeStatus(prevStatus);
+      setLikesCount(prevLikes);
+      setLovesCount(prevLoves);
+      console.error("Failed to like work:", err);
+    }
+  }
+
+  async function handleLove() {
+    if (!isAuthed) {
+      openLoginModal();
+      return;
+    }
+
+    const prevStatus = likeStatus;
+    const prevLikes = likesCount;
+    const prevLoves = lovesCount;
+
+    // Optimistic update
+    if (likeStatus === "love") {
+      setLikeStatus(null);
+      setLovesCount((c) => Math.max(0, c - 1));
+    } else {
+      if (likeStatus === "like") {
+        setLikesCount((c) => Math.max(0, c - 1));
+      }
+      setLikeStatus("love");
+      setLovesCount((c) => c + 1);
+    }
+
+    try {
+      if (prevStatus === "love") {
+        await likesApi.unlikeWork(decodedId);
+      } else {
+        await likesApi.loveWork(decodedId);
+      }
+    } catch (err) {
+      // Revert on error
+      setLikeStatus(prevStatus);
+      setLikesCount(prevLikes);
+      setLovesCount(prevLoves);
+      console.error("Failed to love work:", err);
+    }
+  }
+
   function openReportModal() {
     if (!isAuthed) {
       openLoginModal();
@@ -749,16 +852,18 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
     setReportSubmitting(true);
 
-    // For now, simulate submission since backend doesn't exist yet
-    // In the future, this would call a reports API
-    setTimeout(() => {
+    try {
+      await reportsApi.create("work", decodedId, reportReason.trim(), "");
       setReportSubmitting(false);
       setReportSubmitted(true);
       // Auto-close after showing success message
       setTimeout(() => {
         closeReportModal();
       }, 2000);
-    }, 800);
+    } catch (err) {
+      console.error("Failed to submit report:", err);
+      setReportSubmitting(false);
+    }
   }
 
   const themeClass = prefs.theme === "dark" ? "wv-themeDark" : "wv-themePaper";
@@ -1136,6 +1241,43 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                 </div>
 
                 <div className="wv-headerRight">
+                  {/* Edit - only for author */}
+                  {normalizedUser === authorHandle.toLowerCase() && (
+                    <button
+                      type="button"
+                      className="wv-iconBtn wv-iconBtn--edit"
+                      onClick={handleEdit}
+                      aria-label="Edit this work"
+                      title="Edit"
+                    >
+                      <span style={{ fontSize: 16 }}>&#9998;</span>
+                    </button>
+                  )}
+
+                  {/* Like */}
+                  <button
+                    type="button"
+                    className={`wv-iconBtn ${likeStatus === "like" ? "wv-iconBtn--liked" : ""}`}
+                    onClick={handleLike}
+                    aria-label={likeStatus === "like" ? "Unlike" : "Like"}
+                    title={`Like (${likesCount})`}
+                  >
+                    <span style={{ fontSize: 16 }}>{likeStatus === "like" ? "👍" : "👍"}</span>
+                    {likesCount > 0 && <span className="wv-iconCount">{likesCount}</span>}
+                  </button>
+
+                  {/* Love */}
+                  <button
+                    type="button"
+                    className={`wv-iconBtn ${likeStatus === "love" ? "wv-iconBtn--loved" : ""}`}
+                    onClick={handleLove}
+                    aria-label={likeStatus === "love" ? "Unlove" : "Love"}
+                    title={`Love (${lovesCount})`}
+                  >
+                    <span style={{ fontSize: 16 }}>{likeStatus === "love" ? "❤️" : "🤍"}</span>
+                    {lovesCount > 0 && <span className="wv-iconCount">{lovesCount}</span>}
+                  </button>
+
                   {/* Music */}
                   <button
                     type="button"
@@ -1495,10 +1637,15 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   </div>
                   <div className="wv-panelBody">
                     {reportSubmitted ? (
-                      <div style={{ textAlign: "center", padding: 20 }}>
-                        <div style={{ fontSize: 32, marginBottom: 12 }}>&#10003;</div>
-                        <div style={{ fontWeight: 700, marginBottom: 8 }}>Report Submitted</div>
-                        <div style={{ opacity: 0.7 }}>Thank you for helping keep Sable safe.</div>
+                      <div className="wv-reportSuccess">
+                        <div className="wv-reportSuccess-icon">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        </div>
+                        <div className="wv-reportSuccess-title">Report Submitted</div>
+                        <div className="wv-reportSuccess-message">Thank you for helping keep Sable safe.</div>
+                        <div className="wv-reportSuccess-note">Our team will review this report and take appropriate action.</div>
                       </div>
                     ) : (
                       <>
@@ -1507,34 +1654,25 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                           {[
-                            "Spam or misleading content",
-                            "Harassment or hate speech",
-                            "Copyright infringement",
-                            "Inappropriate content (not properly tagged)",
-                            "Other",
+                            { value: "spam", label: "Spam or misleading content" },
+                            { value: "harassment", label: "Harassment" },
+                            { value: "hate_speech", label: "Hate speech" },
+                            { value: "copyright", label: "Copyright infringement" },
+                            { value: "inappropriate_content", label: "Inappropriate content (not properly tagged)" },
+                            { value: "violence", label: "Violence or threats" },
+                            { value: "other", label: "Other" },
                           ].map((reason) => (
                             <button
-                              key={reason}
+                              key={reason.value}
                               type="button"
-                              className={`wv-miniPill ${reportReason === reason ? "wv-miniPill--active" : ""}`}
-                              onClick={() => setReportReason(reason)}
+                              className={`wv-miniPill ${reportReason === reason.value ? "wv-miniPill--active" : ""}`}
+                              onClick={() => setReportReason(reason.value)}
                               style={{ textAlign: "left", padding: "10px 14px" }}
                             >
-                              {reason}
+                              {reason.label}
                             </button>
                           ))}
                         </div>
-                        {reportReason === "Other" && (
-                          <div style={{ marginTop: 12 }}>
-                            <textarea
-                              className="wv-commentInput"
-                              placeholder="Please describe the issue..."
-                              style={{ minHeight: 80 }}
-                              value={reportReason === "Other" ? "" : reportReason}
-                              onChange={(e) => setReportReason(`Other: ${e.target.value}`)}
-                            />
-                          </div>
-                        )}
                         <div style={{ marginTop: 16, display: "flex", gap: 10, justifyContent: "flex-end" }}>
                           <button
                             type="button"

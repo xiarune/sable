@@ -93,11 +93,17 @@ export default function Settings({ username, onLogout }) {
   const [customSkins, setCustomSkins] = React.useState([]);
   const [skinsLoading, setSkinsLoading] = React.useState(false);
 
+  // Reading preferences / interests
+  const [interestOptions, setInterestOptions] = React.useState({ genres: [], fandoms: [] });
+  const [selectedGenres, setSelectedGenres] = React.useState([]);
+  const [selectedFandoms, setSelectedFandoms] = React.useState([]);
+  const [interestsSaving, setInterestsSaving] = React.useState(false);
+
   // Load user data on mount
   React.useEffect(() => {
     async function loadData() {
       try {
-        const [meData, blockedData, mutedData, privacyData, sessionsData, accountsData, skinsData] = await Promise.all([
+        const [meData, blockedData, mutedData, privacyData, sessionsData, accountsData, skinsData, optionsData] = await Promise.all([
           authApi.me(),
           usersApi.getBlockedUsers().catch(() => ({ blockedUsers: [] })),
           settingsApi.getMutedWords().catch(() => ({ mutedWords: [] })),
@@ -105,6 +111,7 @@ export default function Settings({ username, onLogout }) {
           settingsApi.getSessions().catch(() => ({ sessions: [] })),
           settingsApi.getConnectedAccounts().catch(() => ({ accounts: [], hasPassword: true })),
           skinsApi.list().catch(() => ({ skins: [] })),
+          authApi.getOnboardingOptions().catch(() => ({ genres: [], fandoms: [] })),
         ]);
 
         setUser(meData.user);
@@ -115,6 +122,13 @@ export default function Settings({ username, onLogout }) {
         setConnectedAccounts(accountsData.accounts || []);
         setHasPassword(accountsData.hasPassword !== false);
         setCustomSkins(skinsData.skins || []);
+        setInterestOptions(optionsData);
+
+        // Load current user interests
+        if (meData.user?.interests) {
+          setSelectedGenres(meData.user.interests.genres || []);
+          setSelectedFandoms(meData.user.interests.fandoms || []);
+        }
 
         // Set visibility from user preferences
         if (meData.user?.preferences?.visibility) {
@@ -1231,6 +1245,14 @@ export default function Settings({ username, onLogout }) {
             >
               Audio
             </button>
+
+            <button
+              type="button"
+              className={`st-sideBtn ${activeNav === "interests" ? "is-active" : ""}`}
+              onClick={() => setActiveNav("interests")}
+            >
+              Reading Preferences
+            </button>
           </aside>
 
           {/* Center */}
@@ -1552,6 +1574,103 @@ export default function Settings({ username, onLogout }) {
                   </button>
                   <button type="button" className="st-pillBtn" onClick={() => openModal("audioPrivacy")}>
                     Audio Privacy
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Reading Preferences / Interests */}
+            {activeNav === "interests" && (
+              <>
+                <h1 className="st-title">Reading Preferences</h1>
+                <p className="st-subtitle">
+                  Select your favorite genres and fandoms to get personalized recommendations on your home page.
+                </p>
+
+                <section className="st-sectionCard" aria-label="Genre preferences">
+                  <div className="st-cardTitleRow">
+                    <div className="st-cardTitle">Genres</div>
+                    <span className="st-cardCount">{selectedGenres.length}/5</span>
+                  </div>
+
+                  <div className="st-interestGrid">
+                    {interestOptions.genres.map((genre) => (
+                      <button
+                        key={genre.slug}
+                        type="button"
+                        className={`st-interestChip ${selectedGenres.includes(genre.slug) ? "st-interestChip--selected" : ""}`}
+                        onClick={() => {
+                          setSelectedGenres((prev) => {
+                            if (prev.includes(genre.slug)) {
+                              return prev.filter((g) => g !== genre.slug);
+                            }
+                            if (prev.length >= 5) return prev;
+                            return [...prev, genre.slug];
+                          });
+                        }}
+                        disabled={interestsSaving}
+                      >
+                        <span className="st-interestIcon">{genre.icon}</span>
+                        <span>{genre.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="st-sectionCard" aria-label="Fandom preferences">
+                  <div className="st-cardTitleRow">
+                    <div className="st-cardTitle">Fandoms</div>
+                    <span className="st-cardCount">{selectedFandoms.length}/10</span>
+                  </div>
+
+                  <div className="st-interestGrid">
+                    {interestOptions.fandoms.map((fandom) => (
+                      <button
+                        key={fandom.slug}
+                        type="button"
+                        className={`st-interestChip st-interestChip--fandom ${selectedFandoms.includes(fandom.slug) ? "st-interestChip--selected" : ""}`}
+                        onClick={() => {
+                          setSelectedFandoms((prev) => {
+                            if (prev.includes(fandom.slug)) {
+                              return prev.filter((f) => f !== fandom.slug);
+                            }
+                            if (prev.length >= 10) return prev;
+                            return [...prev, fandom.slug];
+                          });
+                        }}
+                        disabled={interestsSaving}
+                      >
+                        <span>{fandom.name}</span>
+                        <span className="st-interestCategory">{fandom.category}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <div className="st-formFooter">
+                  {modalStatus && <div className="st-mutedNote">{modalStatus}</div>}
+                  <button
+                    type="button"
+                    className="st-saveBtn"
+                    disabled={interestsSaving}
+                    onClick={async () => {
+                      setInterestsSaving(true);
+                      setModalStatus("");
+                      try {
+                        const data = await authApi.saveInterests({
+                          genres: selectedGenres,
+                          fandoms: selectedFandoms,
+                        });
+                        setUser(data.user);
+                        setModalStatus("Preferences saved!");
+                      } catch (err) {
+                        setModalStatus(err.message || "Failed to save preferences");
+                      } finally {
+                        setInterestsSaving(false);
+                      }
+                    }}
+                  >
+                    {interestsSaving ? "Saving..." : "Save Preferences"}
                   </button>
                 </div>
               </>
