@@ -1,8 +1,37 @@
+# Dependencies
 node_modules
+server/node_modules
+
+# Build output
 build
+
+# Git
 .git
 .gitignore
+
+# Environment files (don't include secrets in image)
+.env
+.env.local
+.env.*.local
+server/.env
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs
 npm-debug.log
 yarn-error.log
 
+# Testing
+coverage
+
+# Claude
+.claude

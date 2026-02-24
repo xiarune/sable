@@ -34,11 +34,21 @@ async function updateUserPresence(userId, status) {
  * Initialize Socket.IO with the HTTP server
  */
 function initializeSocket(httpServer) {
+  // Support multiple origins (comma-separated in CLIENT_ORIGIN)
   const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+  const allowedOrigins = clientOrigin.split(",").map((origin) => origin.trim());
 
   io = new Server(httpServer, {
     cors: {
-      origin: clientOrigin,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       credentials: true,
     },
     pingTimeout: 60000,
@@ -178,9 +188,9 @@ function initializeSocket(httpServer) {
   // Check for away users every minute
   setInterval(() => {
     const now = Date.now();
-    userActivity.forEach((lastActive, odlUserId) => {
+    userActivity.forEach((lastActive, odUserId) => {
       if (now - lastActive > AWAY_TIMEOUT) {
-        updateUserPresence(odlUserId, "away");
+        updateUserPresence(odUserId, "away");
       }
     });
   }, 60 * 1000);
