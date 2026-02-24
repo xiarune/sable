@@ -8,6 +8,40 @@ const User = require("../models/User");
 const Bookmark = require("../models/Bookmark");
 const Follow = require("../models/Follow");
 const { optionalAuth, requireAuth } = require("../middleware/auth");
+
+// Helper to get IDs of users with private profiles that the viewer can't see
+async function getPrivateAuthorFilter(viewerId) {
+  // Find all users with private profiles
+  const privateUsers = await User.find({
+    "preferences.visibility": "private",
+  }).select("_id");
+
+  if (privateUsers.length === 0) {
+    return null; // No private users, no filter needed
+  }
+
+  const privateUserIds = privateUsers.map((u) => u._id);
+
+  if (!viewerId) {
+    // Not logged in - exclude all private users' works
+    return { authorId: { $nin: privateUserIds } };
+  }
+
+  // Get users the viewer follows
+  const following = await Follow.find({ followerId: viewerId }).select("followeeId");
+  const followingIds = following.map((f) => f.followeeId.toString());
+
+  // Filter out private users that the viewer doesn't follow
+  const excludeIds = privateUserIds.filter(
+    (id) => !followingIds.includes(id.toString())
+  );
+
+  if (excludeIds.length === 0) {
+    return null; // Viewer follows all private users, no filter needed
+  }
+
+  return { authorId: { $nin: excludeIds } };
+}
 const {
   getWorkRecommendations,
   getPostRecommendations,
@@ -24,6 +58,33 @@ const router = express.Router();
 // Escape special regex characters
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Helper function to filter works by muted words
+function filterWorksByMutedWords(works, mutedWords) {
+  if (!mutedWords || mutedWords.length === 0) return works;
+
+  const lowerMutedWords = mutedWords.map(w => w.toLowerCase());
+
+  return works.filter(work => {
+    const textToCheck = `${work.title || ""} ${work.description || ""} ${(work.tags || []).join(" ")} ${work.fandom || ""} ${work.genre || ""}`.toLowerCase();
+    return !lowerMutedWords.some(word => textToCheck.includes(word));
+  });
+}
+
+// Helper function to filter works by content filters
+function filterWorksByContentFilters(works, contentFilters) {
+  if (!contentFilters) return works;
+
+  return works.filter(work => {
+    // If user has filter OFF (false), hide content with that flag
+    if (!contentFilters.mature && (work.isMature || work.isNSFW)) return false;
+    if (!contentFilters.explicit && work.isExplicit) return false;
+    if (!contentFilters.violence && work.hasViolence) return false;
+    if (!contentFilters.selfHarm && work.hasSelfHarm) return false;
+    if (!contentFilters.spoilers && work.isSpoiler) return false;
+    return true;
+  });
 }
 
 // === GENRES ===
@@ -52,11 +113,26 @@ router.get("/genres/:slug", optionalAuth, async (req, res, next) => {
     // Case-insensitive genre matching
     const query = { genre: { $regex: new RegExp(`^${escapeRegex(genre.name)}$`, "i") }, privacy: "Public", status: "published" };
 
+    // Filter out blocked users' works if user is logged in
+    if (req.user && req.user.blockedUsers && req.user.blockedUsers.length > 0) {
+      query.authorId = { $nin: req.user.blockedUsers };
+    }
+
+    // Filter out works from private profiles (unless viewer follows them)
+    const privateFilter = await getPrivateAuthorFilter(req.user?._id);
+    if (privateFilter) {
+      if (query.authorId) {
+        query.authorId.$nin = [...(query.authorId.$nin || []), ...(privateFilter.authorId.$nin || [])];
+      } else {
+        Object.assign(query, privateFilter);
+      }
+    }
+
     let sortOption = { publishedAt: -1 };
     if (sort === "popular") sortOption = { views: -1 };
     if (sort === "rating") sortOption = { likesCount: -1 };
 
-    const [works, total] = await Promise.all([
+    let [works, total] = await Promise.all([
       Work.find(query)
         .sort(sortOption)
         .skip(skip)
@@ -64,6 +140,16 @@ router.get("/genres/:slug", optionalAuth, async (req, res, next) => {
         .select("-chapters"),
       Work.countDocuments(query),
     ]);
+
+    // Filter out works containing muted words
+    if (req.user && req.user.mutedWords && req.user.mutedWords.length > 0) {
+      works = filterWorksByMutedWords(works, req.user.mutedWords);
+    }
+
+    // Apply content filters
+    if (req.user && req.user.contentFilters) {
+      works = filterWorksByContentFilters(works, req.user.contentFilters);
+    }
 
     res.json({
       genre,
@@ -128,11 +214,26 @@ router.get("/fandoms/:slug", optionalAuth, async (req, res, next) => {
     // Case-insensitive fandom matching
     const query = { fandom: { $regex: new RegExp(`^${escapeRegex(fandom.name)}$`, "i") }, privacy: "Public", status: "published" };
 
+    // Filter out blocked users' works if user is logged in
+    if (req.user && req.user.blockedUsers && req.user.blockedUsers.length > 0) {
+      query.authorId = { $nin: req.user.blockedUsers };
+    }
+
+    // Filter out works from private profiles (unless viewer follows them)
+    const privateFilter = await getPrivateAuthorFilter(req.user?._id);
+    if (privateFilter) {
+      if (query.authorId) {
+        query.authorId.$nin = [...(query.authorId.$nin || []), ...(privateFilter.authorId.$nin || [])];
+      } else {
+        Object.assign(query, privateFilter);
+      }
+    }
+
     let sortOption = { publishedAt: -1 };
     if (sort === "popular") sortOption = { views: -1 };
     if (sort === "rating") sortOption = { likesCount: -1 };
 
-    const [works, total] = await Promise.all([
+    let [works, total] = await Promise.all([
       Work.find(query)
         .sort(sortOption)
         .skip(skip)
@@ -140,6 +241,16 @@ router.get("/fandoms/:slug", optionalAuth, async (req, res, next) => {
         .select("-chapters"),
       Work.countDocuments(query),
     ]);
+
+    // Filter out works containing muted words
+    if (req.user && req.user.mutedWords && req.user.mutedWords.length > 0) {
+      works = filterWorksByMutedWords(works, req.user.mutedWords);
+    }
+
+    // Apply content filters
+    if (req.user && req.user.contentFilters) {
+      works = filterWorksByContentFilters(works, req.user.contentFilters);
+    }
 
     res.json({
       fandom,
@@ -208,10 +319,25 @@ router.get("/tags/:slug", optionalAuth, async (req, res, next) => {
       status: "published",
     };
 
+    // Filter out blocked users' works if user is logged in
+    if (req.user && req.user.blockedUsers && req.user.blockedUsers.length > 0) {
+      query.authorId = { $nin: req.user.blockedUsers };
+    }
+
+    // Filter out works from private profiles (unless viewer follows them)
+    const privateFilter = await getPrivateAuthorFilter(req.user?._id);
+    if (privateFilter) {
+      if (query.authorId) {
+        query.authorId.$nin = [...(query.authorId.$nin || []), ...(privateFilter.authorId.$nin || [])];
+      } else {
+        Object.assign(query, privateFilter);
+      }
+    }
+
     let sortOption = { publishedAt: -1 };
     if (sort === "popular") sortOption = { views: -1 };
 
-    const [works, total] = await Promise.all([
+    let [works, total] = await Promise.all([
       Work.find(query)
         .sort(sortOption)
         .skip(skip)
@@ -219,6 +345,16 @@ router.get("/tags/:slug", optionalAuth, async (req, res, next) => {
         .select("-chapters"),
       Work.countDocuments(query),
     ]);
+
+    // Filter out works containing muted words
+    if (req.user && req.user.mutedWords && req.user.mutedWords.length > 0) {
+      works = filterWorksByMutedWords(works, req.user.mutedWords);
+    }
+
+    // Apply content filters
+    if (req.user && req.user.contentFilters) {
+      works = filterWorksByContentFilters(works, req.user.contentFilters);
+    }
 
     res.json({
       tag,
@@ -265,7 +401,22 @@ router.get("/search", optionalAuth, async (req, res, next) => {
         status: "published",
       };
 
-      const [works, workCount] = await Promise.all([
+      // Filter out blocked users' works if user is logged in
+      if (req.user && req.user.blockedUsers && req.user.blockedUsers.length > 0) {
+        workQuery.authorId = { $nin: req.user.blockedUsers };
+      }
+
+      // Filter out works from private profiles (unless viewer follows them)
+      const privateFilter = await getPrivateAuthorFilter(req.user?._id);
+      if (privateFilter) {
+        if (workQuery.authorId) {
+          workQuery.authorId.$nin = [...(workQuery.authorId.$nin || []), ...(privateFilter.authorId.$nin || [])];
+        } else {
+          Object.assign(workQuery, privateFilter);
+        }
+      }
+
+      let [works, workCount] = await Promise.all([
         Work.find(workQuery)
           .sort({ views: -1 })
           .skip(type === "works" ? skip : 0)
@@ -273,6 +424,16 @@ router.get("/search", optionalAuth, async (req, res, next) => {
           .select("-chapters"),
         Work.countDocuments(workQuery),
       ]);
+
+      // Filter out works containing muted words
+      if (req.user && req.user.mutedWords && req.user.mutedWords.length > 0) {
+        works = filterWorksByMutedWords(works, req.user.mutedWords);
+      }
+
+      // Apply content filters
+      if (req.user && req.user.contentFilters) {
+        works = filterWorksByContentFilters(works, req.user.contentFilters);
+      }
 
       results.works = { items: works, total: workCount };
     }
@@ -350,7 +511,7 @@ router.get("/search", optionalAuth, async (req, res, next) => {
 // === TRENDING / FEATURED ===
 
 // GET /discovery/trending - Get trending works with engagement-weighted scoring
-router.get("/trending", async (req, res, next) => {
+router.get("/trending", optionalAuth, async (req, res, next) => {
   try {
     const { period = "week", limit = 20 } = req.query;
 
@@ -360,12 +521,30 @@ router.get("/trending", async (req, res, next) => {
     else if (period === "week") dateThreshold.setDate(dateThreshold.getDate() - 7);
     else if (period === "month") dateThreshold.setMonth(dateThreshold.getMonth() - 1);
 
-    // Get candidates
-    const candidates = await Work.find({
+    // Build query excluding blocked users
+    const query = {
       privacy: "Public",
       status: "published",
       publishedAt: { $gte: dateThreshold },
-    })
+    };
+
+    // Filter out blocked users' works if user is logged in
+    if (req.user && req.user.blockedUsers && req.user.blockedUsers.length > 0) {
+      query.authorId = { $nin: req.user.blockedUsers };
+    }
+
+    // Filter out works from private profiles (unless viewer follows them)
+    const privateFilter = await getPrivateAuthorFilter(req.user?._id);
+    if (privateFilter) {
+      if (query.authorId) {
+        query.authorId.$nin = [...(query.authorId.$nin || []), ...(privateFilter.authorId.$nin || [])];
+      } else {
+        Object.assign(query, privateFilter);
+      }
+    }
+
+    // Get candidates
+    const candidates = await Work.find(query)
       .limit(parseInt(limit) * 3) // Get more for scoring
       .select("-chapters")
       .lean();
@@ -385,10 +564,20 @@ router.get("/trending", async (req, res, next) => {
     scoredWorks.sort((a, b) => b.score - a.score);
 
     // Apply diversity re-ranking
-    const diverseWorks = diversityRerank(
+    let diverseWorks = diversityRerank(
       scoredWorks.map((sw) => sw.work),
       { maxPerAuthor: 2, maxPerGenre: 5, limit: parseInt(limit) }
     );
+
+    // Filter out works containing muted words
+    if (req.user && req.user.mutedWords && req.user.mutedWords.length > 0) {
+      diverseWorks = filterWorksByMutedWords(diverseWorks, req.user.mutedWords);
+    }
+
+    // Apply content filters
+    if (req.user && req.user.contentFilters) {
+      diverseWorks = filterWorksByContentFilters(diverseWorks, req.user.contentFilters);
+    }
 
     res.json({ works: diverseWorks, period });
   } catch (err) {
@@ -397,16 +586,43 @@ router.get("/trending", async (req, res, next) => {
 });
 
 // GET /discovery/featured - Get featured/staff picks
-router.get("/featured", async (req, res, next) => {
+router.get("/featured", optionalAuth, async (req, res, next) => {
   try {
-    const works = await Work.find({
+    const query = {
       privacy: "Public",
       status: "published",
       featured: true,
-    })
+    };
+
+    // Filter out blocked users' works if user is logged in
+    if (req.user && req.user.blockedUsers && req.user.blockedUsers.length > 0) {
+      query.authorId = { $nin: req.user.blockedUsers };
+    }
+
+    // Filter out works from private profiles (unless viewer follows them)
+    const privateFilter = await getPrivateAuthorFilter(req.user?._id);
+    if (privateFilter) {
+      if (query.authorId) {
+        query.authorId.$nin = [...(query.authorId.$nin || []), ...(privateFilter.authorId.$nin || [])];
+      } else {
+        Object.assign(query, privateFilter);
+      }
+    }
+
+    let works = await Work.find(query)
       .sort({ featuredAt: -1 })
       .limit(20)
       .select("-chapters");
+
+    // Filter out works containing muted words
+    if (req.user && req.user.mutedWords && req.user.mutedWords.length > 0) {
+      works = filterWorksByMutedWords(works, req.user.mutedWords);
+    }
+
+    // Apply content filters
+    if (req.user && req.user.contentFilters) {
+      works = filterWorksByContentFilters(works, req.user.contentFilters);
+    }
 
     res.json({ works });
   } catch (err) {
@@ -415,13 +631,28 @@ router.get("/featured", async (req, res, next) => {
 });
 
 // GET /discovery/new - Get newest works with optional quality filter
-router.get("/new", async (req, res, next) => {
+router.get("/new", optionalAuth, async (req, res, next) => {
   try {
     const { page = 1, limit = 20, quality = "all" } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Build query based on quality filter
     const query = { privacy: "Public", status: "published" };
+
+    // Filter out blocked users' works if user is logged in
+    if (req.user && req.user.blockedUsers && req.user.blockedUsers.length > 0) {
+      query.authorId = { $nin: req.user.blockedUsers };
+    }
+
+    // Filter out works from private profiles (unless viewer follows them)
+    const privateFilter = await getPrivateAuthorFilter(req.user?._id);
+    if (privateFilter) {
+      if (query.authorId) {
+        query.authorId.$nin = [...(query.authorId.$nin || []), ...(privateFilter.authorId.$nin || [])];
+      } else {
+        Object.assign(query, privateFilter);
+      }
+    }
 
     // Quality filter: only show works with minimum engagement or quality score
     if (quality === "quality") {
@@ -432,7 +663,7 @@ router.get("/new", async (req, res, next) => {
       ];
     }
 
-    const [works, total] = await Promise.all([
+    let [works, total] = await Promise.all([
       Work.find(query)
         .sort({ publishedAt: -1 })
         .skip(skip)
@@ -440,6 +671,16 @@ router.get("/new", async (req, res, next) => {
         .select("-chapters"),
       Work.countDocuments(query),
     ]);
+
+    // Filter out works containing muted words
+    if (req.user && req.user.mutedWords && req.user.mutedWords.length > 0) {
+      works = filterWorksByMutedWords(works, req.user.mutedWords);
+    }
+
+    // Apply content filters
+    if (req.user && req.user.contentFilters) {
+      works = filterWorksByContentFilters(works, req.user.contentFilters);
+    }
 
     res.json({
       works,
@@ -466,8 +707,20 @@ router.get("/for-you", requireAuth, async (req, res, next) => {
       limit: parseInt(limit),
     });
 
+    let works = result.works;
+
+    // Filter out works containing muted words
+    if (req.user.mutedWords && req.user.mutedWords.length > 0) {
+      works = filterWorksByMutedWords(works, req.user.mutedWords);
+    }
+
+    // Apply content filters
+    if (req.user.contentFilters) {
+      works = filterWorksByContentFilters(works, req.user.contentFilters);
+    }
+
     res.json({
-      works: result.works,
+      works,
       personalized: result.personalized,
       mode: result.mode,
     });

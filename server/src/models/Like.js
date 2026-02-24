@@ -13,21 +13,18 @@ const likeSchema = new mongoose.Schema(
       enum: ["like", "love"],
       default: "like",
     },
-    // Can like a Work, Post, or Comment
+    // Can like a Work, Post, or Comment (no defaults - leave undefined for sparse index to work)
     workId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Work",
-      default: null,
     },
     postId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Post",
-      default: null,
     },
     commentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Comment",
-      default: null,
     },
   },
   {
@@ -35,10 +32,19 @@ const likeSchema = new mongoose.Schema(
   }
 );
 
-// Ensure unique likes
-likeSchema.index({ userId: 1, workId: 1 }, { unique: true, sparse: true });
-likeSchema.index({ userId: 1, postId: 1 }, { unique: true, sparse: true });
-likeSchema.index({ userId: 1, commentId: 1 }, { unique: true, sparse: true });
+// Ensure unique likes - use partialFilterExpression for proper null handling
+likeSchema.index(
+  { userId: 1, workId: 1 },
+  { unique: true, partialFilterExpression: { workId: { $exists: true } } }
+);
+likeSchema.index(
+  { userId: 1, postId: 1 },
+  { unique: true, partialFilterExpression: { postId: { $exists: true } } }
+);
+likeSchema.index(
+  { userId: 1, commentId: 1 },
+  { unique: true, partialFilterExpression: { commentId: { $exists: true } } }
+);
 
 const Like = mongoose.model("Like", likeSchema);
 

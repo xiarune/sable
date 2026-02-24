@@ -23,6 +23,33 @@ const createPostSchema = z.object({
 
 const updatePostSchema = createPostSchema.partial();
 
+// Helper function to filter posts by muted words
+function filterByMutedWords(posts, mutedWords) {
+  if (!mutedWords || mutedWords.length === 0) return posts;
+
+  const lowerMutedWords = mutedWords.map(w => w.toLowerCase());
+
+  return posts.filter(post => {
+    const textToCheck = `${post.caption || ""} ${post.content || ""} ${post.title || ""} ${(post.tags || []).join(" ")}`.toLowerCase();
+    return !lowerMutedWords.some(word => textToCheck.includes(word));
+  });
+}
+
+// Helper function to filter posts by content filters
+function filterByContentFilters(posts, contentFilters) {
+  if (!contentFilters) return posts;
+
+  return posts.filter(post => {
+    // If user has filter OFF (false), hide content with that flag
+    if (!contentFilters.mature && (post.isMature || post.isNSFW)) return false;
+    if (!contentFilters.explicit && post.isExplicit) return false;
+    if (!contentFilters.violence && post.hasViolence) return false;
+    if (!contentFilters.selfHarm && post.hasSelfHarm) return false;
+    if (!contentFilters.spoilers && post.isSpoiler) return false;
+    return true;
+  });
+}
+
 // GET /posts - List posts (feed)
 router.get("/", optionalAuth, async (req, res, next) => {
   try {
@@ -32,6 +59,11 @@ router.get("/", optionalAuth, async (req, res, next) => {
     const query = {};
     if (type) query.type = type;
     if (author) query.authorUsername = author.toLowerCase();
+
+    // Filter out posts from blocked users if user is logged in
+    if (req.user && req.user.blockedUsers && req.user.blockedUsers.length > 0) {
+      query.authorId = { $nin: req.user.blockedUsers };
+    }
 
     const [posts, total] = await Promise.all([
       Post.find(query)
@@ -43,7 +75,7 @@ router.get("/", optionalAuth, async (req, res, next) => {
     ]);
 
     // Transform posts to include author info
-    const transformedPosts = posts.map((post) => {
+    let transformedPosts = posts.map((post) => {
       const p = post.toObject();
       p.author = p.authorId ? {
         _id: p.authorId._id,
@@ -53,6 +85,16 @@ router.get("/", optionalAuth, async (req, res, next) => {
       } : null;
       return p;
     });
+
+    // Filter out posts containing muted words
+    if (req.user && req.user.mutedWords && req.user.mutedWords.length > 0) {
+      transformedPosts = filterByMutedWords(transformedPosts, req.user.mutedWords);
+    }
+
+    // Apply content filters
+    if (req.user && req.user.contentFilters) {
+      transformedPosts = filterByContentFilters(transformedPosts, req.user.contentFilters);
+    }
 
     res.json({
       posts: transformedPosts,
@@ -73,14 +115,20 @@ router.get("/feed", optionalAuth, async (req, res, next) => {
   try {
     const { limit = 20, mode = "ranked" } = req.query;
 
+    // Build query to exclude blocked users
+    const feedQuery = {};
+    if (req.user && req.user.blockedUsers && req.user.blockedUsers.length > 0) {
+      feedQuery.authorId = { $nin: req.user.blockedUsers };
+    }
+
     // If mode is "chronological", use the existing logic
     if (mode === "chronological") {
-      const posts = await Post.find({})
+      const posts = await Post.find(feedQuery)
         .populate("authorId", "username displayName avatarUrl")
         .sort({ createdAt: -1 })
         .limit(parseInt(limit));
 
-      const transformedPosts = posts.map((post) => {
+      let transformedPosts = posts.map((post) => {
         const p = post.toObject();
         p.author = p.authorId
           ? {
@@ -92,6 +140,16 @@ router.get("/feed", optionalAuth, async (req, res, next) => {
           : null;
         return p;
       });
+
+      // Filter out posts containing muted words
+      if (req.user && req.user.mutedWords && req.user.mutedWords.length > 0) {
+        transformedPosts = filterByMutedWords(transformedPosts, req.user.mutedWords);
+      }
+
+      // Apply content filters
+      if (req.user && req.user.contentFilters) {
+        transformedPosts = filterByContentFilters(transformedPosts, req.user.contentFilters);
+      }
 
       return res.json({
         posts: transformedPosts,
@@ -106,7 +164,7 @@ router.get("/feed", optionalAuth, async (req, res, next) => {
     });
 
     // Transform posts to include author info
-    const transformedPosts = result.posts.map((post) => {
+    let transformedPosts = result.posts.map((post) => {
       const p = { ...post };
       if (post.authorId && typeof post.authorId === "object") {
         p.author = {
@@ -118,6 +176,16 @@ router.get("/feed", optionalAuth, async (req, res, next) => {
       }
       return p;
     });
+
+    // Filter out posts containing muted words
+    if (req.user && req.user.mutedWords && req.user.mutedWords.length > 0) {
+      transformedPosts = filterByMutedWords(transformedPosts, req.user.mutedWords);
+    }
+
+    // Apply content filters
+    if (req.user && req.user.contentFilters) {
+      transformedPosts = filterByContentFilters(transformedPosts, req.user.contentFilters);
+    }
 
     res.json({
       posts: transformedPosts,

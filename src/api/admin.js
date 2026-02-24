@@ -82,6 +82,10 @@ export async function resetUserPassword(id) {
   return api.put(`/admin/users/${id}/reset-password`, {});
 }
 
+export async function deleteUser(id) {
+  return api.delete(`/admin/users/${id}`);
+}
+
 // ============================================
 // CONTACTS / SUPPORT
 // ============================================
@@ -100,6 +104,14 @@ export async function getContact(id) {
 
 export async function updateContact(id, data) {
   return api.put(`/admin/contacts/${id}`, data);
+}
+
+export async function deleteContact(id) {
+  return api.delete(`/admin/contacts/${id}`);
+}
+
+export async function respondToContact(id, response) {
+  return api.post(`/admin/contacts/${id}/respond`, { response });
 }
 
 // ============================================
@@ -181,10 +193,13 @@ export default {
   banUser,
   issueWarning,
   resetUserPassword,
+  deleteUser,
   // Contacts
   getContacts,
   getContact,
   updateContact,
+  deleteContact,
+  respondToContact,
   // System
   sendSystemNotification,
   // Taxonomies

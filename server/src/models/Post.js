@@ -70,6 +70,10 @@ const postSchema = new mongoose.Schema(
     // Content warnings
     isSpoiler: { type: Boolean, default: false },
     isNSFW: { type: Boolean, default: false },
+    isMature: { type: Boolean, default: false },
+    isExplicit: { type: Boolean, default: false },
+    hasViolence: { type: Boolean, default: false },
+    hasSelfHarm: { type: Boolean, default: false },
   },
   {
     timestamps: true,

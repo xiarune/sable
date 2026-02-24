@@ -5,6 +5,8 @@ const Draft = require("../models/Draft");
 const Genre = require("../models/Genre");
 const Fandom = require("../models/Fandom");
 const Tag = require("../models/Tag");
+const User = require("../models/User");
+const Follow = require("../models/Follow");
 const { requireAuth, optionalAuth } = require("../middleware/auth");
 const { MAX_WORKS_PER_USER, MAX_CHAPTERS, MAX_BODY_LENGTH, MAX_TAGS, MAX_TAG_LENGTH } = require("../config/limits");
 
@@ -254,10 +256,10 @@ router.get("/:id", optionalAuth, async (req, res, next) => {
 
     const isAuthor = req.user && work.authorId.toString() === req.user._id.toString();
 
-    // Check privacy
+    // Check work privacy setting
     // Public: anyone can view
     // Private: only author
-    // Following: requires auth (real follow check comes later)
+    // Following: requires auth and being a follower
     if (work.privacy === "Private") {
       if (!isAuthor) {
         return res.status(403).json({ error: "This work is private" });
@@ -266,8 +268,34 @@ router.get("/:id", optionalAuth, async (req, res, next) => {
       if (!req.user) {
         return res.status(401).json({ error: "Authentication required to view this work" });
       }
-      // For now, any authenticated user can view "Following" works
-      // Real follow check will be added later
+      if (!isAuthor) {
+        // Check if viewer follows the author
+        const isFollowing = await Follow.findOne({
+          followerId: req.user._id,
+          followeeId: work.authorId,
+        });
+        if (!isFollowing) {
+          return res.status(403).json({ error: "This work is only visible to followers" });
+        }
+      }
+    }
+
+    // Check author's account privacy setting
+    if (!isAuthor) {
+      const author = await User.findById(work.authorId).select("preferences.visibility");
+      if (author?.preferences?.visibility === "private") {
+        if (!req.user) {
+          return res.status(403).json({ error: "This user has a private profile" });
+        }
+        // Check if viewer is an approved follower
+        const isFollowing = await Follow.findOne({
+          followerId: req.user._id,
+          followeeId: work.authorId,
+        });
+        if (!isFollowing) {
+          return res.status(403).json({ error: "This user has a private profile. Send a follow request to see their works." });
+        }
+      }
     }
 
     // Increment views only for non-authors

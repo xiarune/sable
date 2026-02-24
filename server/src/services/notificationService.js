@@ -358,6 +358,7 @@ async function notifySystem(recipientIds, title, body) {
         type: NOTIFICATION_TYPES.SYSTEM,
         title,
         body,
+        actorUsername: "Sable Support", // System notifications come from Sable Support
       });
 
       if (notification) {

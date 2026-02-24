@@ -44,6 +44,8 @@ export default function AdminDashboard({ admin: initialAdmin, onLogout }) {
   const [selectedReport, setSelectedReport] = React.useState(null);
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [selectedContact, setSelectedContact] = React.useState(null);
+  const [contactResponse, setContactResponse] = React.useState("");
+  const [respondingSending, setRespondingSending] = React.useState(false);
 
   // Check auth on mount
   React.useEffect(() => {
@@ -178,6 +180,26 @@ export default function AdminDashboard({ admin: initialAdmin, onLogout }) {
     }
   }
 
+  async function handleDeleteUser(userId, username) {
+    const confirmText = prompt(
+      `This will PERMANENTLY delete user @${username} and ALL their data (works, posts, comments, messages, etc.).\n\nThis action CANNOT be undone.\n\nType the username to confirm:`
+    );
+    if (confirmText !== username) {
+      if (confirmText !== null) {
+        alert("Username did not match. User was not deleted.");
+      }
+      return;
+    }
+    try {
+      await adminApi.deleteUser(userId);
+      alert(`User @${username} and all their data has been deleted.`);
+      loadUsers();
+      setSelectedUser(null);
+    } catch (err) {
+      alert(err.message || "Delete failed");
+    }
+  }
+
   async function handleContactAction(contactId, status) {
     try {
       await adminApi.updateContact(contactId, { status });
@@ -185,6 +207,38 @@ export default function AdminDashboard({ admin: initialAdmin, onLogout }) {
       setSelectedContact(null);
     } catch (err) {
       alert(err.message || "Action failed");
+    }
+  }
+
+  async function handleDeleteContact(contactId) {
+    if (!window.confirm("Are you sure you want to delete this ticket? This cannot be undone.")) {
+      return;
+    }
+    try {
+      await adminApi.deleteContact(contactId);
+      loadContacts();
+      setSelectedContact(null);
+    } catch (err) {
+      alert(err.message || "Delete failed");
+    }
+  }
+
+  async function handleRespondToContact(contactId) {
+    if (!contactResponse.trim()) {
+      alert("Please enter a response message");
+      return;
+    }
+    setRespondingSending(true);
+    try {
+      await adminApi.respondToContact(contactId, contactResponse.trim());
+      alert("Response sent successfully");
+      setContactResponse("");
+      loadContacts();
+      setSelectedContact(null);
+    } catch (err) {
+      alert(err.message || "Failed to send response");
+    } finally {
+      setRespondingSending(false);
     }
   }
 
@@ -646,6 +700,14 @@ export default function AdminDashboard({ admin: initialAdmin, onLogout }) {
                   Ban User
                 </button>
               )}
+              <button
+                type="button"
+                className="add-modalBtn add-modalBtn--danger"
+                onClick={() => handleDeleteUser(selectedUser._id, selectedUser.username)}
+                style={{ marginLeft: "auto" }}
+              >
+                Delete User
+              </button>
             </div>
           </div>
         </div>
@@ -653,11 +715,11 @@ export default function AdminDashboard({ admin: initialAdmin, onLogout }) {
 
       {/* Contact Modal */}
       {selectedContact && (
-        <div className="add-modal-overlay" onClick={() => setSelectedContact(null)}>
+        <div className="add-modal-overlay" onClick={() => { setSelectedContact(null); setContactResponse(""); }}>
           <div className="add-modal" onClick={(e) => e.stopPropagation()}>
             <div className="add-modalHeader">
               <h3 className="add-modalTitle">Support Ticket</h3>
-              <button type="button" className="add-modalClose" onClick={() => setSelectedContact(null)}>×</button>
+              <button type="button" className="add-modalClose" onClick={() => { setSelectedContact(null); setContactResponse(""); }}>×</button>
             </div>
             <div className="add-modalBody">
               <div className="add-modalField">
@@ -672,6 +734,41 @@ export default function AdminDashboard({ admin: initialAdmin, onLogout }) {
                 <span className="add-modalLabel">Message:</span>
                 <p className="add-modalText">{selectedContact.message}</p>
               </div>
+              {selectedContact.response && (
+                <div className="add-modalField add-modalField--block">
+                  <span className="add-modalLabel">Previous Response:</span>
+                  <p className="add-modalText" style={{ fontStyle: "italic", color: "#666" }}>{selectedContact.response}</p>
+                </div>
+              )}
+              {selectedContact.userId && !selectedContact.response && (
+                <div className="add-modalField add-modalField--block">
+                  <span className="add-modalLabel">Send Response to User:</span>
+                  <textarea
+                    className="add-textarea"
+                    placeholder="Type your response here. This will be sent as a notification to the user."
+                    rows={4}
+                    value={contactResponse}
+                    onChange={(e) => setContactResponse(e.target.value)}
+                    style={{ marginTop: "8px" }}
+                  />
+                  <button
+                    type="button"
+                    className="add-primaryBtn"
+                    onClick={() => handleRespondToContact(selectedContact._id)}
+                    disabled={respondingSending || !contactResponse.trim()}
+                    style={{ marginTop: "12px" }}
+                  >
+                    {respondingSending ? "Sending..." : "Send Response"}
+                  </button>
+                </div>
+              )}
+              {!selectedContact.userId && (
+                <div className="add-modalField" style={{ marginTop: "12px" }}>
+                  <span className="add-modalLabel" style={{ color: "#888", fontStyle: "italic" }}>
+                    Note: User was not logged in when submitting. Response cannot be sent via notification - reply via email at {selectedContact.email}.
+                  </span>
+                </div>
+              )}
             </div>
             <div className="add-modalFooter">
               <button
@@ -688,6 +785,15 @@ export default function AdminDashboard({ admin: initialAdmin, onLogout }) {
               >
                 Mark Resolved
               </button>
+              {(selectedContact.status === "resolved" || selectedContact.status === "closed") && (
+                <button
+                  type="button"
+                  className="add-modalBtn add-modalBtn--danger"
+                  onClick={() => handleDeleteContact(selectedContact._id)}
+                >
+                  Delete Ticket
+                </button>
+              )}
             </div>
           </div>
         </div>

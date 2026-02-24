@@ -221,4 +221,80 @@ router.get("/posts", requireAuth, async (req, res, next) => {
   }
 });
 
+// GET /likes/indexes - List all indexes on the likes collection
+router.get("/indexes", async (req, res, next) => {
+  try {
+    const indexes = await Like.collection.indexes();
+    res.json({ indexes });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /likes/clear-all - Nuclear option: delete all likes and fix indexes
+router.post("/clear-all", async (req, res, next) => {
+  try {
+    // Delete all like documents
+    await Like.deleteMany({});
+
+    // Drop all indexes
+    try {
+      await Like.collection.dropIndexes();
+    } catch (e) {
+      console.log("Drop indexes:", e.message);
+    }
+
+    // Sync indexes from schema
+    await Like.syncIndexes();
+
+    const indexes = await Like.collection.indexes();
+
+    res.json({
+      message: "All likes cleared and indexes rebuilt",
+      indexes
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /likes/fix-indexes - Fix duplicate index issue (run once)
+router.post("/fix-indexes", async (req, res, next) => {
+  try {
+    // Get current indexes
+    const indexesBefore = await Like.collection.indexes();
+
+    // Drop ALL indexes (including the default _id index will be kept by MongoDB)
+    try {
+      await Like.collection.dropIndexes();
+    } catch (e) {
+      console.log("Drop indexes error (may be ok):", e.message);
+    }
+
+    // Also try to drop specific problematic index names
+    const problematicIndexes = ["userId_1", "userId_1_workId_1", "userId_1_postId_1", "userId_1_commentId_1"];
+    for (const indexName of problematicIndexes) {
+      try {
+        await Like.collection.dropIndex(indexName);
+      } catch (e) {
+        // Index might not exist, that's ok
+      }
+    }
+
+    // Ensure the schema indexes are synced
+    await Like.syncIndexes();
+
+    // Get indexes after fix
+    const indexesAfter = await Like.collection.indexes();
+
+    res.json({
+      message: "Indexes fixed successfully",
+      before: indexesBefore,
+      after: indexesAfter
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

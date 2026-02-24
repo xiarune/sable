@@ -25,6 +25,11 @@ const contactSchema = new mongoose.Schema(
       required: true,
       maxlength: 5000,
     },
+    // Optional: link to logged-in user who submitted
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     status: {
       type: String,
       enum: ["new", "in_progress", "resolved", "closed"],
@@ -37,6 +42,18 @@ const contactSchema = new mongoose.Schema(
     notes: {
       type: String,
       maxlength: 2000,
+    },
+    // Admin response to user
+    response: {
+      type: String,
+      maxlength: 5000,
+    },
+    respondedAt: {
+      type: Date,
+    },
+    respondedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
     },
     resolvedAt: {
       type: Date,
