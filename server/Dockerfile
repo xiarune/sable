@@ -8,8 +8,8 @@ RUN apk add --no-cache python3 make g++
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with reduced memory
-RUN npm ci --maxsockets 1
+# Install dependencies
+RUN npm install
 
 # Copy source code
 COPY . .
