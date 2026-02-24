@@ -477,7 +477,7 @@
   background: rgba(255, 255, 255, 0.84);
   border-radius: 12px;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(0, 0, 0, 0.10);
-  overflow: hidden;
+  /* Note: overflow visible to allow dropdown menus to extend beyond card */
 }
 
 .co-postTop {
@@ -687,6 +687,11 @@
   font-weight: 700;
   font-size: 12px;
   color: rgba(60, 55, 52, 0.78);
+  pointer-events: auto;
+}
+
+.co-action:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .co-action--ghost {
@@ -759,6 +764,10 @@
 .co-replyCancel:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.co-action:not(:disabled) {
+  cursor: pointer !important;
 }
 
 .co-action:disabled {
@@ -1273,9 +1282,16 @@
   background: rgba(255, 255, 255, 0.98);
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
-  z-index: 50;
+  z-index: 9999;
   min-width: 140px;
-  overflow: hidden;
+}
+
+/* Open menu upward when near bottom of viewport */
+.co-menuDropdown--upward {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 4px;
 }
 
 .co-menuItem {

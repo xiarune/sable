@@ -19,6 +19,19 @@ const sendMessageSchema = z.object({
   attachmentName: z.string().optional(),
 });
 
+// Helper to sanitize user presence based on visibility settings
+function sanitizePresence(user) {
+  if (!user) return null;
+  const u = user.toObject ? user.toObject() : { ...user };
+  // If user has invisible visibility, always show them as offline
+  if (u.preferences?.visibility === "invisible") {
+    u.presence = { status: "offline", lastSeenAt: null, lastActiveAt: null };
+  }
+  // Don't expose visibility preference to other users
+  delete u.preferences;
+  return u;
+}
+
 // GET /messages/unread-count - Get total unread message count
 router.get("/unread-count", async (req, res, next) => {
   try {
@@ -57,10 +70,10 @@ router.get("/threads", async (req, res, next) => {
 
     // Get participant info for each thread (including presence)
     const participantIds = [...new Set(threads.flatMap((t) => t.participants.map((p) => p.toString())))];
-    const users = await User.find({ _id: { $in: participantIds } }).select("username displayName avatarUrl presence");
+    const users = await User.find({ _id: { $in: participantIds } }).select("username displayName avatarUrl presence preferences.visibility");
     const userMap = {};
     users.forEach((u) => {
-      userMap[u._id.toString()] = u;
+      userMap[u._id.toString()] = sanitizePresence(u);
     });
 
     const threadsWithUsers = threads.map((t) => {
@@ -87,10 +100,10 @@ router.get("/requests", async (req, res, next) => {
 
     // Get participant info (including presence)
     const participantIds = [...new Set(threads.flatMap((t) => t.participants.map((p) => p.toString())))];
-    const users = await User.find({ _id: { $in: participantIds } }).select("username displayName avatarUrl presence");
+    const users = await User.find({ _id: { $in: participantIds } }).select("username displayName avatarUrl presence preferences.visibility");
     const userMap = {};
     users.forEach((u) => {
-      userMap[u._id.toString()] = u;
+      userMap[u._id.toString()] = sanitizePresence(u);
     });
 
     const threadsWithUsers = threads.map((t) => {
@@ -152,6 +165,15 @@ router.delete("/requests/:threadId", async (req, res, next) => {
   }
 });
 
+// Helper function to check if two users are mutuals
+async function areMutuals(userId1, userId2) {
+  const [follow1, follow2] = await Promise.all([
+    Follow.findOne({ followerId: userId1, followeeId: userId2 }),
+    Follow.findOne({ followerId: userId2, followeeId: userId1 }),
+  ]);
+  return !!(follow1 && follow2);
+}
+
 // POST /messages/threads - Start new thread
 router.post("/threads", async (req, res, next) => {
   try {
@@ -177,6 +199,33 @@ router.post("/threads", async (req, res, next) => {
 
     if (thread) {
       return res.status(200).json({ thread, existing: true });
+    }
+
+    // Check DM permissions
+    const dmSetting = recipient.preferences?.dmSetting || "everyone";
+
+    if (dmSetting === "none") {
+      return res.status(403).json({ error: "This user has disabled direct messages" });
+    }
+
+    // Check if users are mutuals (used for both "mutuals" and "community" settings)
+    const mutuals = await areMutuals(req.user._id, recipientId);
+
+    if (dmSetting === "mutuals" && !mutuals) {
+      return res.status(403).json({ error: "This user only accepts messages from mutuals" });
+    }
+
+    if (dmSetting === "community") {
+      // For "community" setting, allow if mutuals OR if sender follows recipient
+      // This is a reasonable interpretation since community implies some connection
+      const senderFollowsRecipient = await Follow.findOne({
+        followerId: req.user._id,
+        followeeId: recipientId,
+      });
+
+      if (!mutuals && !senderFollowsRecipient) {
+        return res.status(403).json({ error: "This user only accepts messages from their community" });
+      }
     }
 
     // Check if sender is followed by the recipient (to determine if it's a request)
@@ -225,9 +274,9 @@ router.get("/threads/:threadId", async (req, res, next) => {
     await thread.save();
 
     // Get participant details (including presence)
-    const users = await User.find({ _id: { $in: thread.participants } }).select("username displayName avatarUrl presence");
+    const users = await User.find({ _id: { $in: thread.participants } }).select("username displayName avatarUrl presence preferences.visibility");
     const participantDetails = thread.participants.map((pId) =>
-      users.find((u) => u._id.toString() === pId.toString()) || null
+      sanitizePresence(users.find((u) => u._id.toString() === pId.toString()))
     );
 
     res.json({
@@ -502,9 +551,11 @@ router.get("/mutuals", async (req, res, next) => {
       return res.json({ mutuals: [] });
     }
 
-    const mutuals = await User.find({ _id: { $in: mutualIds } })
-      .select("username displayName avatarUrl presence")
+    const mutualsRaw = await User.find({ _id: { $in: mutualIds } })
+      .select("username displayName avatarUrl presence preferences.visibility")
       .limit(20);
+
+    const mutuals = mutualsRaw.map(sanitizePresence);
 
     res.json({ mutuals });
   } catch (err) {
@@ -526,9 +577,11 @@ router.get("/users", async (req, res, next) => {
       ];
     }
 
-    const users = await User.find(filter)
-      .select("username displayName avatarUrl presence")
+    const usersRaw = await User.find(filter)
+      .select("username displayName avatarUrl presence preferences.visibility")
       .limit(20);
+
+    const users = usersRaw.map(sanitizePresence);
 
     res.json({ users });
   } catch (err) {

@@ -153,7 +153,9 @@ function MentionInput({ value, onChange, placeholder, rows = 2, followingList = 
 // Post menu component (three dots)
 function PostMenu({ post, onEdit, onDelete, onReport, onBlock, onMute, onHide, isOwner }) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [openUpward, setOpenUpward] = React.useState(false);
   const menuRef = React.useRef(null);
+  const buttonRef = React.useRef(null);
 
   React.useEffect(() => {
     function handleClickOutside(e) {
@@ -167,9 +169,20 @@ function PostMenu({ post, onEdit, onDelete, onReport, onBlock, onMute, onHide, i
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
+  // Check if menu should open upward when opened
+  React.useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      const menuHeight = isOwner ? 80 : 160; // Approximate height based on menu items
+      const spaceBelow = window.innerHeight - buttonRect.bottom;
+      setOpenUpward(spaceBelow < menuHeight + 20);
+    }
+  }, [isOpen, isOwner]);
+
   return (
     <div className="co-menuWrap" ref={menuRef}>
       <button
+        ref={buttonRef}
         type="button"
         className="co-more"
         aria-label="More actions"
@@ -179,7 +192,7 @@ function PostMenu({ post, onEdit, onDelete, onReport, onBlock, onMute, onHide, i
         ⋯
       </button>
       {isOpen && (
-        <div className="co-menuDropdown">
+        <div className={`co-menuDropdown ${openUpward ? "co-menuDropdown--upward" : ""}`}>
           {isOwner ? (
             <>
               <button
@@ -570,6 +583,10 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
 
   async function handleLike(postId) {
     const postIdStr = String(postId);
+    if (!postIdStr || postIdStr === "undefined" || postIdStr === "null") {
+      console.error("Invalid post ID:", postId);
+      return;
+    }
     if (likeInProgress[postIdStr]) return;
 
     setLikeInProgress((prev) => ({ ...prev, [postIdStr]: true }));
@@ -601,6 +618,9 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
       }
     } catch (err) {
       console.error("Like action failed:", err);
+      // Show error to user
+      const errorMsg = err.data?.error || err.message || "Failed to like post";
+      alert(errorMsg);
     } finally {
       setLikeInProgress((prev) => ({ ...prev, [postIdStr]: false }));
     }
@@ -1603,7 +1623,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                         type="button"
                         className={`co-action ${likedPosts.some((id) => String(id) === String(p.id)) ? "co-action--active" : ""}`}
                         onClick={() => requireAuth(() => handleLike(p.id))}
-                        disabled={likeInProgress[String(p.id)]}
+                        style={{ cursor: 'pointer' }}
                       >
                         {likedPosts.some((id) => String(id) === String(p.id)) ? "♥ Liked" : "♡ Like"} {p.meta?.likes && p.meta.likes !== "0" ? `(${p.meta.likes})` : ""}
                       </button>

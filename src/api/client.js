@@ -9,15 +9,14 @@ async function request(endpoint, options = {}) {
   const config = {
     credentials: "include", // Send cookies for auth
     headers: {
-      "Content-Type": "application/json",
       ...options.headers,
     },
     ...options,
   };
 
-  // Don't set Content-Type for FormData (let browser set it with boundary)
-  if (options.body instanceof FormData) {
-    delete config.headers["Content-Type"];
+  // Only set Content-Type: application/json when there's a body (and it's not FormData)
+  if (options.body && !(options.body instanceof FormData)) {
+    config.headers["Content-Type"] = "application/json";
   }
 
   const response = await fetch(url, config);
@@ -47,13 +46,15 @@ export const api = {
   post: (endpoint, body) =>
     request(endpoint, {
       method: "POST",
-      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+      ...(body !== undefined && { body: JSON.stringify(body) }),
     }),
 
   put: (endpoint, body) =>
     request(endpoint, {
       method: "PUT",
-      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+      ...(body !== undefined && { body: JSON.stringify(body) }),
     }),
 
   delete: (endpoint) => request(endpoint, { method: "DELETE" }),

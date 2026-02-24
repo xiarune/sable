@@ -100,6 +100,14 @@ const workSchema = new mongoose.Schema(
     // Quality scoring for recommendations
     qualityScore: { type: Number, default: 1.0, min: 0, max: 1 },
 
+    // Content warnings/ratings
+    isSpoiler: { type: Boolean, default: false },
+    isNSFW: { type: Boolean, default: false },
+    isMature: { type: Boolean, default: false },
+    isExplicit: { type: Boolean, default: false },
+    hasViolence: { type: Boolean, default: false },
+    hasSelfHarm: { type: Boolean, default: false },
+
     // Content flagging
     flaggedAt: { type: Date, default: null },
     flagReason: { type: String, default: null },

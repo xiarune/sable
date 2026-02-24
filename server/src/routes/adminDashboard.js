@@ -464,6 +464,87 @@ router.put("/users/:id/reset-password", async (req, res, next) => {
   }
 });
 
+/**
+ * DELETE /admin/users/:id
+ * Permanently delete a user and all their data
+ */
+router.delete("/users/:id", async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Don't allow deleting admin accounts through this endpoint
+    if (user.isAdmin) {
+      return res.status(403).json({ error: "Cannot delete admin accounts" });
+    }
+
+    // Delete all user-related data
+    const Work = require("../models/Work");
+    const Post = require("../models/Post");
+    const Comment = require("../models/Comment");
+    const Like = require("../models/Like");
+    const Bookmark = require("../models/Bookmark");
+    const Follow = require("../models/Follow");
+    const FollowRequest = require("../models/FollowRequest");
+    const Notification = require("../models/Notification");
+    const Message = require("../models/Message");
+    const Thread = require("../models/Thread");
+    const Draft = require("../models/Draft");
+    const ReadingList = require("../models/ReadingList");
+    const Upload = require("../models/Upload");
+    const AudioTrack = require("../models/AudioTrack");
+    const CommunityPage = require("../models/CommunityPage");
+    const Session = require("../models/Session");
+    const Skin = require("../models/Skin");
+    const Donation = require("../models/Donation");
+    const Warning = require("../models/Warning");
+    const Report = require("../models/Report");
+
+    // Delete in order to avoid foreign key issues
+    await Promise.all([
+      Work.deleteMany({ authorId: userId }),
+      Post.deleteMany({ authorId: userId }),
+      Comment.deleteMany({ authorId: userId }),
+      Like.deleteMany({ userId: userId }),
+      Bookmark.deleteMany({ userId: userId }),
+      Follow.deleteMany({ $or: [{ followerId: userId }, { followeeId: userId }] }),
+      FollowRequest.deleteMany({ $or: [{ requesterId: userId }, { targetId: userId }] }),
+      Notification.deleteMany({ userId: userId }),
+      Message.deleteMany({ senderId: userId }),
+      Draft.deleteMany({ authorId: userId }),
+      ReadingList.deleteMany({ userId: userId }),
+      Upload.deleteMany({ userId: userId }),
+      AudioTrack.deleteMany({ userId: userId }),
+      CommunityPage.deleteMany({ userId: userId }),
+      Session.deleteMany({ userId: userId }),
+      Skin.deleteMany({ userId: userId }),
+      Donation.deleteMany({ $or: [{ donorId: userId }, { recipientId: userId }] }),
+      Warning.deleteMany({ userId: userId }),
+      Report.deleteMany({ reporterId: userId }),
+    ]);
+
+    // Remove user from threads (don't delete threads, just remove participation)
+    await Thread.updateMany(
+      { participants: userId },
+      { $pull: { participants: userId } }
+    );
+
+    // Delete empty threads
+    await Thread.deleteMany({ participants: { $size: 0 } });
+
+    // Finally delete the user
+    await User.findByIdAndDelete(userId);
+
+    res.json({ message: "User and all associated data deleted successfully" });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ============================================
 // CONTACT / SUPPORT TICKETS
 // ============================================
@@ -550,6 +631,72 @@ router.put("/contacts/:id", async (req, res, next) => {
     await contact.save();
 
     res.json({ message: "Contact updated", contact });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /admin/contacts/:id/respond
+ * Send a response to a contact submission
+ */
+router.post("/contacts/:id/respond", async (req, res, next) => {
+  try {
+    const { response } = req.body;
+
+    if (!response || !response.trim()) {
+      return res.status(400).json({ error: "Response message is required" });
+    }
+
+    const contact = await Contact.findById(req.params.id);
+    if (!contact) {
+      return res.status(404).json({ error: "Contact submission not found" });
+    }
+
+    // Save the response
+    contact.response = response.trim();
+    contact.respondedAt = new Date();
+    contact.respondedBy = req.admin._id;
+    contact.status = "resolved";
+    contact.resolvedAt = new Date();
+    contact.resolvedBy = req.admin._id;
+    await contact.save();
+
+    // If the contact has a linked user, send them a notification
+    if (contact.userId) {
+      const { notifySystem } = require("../services/notificationService");
+      await notifySystem(
+        contact.userId,
+        "Response to your support ticket",
+        `Regarding "${contact.subject}": ${response.trim().slice(0, 200)}${response.trim().length > 200 ? "..." : ""}`
+      );
+    }
+
+    res.json({ message: "Response sent", contact });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * DELETE /admin/contacts/:id
+ * Delete a contact submission (only resolved/closed tickets can be deleted)
+ */
+router.delete("/contacts/:id", async (req, res, next) => {
+  try {
+    const contact = await Contact.findById(req.params.id);
+    if (!contact) {
+      return res.status(404).json({ error: "Contact submission not found" });
+    }
+
+    // Only allow deletion of resolved or closed tickets
+    if (contact.status !== "resolved" && contact.status !== "closed") {
+      return res.status(400).json({ error: "Only resolved or closed tickets can be deleted" });
+    }
+
+    await Contact.findByIdAndDelete(req.params.id);
+
+    res.json({ message: "Contact deleted successfully" });
   } catch (err) {
     next(err);
   }

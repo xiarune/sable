@@ -2,6 +2,7 @@ const express = require("express");
 const { z } = require("zod");
 const { sendEmail } = require("../utils/email");
 const Contact = require("../models/Contact");
+const { optionalAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ const contactSchema = z.object({
 });
 
 // POST /api/contact - Send a contact form message
-router.post("/", async (req, res, next) => {
+router.post("/", optionalAuth, async (req, res, next) => {
   try {
     const data = contactSchema.parse(req.body);
 
@@ -24,6 +25,8 @@ router.post("/", async (req, res, next) => {
       subject: data.subject,
       message: data.message,
       status: "new",
+      // Link to user if logged in (so we can notify them of response)
+      userId: req.user?._id || null,
     });
     await contact.save();
 

@@ -40,6 +40,7 @@ export default function Settings({ username, onLogout }) {
 
   // Privacy state
   const [blockedUsers, setBlockedUsers] = React.useState([]);
+  const [mutedUsers, setMutedUsers] = React.useState([]);
   const [mutedWords, setMutedWords] = React.useState([]);
   const [dmSetting, setDmSetting] = React.useState("everyone");
   const [contentFilters, setContentFilters] = React.useState({
@@ -103,9 +104,10 @@ export default function Settings({ username, onLogout }) {
   React.useEffect(() => {
     async function loadData() {
       try {
-        const [meData, blockedData, mutedData, privacyData, sessionsData, accountsData, skinsData, optionsData] = await Promise.all([
+        const [meData, blockedData, mutedUsersData, mutedData, privacyData, sessionsData, accountsData, skinsData, optionsData] = await Promise.all([
           authApi.me(),
           usersApi.getBlockedUsers().catch(() => ({ blockedUsers: [] })),
+          usersApi.getMutedUsers().catch(() => ({ mutedUsers: [] })),
           settingsApi.getMutedWords().catch(() => ({ mutedWords: [] })),
           settingsApi.getPrivacy().catch(() => ({ privacy: {} })),
           settingsApi.getSessions().catch(() => ({ sessions: [] })),
@@ -116,6 +118,7 @@ export default function Settings({ username, onLogout }) {
 
         setUser(meData.user);
         setBlockedUsers(blockedData.blockedUsers || []);
+        setMutedUsers(mutedUsersData.mutedUsers || []);
         setMutedWords(mutedData.mutedWords || []);
         setPrivacySettings(privacyData.privacy || {});
         setSessions(sessionsData.sessions || []);
@@ -233,6 +236,7 @@ export default function Settings({ username, onLogout }) {
       case "download": return "Download Your Data";
       case "sessions": return "Active Sessions";
       case "blocked": return "Blocked Users";
+      case "mutedusers": return "Muted Users";
       case "muted": return "Muted Words";
       case "filters": return "Content Filters";
       case "dm": return "DM Permissions";
@@ -652,6 +656,43 @@ export default function Settings({ username, onLogout }) {
                 </button>
               ))}
               {blockedUsers.length === 0 && <div className="st-mutedNote">No blocked users.</div>}
+            </div>
+
+            {modalStatus && <div className="st-mutedNote" style={{ marginTop: 10 }}>{modalStatus}</div>}
+          </>
+        );
+
+      case "mutedusers":
+        return (
+          <>
+            <div className="st-mutedNote">
+              Muted users' posts won't appear in your feed, but they can still follow and message you.
+            </div>
+
+            <div className="st-mutedNote" style={{ marginTop: 12 }}>
+              Currently muted:
+            </div>
+
+            <div className="st-pillStack" style={{ marginTop: 10 }}>
+              {mutedUsers.map((u) => (
+                <button
+                  key={u._id}
+                  type="button"
+                  className="st-pillBtn"
+                  onClick={async () => {
+                    try {
+                      await usersApi.unmuteUser(u._id);
+                      setMutedUsers((prev) => prev.filter((x) => x._id !== u._id));
+                      setModalStatus(`Unmuted @${u.username}`);
+                    } catch (err) {
+                      setModalStatus(err.message || "Failed to unmute");
+                    }
+                  }}
+                >
+                  Unmute @{u.username}
+                </button>
+              ))}
+              {mutedUsers.length === 0 && <div className="st-mutedNote">No muted users.</div>}
             </div>
 
             {modalStatus && <div className="st-mutedNote" style={{ marginTop: 10 }}>{modalStatus}</div>}
@@ -1444,6 +1485,9 @@ export default function Settings({ username, onLogout }) {
                 <div className="st-pillStack" aria-label="Privacy options">
                   <button type="button" className="st-pillBtn" onClick={() => openModal("blocked")}>
                     Blocked Users ({blockedUsers.length})
+                  </button>
+                  <button type="button" className="st-pillBtn" onClick={() => openModal("mutedusers")}>
+                    Muted Users ({mutedUsers.length})
                   </button>
                   <button type="button" className="st-pillBtn" onClick={() => openModal("muted")}>
                     Muted Words ({mutedWords.length})

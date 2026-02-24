@@ -119,6 +119,42 @@ router.get("/discover", optionalAuth, async (req, res, next) => {
   }
 });
 
+// GET /users/blocked - Get blocked users
+// IMPORTANT: This route must come BEFORE /:username to avoid matching "blocked" as a username
+router.get("/blocked", requireAuth, async (req, res, next) => {
+  try {
+    const blockedUsers = await User.find({ _id: { $in: req.user.blockedUsers } })
+      .select("username displayName avatarUrl");
+
+    res.json({ blockedUsers });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /users/muted - Get muted users
+// IMPORTANT: This route must come BEFORE /:username to avoid matching "muted" as a username
+router.get("/muted", requireAuth, async (req, res, next) => {
+  try {
+    const mutedUsers = await User.find({ _id: { $in: req.user.mutedUsers || [] } })
+      .select("username displayName avatarUrl");
+
+    res.json({ mutedUsers });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /users/hidden-posts - Get hidden post IDs
+// IMPORTANT: This route must come BEFORE /:username to avoid matching "hidden-posts" as a username
+router.get("/hidden-posts", requireAuth, async (req, res, next) => {
+  try {
+    res.json({ hiddenPostIds: req.user.hiddenPosts || [] });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /users/:username - Get public profile
 router.get("/:username", optionalAuth, async (req, res, next) => {
   try {
@@ -270,18 +306,6 @@ router.delete("/block/:userId", requireAuth, async (req, res, next) => {
   }
 });
 
-// GET /users/blocked - Get blocked users
-router.get("/blocked", requireAuth, async (req, res, next) => {
-  try {
-    const blockedUsers = await User.find({ _id: { $in: req.user.blockedUsers } })
-      .select("username displayName avatarUrl");
-
-    res.json({ blockedUsers });
-  } catch (err) {
-    next(err);
-  }
-});
-
 // POST /users/mute/:userId - Mute a user
 router.post("/mute/:userId", requireAuth, async (req, res, next) => {
   try {
@@ -326,18 +350,6 @@ router.delete("/mute/:userId", requireAuth, async (req, res, next) => {
   }
 });
 
-// GET /users/muted - Get muted users
-router.get("/muted", requireAuth, async (req, res, next) => {
-  try {
-    const mutedUsers = await User.find({ _id: { $in: req.user.mutedUsers || [] } })
-      .select("username displayName avatarUrl");
-
-    res.json({ mutedUsers });
-  } catch (err) {
-    next(err);
-  }
-});
-
 // POST /users/hide-post/:postId - Hide a post
 router.post("/hide-post/:postId", requireAuth, async (req, res, next) => {
   try {
@@ -373,15 +385,6 @@ router.delete("/hide-post/:postId", requireAuth, async (req, res, next) => {
     await req.user.save();
 
     res.json({ message: "Post unhidden" });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// GET /users/hidden-posts - Get hidden post IDs
-router.get("/hidden-posts", requireAuth, async (req, res, next) => {
-  try {
-    res.json({ hiddenPostIds: req.user.hiddenPosts || [] });
   } catch (err) {
     next(err);
   }
