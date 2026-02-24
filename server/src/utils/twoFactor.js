@@ -1,11 +1,11 @@
-const { TOTP, generateSecret: genSecret, generateURI } = require("otplib");
+const { authenticator } = require("otplib");
 const QRCode = require("qrcode");
 const crypto = require("crypto");
 
 const APP_NAME = "Sable";
 
-// Create TOTP instance with window for clock drift
-const totp = new TOTP({ window: 1 });
+// Configure authenticator with window for clock drift
+authenticator.options = { window: 1 };
 
 /**
  * Generate a new 2FA secret for a user
@@ -13,13 +13,8 @@ const totp = new TOTP({ window: 1 });
  * @returns {Object} Secret and otpauth URL
  */
 function generateSecret(username) {
-  const secret = genSecret();
-  const otpauthUrl = generateURI({
-    issuer: APP_NAME,
-    label: username,
-    secret,
-    type: "totp",
-  });
+  const secret = authenticator.generateSecret();
+  const otpauthUrl = authenticator.keyuri(username, APP_NAME, secret);
 
   return { secret, otpauthUrl };
 }
@@ -46,7 +41,7 @@ async function generateQRCode(otpauthUrl) {
  */
 function verifyToken(token, secret) {
   try {
-    return totp.verify({ token, secret });
+    return authenticator.verify({ token, secret });
   } catch {
     return false;
   }
