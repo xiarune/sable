@@ -8,8 +8,8 @@ RUN apk add --no-cache python3 make g++
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies with reduced memory
+RUN npm ci --maxsockets 1
 
 # Copy source code
 COPY . .
@@ -17,5 +17,5 @@ COPY . .
 # Expose the server port
 EXPOSE 5050
 
-# Start the server
-CMD ["npm", "start"]
+# Limit Node.js memory and start the server
+CMD ["node", "--max-old-space-size=400", "src/server.js"]
