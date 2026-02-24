@@ -1,93 +1,204 @@
-       
-≽^•⩊•^≼ Welcome to Sable!
+# Sable
 
-This repository contains the completed front-end implementation of the Sable application.
+A creative writing and community platform built with React and Express.js.
 
-Project Root
+---
+
+## Quick Start with Docker (Recommended)
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+
+### Project Root
 All commands should be executed from the project root directory (`./sable`). This directory contains the `Dockerfile`, `docker-compose.yml`, and `package.json` required to run the application.
 
-Running the Project with Docker
-With Docker Desktop installed, navigate to the project root and run:
+### Running the Project
 
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/xiarune/sable.git
+   cd sable
+   ```
+
+2. Start the application:
+   ```bash
+   docker compose up --build
+   ```
+
+3. Wait for all services to start (first build takes 2-3 minutes). You'll see:
+   ```
+   sable_mongodb  | Waiting for connections
+   sable_backend  | Connected to MongoDB
+   sable_backend  | Server running on http://localhost:5050
+   sable_frontend | nginx ready
+   ```
+
+4. Open your browser:
+   - **Frontend**: http://localhost:3000
+   - **Backend API**: http://localhost:5050/health
+
+5. To stop the application:
+   ```bash
+   docker compose down
+   ```
+
+6. To stop and remove all data:
+   ```bash
+   docker compose down -v
+   ```
+
+### What's Running
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| Frontend | http://localhost:3000 | React application |
+| Backend | http://localhost:5050 | Express.js API |
+| MongoDB | localhost:27017 | Database (internal) |
+
+### Troubleshooting Docker
+
+**Port already in use:**
+```bash
+# Check what's using port 3000 or 5050
+lsof -i :3000
+lsof -i :5050
+# Kill the process or change ports in docker-compose.yml
+```
+
+**Build fails:**
+```bash
+# Clean rebuild
+docker compose down -v
+docker system prune -f
 docker compose up --build
+```
 
-The application will be available at:
-http://localhost:3000
+**MongoDB connection issues:**
+```bash
+# Check if MongoDB container is healthy
+docker compose ps
+docker logs sable_mongodb
+```
 
-GitHub Pages Fallback
-In the event that Docker cannot be run, a GitHub Pages deployment is also available to view the completed front-end interface in a browser:
+---
 
-https://xiarune.github.io/sable/
+## Alternative Access (Non-Docker)
 
+If Docker is not available, a live deployment is available:
 
+**Live Site**: https://sable.vercel.app
 
-# Getting Started with Create React App
+---
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Local Development (Without Docker)
 
-## Available Scripts
+### Prerequisites
+- Node.js 18+
+- npm 9+
+- MongoDB (local installation or Atlas connection string)
 
-In the project directory, you can run:
+### Setup
 
-### `npm start`
+1. Install frontend dependencies:
+   ```bash
+   npm install
+   ```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+2. Install backend dependencies:
+   ```bash
+   cd server
+   npm install
+   cd ..
+   ```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+3. Configure environment variables:
+   ```bash
+   # Frontend
+   cp .env.example .env
 
-### `npm test`
+   # Backend
+   cp server/.env.example server/.env
+   # Edit server/.env with your MongoDB URI and other settings
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+4. Run both frontend and backend:
+   ```bash
+   npm run dev
+   ```
 
-### `npm run build`
+   Or run separately:
+   ```bash
+   # Terminal 1 - Backend
+   cd server && npm run dev
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+   # Terminal 2 - Frontend
+   npm start
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Project Structure
 
-### `npm run eject`
+```
+sable/
+├── src/                    # React frontend source
+│   ├── api/               # API client and configuration
+│   ├── components/        # React components
+│   ├── pages/             # Page components
+│   └── ...
+├── server/                 # Express.js backend
+│   ├── src/
+│   │   ├── config/        # Database, S3, Socket.IO config
+│   │   ├── middleware/    # Auth, error handling, security
+│   │   ├── models/        # MongoDB/Mongoose models
+│   │   ├── routes/        # API routes
+│   │   └── server.js      # Entry point
+│   ├── package.json
+│   └── Dockerfile
+├── docker-compose.yml      # Full-stack Docker setup
+├── Dockerfile             # Frontend container
+├── nginx.conf             # Nginx configuration for SPA
+└── package.json           # Frontend dependencies
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+---
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Environment Variables
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Frontend (.env)
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `REACT_APP_API_URL` | Backend API URL | `http://localhost:5050/api` |
 
-## Learn More
+### Backend (server/.env)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `MONGO_URI` | MongoDB connection string | Yes |
+| `JWT_SECRET` | Secret for JWT signing | Yes |
+| `CLIENT_ORIGIN` | Frontend URL for CORS | Yes |
+| `PORT` | Server port | No (5050) |
+| `AWS_*` | S3 credentials for uploads | For uploads |
+| `GOOGLE_*` | OAuth credentials | For Google login |
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+## API Endpoints
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| POST | `/api/auth/register` | User registration |
+| POST | `/api/auth/login` | User login |
+| GET | `/api/auth/google` | Google OAuth |
+| GET | `/api/works` | List works |
+| GET | `/api/communities` | List communities |
 
-### Analyzing the Bundle Size
+See `server/src/routes/` for full API documentation.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+MIT

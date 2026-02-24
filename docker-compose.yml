@@ -1,14 +1,67 @@
+version: "3.8"
+
 services:
-  sable:
+  # MongoDB database
+  mongodb:
+    image: mongo:7
+    container_name: sable_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=sable
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API server
+  backend:
+    container_name: sable_backend
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    environment:
+      - NODE_ENV=development
+      - PORT=5050
+      - MONGO_URI=mongodb://mongodb:27017/sable
+      - JWT_SECRET=docker-dev-secret-key-change-in-production
+      - CLIENT_ORIGIN=http://localhost:3000
+      # AWS S3 - Add your credentials here for file uploads
+      # - AWS_REGION=us-east-1
+      # - AWS_ACCESS_KEY_ID=your-key
+      # - AWS_SECRET_ACCESS_KEY=your-secret
+      # - S3_BUCKET_NAME=your-bucket
+      # SendGrid Email - Add your credentials here for password reset emails
+      # - SMTP_HOST=smtp.sendgrid.net
+      # - SMTP_PORT=587
+      # - SMTP_SECURE=false
+      # - SMTP_USER=apikey
+      # - SMTP_PASS=your-sendgrid-key
+      # - EMAIL_FROM=Sable <your-email>
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # Frontend React app (served by nginx)
+  frontend:
     container_name: sable_frontend
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=http://localhost:5050/api
+    restart: unless-stopped
     ports:
       - "3000:3000"
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-    volumes:
-      - .:/app
-      - /app/node_modules
-    stdin_open: true
-    tty: true
+    depends_on:
+      - backend
 
+volumes:
+  mongodb_data:

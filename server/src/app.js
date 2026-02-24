@@ -40,11 +40,20 @@ function createApp() {
   app.use(sanitizeMiddleware);
   app.use(xssMiddleware);
 
-  // CORS (React dev server)
-  const origin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+  // CORS (supports multiple origins, comma-separated in CLIENT_ORIGIN)
+  const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+  const allowedOrigins = clientOrigin.split(",").map((o) => o.trim());
   app.use(
     cors({
-      origin,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       credentials: true,
     })
   );
