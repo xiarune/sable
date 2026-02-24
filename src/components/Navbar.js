@@ -8,11 +8,6 @@
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { authApi } from "../api";
-
-// Helper to check if user needs onboarding
-function needsOnboarding(user) {
-  return user && !user.interests?.completedOnboarding;
-}
 import notificationsApi from "../api/notifications";
 import messagesApi from "../api/messages";
 import { initSocket, onNotification, onNotificationsRead, onNewMessage } from "../api/socket";
@@ -20,15 +15,18 @@ import "./Navbar.css";
 
 // Assets
 import sableLogo from "../assets/images/Sable_Logo.png";
-
 import draftNavIcon from "../assets/images/draft_nav.svg";
 import inboxNavIcon from "../assets/images/inbox_nav.svg";
 import notificationsNavIcon from "../assets/images/notifications_nav.svg";
 import searchNavIcon from "../assets/images/search_nav.svg";
-
 import loginGraphic from "../assets/images/login_graphic.png";
 import visibleIcon from "../assets/images/Visible.png";
 import visibleOffIcon from "../assets/images/Visible_Off.png";
+
+// Helper to check if user needs onboarding
+function needsOnboarding(user) {
+  return user && !user.interests?.completedOnboarding;
+}
 
 export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   const navigate = useNavigate();
