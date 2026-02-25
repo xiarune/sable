@@ -240,12 +240,6 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     }
   }
 
-  function handleGoogleContinue() {
-    // Redirect to Google OAuth endpoint
-    const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5050/api";
-    window.location.href = `${apiUrl}/auth/google`;
-  }
-
   function toggleUserMenu() {
     setIsUserMenuOpen((v) => !v);
   }
@@ -825,13 +819,6 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
 
             {authMode !== "2fa" && (
               <>
-                <button type="button" className="googleBtn" onClick={handleGoogleContinue}>
-                  <span className="googleDot" aria-hidden="true">
-                    G
-                  </span>
-                  <span className="googleText">Continue with Google</span>
-                </button>
-
                 <div className="authSwitch">
                   {authMode === "login" ? (
                     <>

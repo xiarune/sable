@@ -21,7 +21,6 @@ const DEFAULT_WIDGETS = {
   announcements: true,
   donations: true,
   recentWorks: true,
-  chatroom: true,
 };
 
 export default function YourCommunityPage({ username }) {
@@ -208,43 +207,6 @@ export default function YourCommunityPage({ username }) {
   function closeFollowModal() {
     setFollowModalOpen(false);
   }
-
-  // Chatroom state (starts empty - real-time chat not yet implemented)
-  const [chatMessages, setChatMessages] = React.useState([]);
-  const [chatInput, setChatInput] = React.useState("");
-  const chatEndRef = React.useRef(null);
-  const isInitialChatMount = React.useRef(true);
-
-  function handleSendMessage() {
-    const text = chatInput.trim();
-    if (!text) return;
-    const newMsg = {
-      id: `m_${Date.now()}`,
-      user: (username || "john.doe").toLowerCase(),
-      text,
-      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-    };
-    setChatMessages((prev) => [...prev, newMsg]);
-    setChatInput("");
-  }
-
-  function handleChatKeyDown(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  }
-
-  // Only scroll chat to bottom when new messages are added, not on initial load
-  React.useEffect(() => {
-    if (isInitialChatMount.current) {
-      isInitialChatMount.current = false;
-      return;
-    }
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [chatMessages]);
 
   // Donation state (for viewing received donations - not yet implemented)
   const [donationHistory] = React.useState([]);
@@ -773,49 +735,6 @@ export default function YourCommunityPage({ username }) {
                   </div>
                 )}
 
-                {widgets.chatroom && (
-                  <div className="ycp-panel ycp-panel--chatroom">
-                    <div className="ycp-panelTitle">Chatroom</div>
-                    <div className="ycp-chatBox">
-                      <div className="ycp-chatMessages">
-                        {chatMessages.length === 0 ? (
-                          <div className="ycp-chatEmpty">No messages yet. Start the conversation!</div>
-                        ) : (
-                          chatMessages.map((msg) => (
-                            <div key={msg.id} className="ycp-chatMessage">
-                              <div className="ycp-chatMsgHeader">
-                                <span className="ycp-chatMsgUser">@{msg.user}</span>
-                                <span className="ycp-chatMsgTime">{msg.time}</span>
-                              </div>
-                              <div className="ycp-chatMsgText">{msg.text}</div>
-                            </div>
-                          ))
-                        )}
-                        <div ref={chatEndRef} />
-                      </div>
-                      <div className="ycp-chatInputRow">
-                        <input
-                          type="text"
-                          className="ycp-chatInput"
-                          placeholder="Type a message..."
-                          value={chatInput}
-                          onChange={(e) => setChatInput(e.target.value)}
-                          onKeyDown={handleChatKeyDown}
-                          aria-label="Chat message"
-                        />
-                        <button
-                          type="button"
-                          className="ycp-chatSendBtn"
-                          onClick={handleSendMessage}
-                          disabled={!chatInput.trim()}
-                          aria-label="Send message"
-                        >
-                          Send
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </aside>
           </div>
@@ -934,16 +853,6 @@ export default function YourCommunityPage({ username }) {
                   </div>
                 )}
 
-                {widgets.chatroom && (
-                  <div className="ycp-panel ycp-panel--edit">
-                    <div className="ycp-panelTitle">Chatroom</div>
-                    <div className="ycp-panelBox ycp-panelBox--edit">
-                      <button type="button" className="ycp-subtractBtn" aria-label="Remove Chatroom widget" title="Remove" onClick={() => toggleWidget("chatroom")}>
-                        <img src={subtractWidgetIcon} alt="" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Add Widget options for disabled widgets */}
@@ -964,11 +873,6 @@ export default function YourCommunityPage({ username }) {
                     {!widgets.recentWorks && (
                       <button type="button" className="ycp-addWidgetBtn" onClick={() => toggleWidget("recentWorks")}>
                         + Recent Works
-                      </button>
-                    )}
-                    {!widgets.chatroom && (
-                      <button type="button" className="ycp-addWidgetBtn" onClick={() => toggleWidget("chatroom")}>
-                        + Chatroom
                       </button>
                     )}
                   </div>
