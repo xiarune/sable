@@ -1013,9 +1013,9 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                         disabled={!currentTrack}
                       >
                         {currentTrackFav ? (
-                          <img src={bookmarkOnIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                          <img src={bookmarkOnIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block", objectFit: "contain" }} />
                         ) : (
-                          <img src={bookmarkOffIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                          <img src={bookmarkOffIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block", objectFit: "contain" }} />
                         )}
                       </button>
 
@@ -1292,9 +1292,9 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   title={isBookmarked ? "Bookmarked" : "Bookmark"}
                 >
                   {isBookmarked ? (
-                    <img src={bookmarkOnIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                    <img src={bookmarkOnIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block", objectFit: "contain" }} />
                   ) : (
-                    <img src={bookmarkOffIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                    <img src={bookmarkOffIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block", objectFit: "contain" }} />
                   )}
                 </button>
 
@@ -1306,7 +1306,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   aria-label="Toggle comments"
                   title="Comments"
                 >
-                  <img src={commentsIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                  <img src={commentsIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block", objectFit: "contain" }} />
                 </button>
 
                 {/* Report - only show for non-authors */}
@@ -1332,7 +1332,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   aria-label="Toggle music bar"
                   title="Music"
                 >
-                  <img src={musicIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                  <img src={musicIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block", objectFit: "contain" }} />
                 </button>
 
                 {/* Audio */}
@@ -1354,7 +1354,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   aria-label="Open settings"
                   title="Settings"
                 >
-                  <img src={settingsIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                  <img src={settingsIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block", objectFit: "contain" }} />
                 </button>
               </div>
 
@@ -1603,9 +1603,9 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                                     title={fav ? "Remove bookmark" : "Bookmark"}
                                   >
                                     {fav ? (
-                                      <img src={bookmarkOnIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                                      <img src={bookmarkOnIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block", objectFit: "contain" }} />
                                     ) : (
-                                      <img src={bookmarkOffIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block" }} />
+                                      <img src={bookmarkOffIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block", objectFit: "contain" }} />
                                     )}
                                   </button>
                                   <span className="wv-audioPickHint">{active ? "Now playing" : "Select"}</span>
