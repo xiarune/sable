@@ -46,7 +46,7 @@ function setAdminTokenCookie(res, token) {
   res.cookie("adminToken", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: ADMIN_SESSION_HOURS * 60 * 60 * 1000,
     path: "/",
   });
@@ -59,7 +59,7 @@ function clearAdminTokenCookie(res) {
   res.cookie("adminToken", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 0,
     path: "/",
   });
