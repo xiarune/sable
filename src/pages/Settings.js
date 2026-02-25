@@ -20,6 +20,8 @@ export default function Settings({ username, onLogout }) {
 
   // Right-side visibility card
   const [visibility, setVisibility] = React.useState("public");
+  const [draftVisibility, setDraftVisibility] = React.useState("public");
+  const [visibilitySaving, setVisibilitySaving] = React.useState(false);
 
   // Modals
   const [activeModal, setActiveModal] = React.useState(null);
@@ -136,6 +138,7 @@ export default function Settings({ username, onLogout }) {
         // Set visibility from user preferences
         if (meData.user?.preferences?.visibility) {
           setVisibility(meData.user.preferences.visibility);
+          setDraftVisibility(meData.user.preferences.visibility);
         }
         if (meData.user?.preferences?.dmSetting) {
           setDmSetting(meData.user.preferences.dmSetting);
@@ -246,13 +249,21 @@ export default function Settings({ username, onLogout }) {
     }
   }
 
-  // Update visibility
-  async function handleVisibilityChange(newVisibility) {
-    setVisibility(newVisibility);
+  // Update draft visibility (doesn't save until user clicks save)
+  function handleVisibilityChange(newVisibility) {
+    setDraftVisibility(newVisibility);
+  }
+
+  // Save visibility changes
+  async function handleSaveVisibility() {
+    setVisibilitySaving(true);
     try {
-      await usersApi.updatePreferences({ visibility: newVisibility });
+      await usersApi.updatePreferences({ visibility: draftVisibility });
+      setVisibility(draftVisibility);
     } catch (err) {
       console.error("Failed to update visibility:", err);
+    } finally {
+      setVisibilitySaving(false);
     }
   }
 
@@ -1745,12 +1756,12 @@ export default function Settings({ username, onLogout }) {
                     type="radio"
                     name="visibility"
                     value="public"
-                    checked={visibility === "public"}
+                    checked={draftVisibility === "public"}
                     onChange={() => handleVisibilityChange("public")}
                   />
                   <div>
                     <div className="st-radioLabel">Public</div>
-                    <div className="st-radioDesc">Everyone can see your works, posts, and comments</div>
+                    <div className="st-radioDesc">Everyone can see your works, posts, and comments. Anyone can follow you.</div>
                   </div>
                 </label>
 
@@ -1759,13 +1770,13 @@ export default function Settings({ username, onLogout }) {
                     type="radio"
                     name="visibility"
                     value="private"
-                    checked={visibility === "private"}
+                    checked={draftVisibility === "private"}
                     onChange={() => handleVisibilityChange("private")}
                   />
                   <div>
                     <div className="st-radioLabel">Private</div>
                     <div className="st-radioDesc">
-                      Your works, posts, and comments are visible only to those in your community
+                      Only approved followers can see your posts and works. Follow requests require your approval.
                     </div>
                   </div>
                 </label>
@@ -1775,7 +1786,7 @@ export default function Settings({ username, onLogout }) {
                     type="radio"
                     name="visibility"
                     value="invisible"
-                    checked={visibility === "invisible"}
+                    checked={draftVisibility === "invisible"}
                     onChange={() => handleVisibilityChange("invisible")}
                   />
                   <div>
@@ -1784,6 +1795,17 @@ export default function Settings({ username, onLogout }) {
                   </div>
                 </label>
               </div>
+
+              {draftVisibility !== visibility && (
+                <button
+                  type="button"
+                  className="st-saveVisibilityBtn"
+                  onClick={handleSaveVisibility}
+                  disabled={visibilitySaving}
+                >
+                  {visibilitySaving ? "Saving..." : "Save Changes"}
+                </button>
+              )}
             </section>
           </aside>
         </div>
