@@ -86,7 +86,7 @@ docker logs sable_mongodb
 
 If Docker is not available, a live deployment is available:
 
-**Live Site**: https://sable.vercel.app
+**Live Site**: https://sable-two.vercel.app
 
 ---
 

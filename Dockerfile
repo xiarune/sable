@@ -16,8 +16,8 @@ COPY . .
 ARG REACT_APP_API_URL=http://localhost:5050/api
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
-# Build the React app
-RUN npm run build
+# Build the React app (CI=false prevents warnings from failing the build)
+RUN CI=false npm run build
 
 # Production stage - serve with nginx
 FROM nginx:alpine
