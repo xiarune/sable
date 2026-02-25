@@ -421,6 +421,30 @@
   max-width: 280px;
 }
 
+.st-saveVisibilityBtn {
+  margin-top: 16px;
+  width: 100%;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #1f3a2a;
+  color: #fff;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.st-saveVisibilityBtn:hover:not(:disabled) {
+  background: #2a4f3a;
+}
+
+.st-saveVisibilityBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Buttons */
 .st-actionBtn {
   border: 0;

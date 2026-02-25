@@ -49,8 +49,8 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   const [announcements, setAnnouncements] = React.useState([]);
   const [accessDenied, setAccessDenied] = React.useState(null); // null | "private" | "following"
 
-  // Following state
-  const [isFollowing, setIsFollowing] = React.useState(false);
+  // Following state: "none" | "following" | "pending"
+  const [followStatus, setFollowStatus] = React.useState("none");
   const [followLoading, setFollowLoading] = React.useState(false);
 
   // Followers/following list state
@@ -187,16 +187,17 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
 
   // Check if following this user
   React.useEffect(() => {
-    async function checkFollowing() {
+    async function checkFollowStatus() {
       if (!isAuthed || !userId) return;
       try {
         const data = await followsApi.checkFollowing(userId);
-        setIsFollowing(data.following);
+        // API returns { status: "following" | "pending" | "none" }
+        setFollowStatus(data.status || "none");
       } catch (err) {
         console.error("Failed to check following status:", err);
       }
     }
-    checkFollowing();
+    checkFollowStatus();
   }, [isAuthed, userId]);
 
   // Load followers/following counts
@@ -380,8 +381,10 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
     if (!userId || followLoading) return;
     setFollowLoading(true);
     try {
-      await followsApi.follow(userId);
-      setIsFollowing(true);
+      const result = await followsApi.follow(userId);
+      // API returns { status: "following" } for public accounts
+      // or { status: "pending" } for private accounts
+      setFollowStatus(result.status || "following");
     } catch (err) {
       console.error("Failed to follow:", err);
     } finally {
@@ -394,9 +397,22 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
     setFollowLoading(true);
     try {
       await followsApi.unfollow(userId);
-      setIsFollowing(false);
+      setFollowStatus("none");
     } catch (err) {
       console.error("Failed to unfollow:", err);
+    } finally {
+      setFollowLoading(false);
+    }
+  }
+
+  async function handleCancelRequest() {
+    if (!userId || followLoading) return;
+    setFollowLoading(true);
+    try {
+      await followsApi.unfollow(userId);
+      setFollowStatus("none");
+    } catch (err) {
+      console.error("Failed to cancel follow request:", err);
     } finally {
       setFollowLoading(false);
     }
@@ -491,7 +507,7 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
               <h1 className="pcp-name">{profile.displayName}</h1>
 
               <div className="pcp-actions" aria-label="Profile actions">
-                {isFollowing ? (
+                {followStatus === "following" ? (
                   <button
                     type="button"
                     className="pcp-actionBtn pcp-followBtn pcp-followBtn--following"
@@ -500,6 +516,16 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
                     aria-label="Unfollow"
                   >
                     {followLoading ? "..." : "Following"}
+                  </button>
+                ) : followStatus === "pending" ? (
+                  <button
+                    type="button"
+                    className="pcp-actionBtn pcp-followBtn pcp-followBtn--pending"
+                    onClick={handleCancelRequest}
+                    disabled={followLoading}
+                    aria-label="Cancel follow request"
+                  >
+                    {followLoading ? "..." : "Requested"}
                   </button>
                 ) : (
                   <button
