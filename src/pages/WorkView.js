@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import "./WorkView.css";
 import "../styles/skins.css";
 
-import { worksApi, bookmarksApi, commentsApi, skinsApi, likesApi, reportsApi } from "../api";
+import { worksApi, bookmarksApi, commentsApi, skinsApi, likesApi, reportsApi, spotifyApi } from "../api";
 import { works as libraryWorks } from "../data/libraryWorks";
 import { SableLoader } from "../components";
 
@@ -310,6 +310,16 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   const [youtubeVideoId, setYoutubeVideoId] = React.useState(null);
   const [spotifyConnected, setSpotifyConnected] = React.useState(false);
 
+  // Spotify SDK state
+  const [spotifyLoading, setSpotifyLoading] = React.useState(false);
+  const [spotifyError, setSpotifyError] = React.useState(null);
+  const [spotifyPlayer, setSpotifyPlayer] = React.useState(null);
+  const [spotifyDeviceId, setSpotifyDeviceId] = React.useState(null);
+  const [spotifyTrack, setSpotifyTrack] = React.useState(null);
+  const [spotifyPaused, setSpotifyPaused] = React.useState(true);
+  const [spotifyPremiumRequired, setSpotifyPremiumRequired] = React.useState(false);
+  const spotifyPlayerRef = React.useRef(null);
+
   // Parse YouTube URL to extract video ID
   function parseYoutubeUrl(url) {
     if (!url) return null;
@@ -346,6 +356,194 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
   function clearYoutubeVideo() {
     setYoutubeVideoId(null);
     setMusicQuery("");
+  }
+
+  // Check Spotify connection status on mount
+  React.useEffect(() => {
+    if (!isAuthed) return;
+
+    async function checkSpotifyStatus() {
+      try {
+        const status = await spotifyApi.getStatus();
+        if (status.connected) {
+          setSpotifyConnected(true);
+          if (!status.isPremium) {
+            setSpotifyPremiumRequired(true);
+          }
+        }
+      } catch {
+        // Not connected, that's fine
+      }
+    }
+
+    checkSpotifyStatus();
+  }, [isAuthed]);
+
+  // Load Spotify SDK when connected
+  React.useEffect(() => {
+    if (!spotifyConnected || spotifyPremiumRequired) return;
+
+    // Check if SDK is already loaded
+    if (window.Spotify) {
+      initSpotifyPlayer();
+      return;
+    }
+
+    // Load SDK script
+    const script = document.createElement("script");
+    script.src = "https://sdk.scdn.co/spotify-player.js";
+    script.async = true;
+
+    script.onerror = () => {
+      console.error("Failed to load Spotify SDK");
+      setSpotifyError("Failed to load Spotify player");
+      setSpotifyLoading(false);
+    };
+
+    document.body.appendChild(script);
+
+    window.onSpotifyWebPlaybackSDKReady = () => {
+      initSpotifyPlayer();
+    };
+
+    return () => {
+      if (spotifyPlayerRef.current) {
+        spotifyPlayerRef.current.disconnect();
+        spotifyPlayerRef.current = null;
+      }
+    };
+  }, [spotifyConnected, spotifyPremiumRequired]);
+
+  // Initialize Spotify player
+  async function initSpotifyPlayer() {
+    if (!window.Spotify || spotifyPlayerRef.current) return;
+
+    try {
+      const player = new window.Spotify.Player({
+        name: "Sable Reader",
+        getOAuthToken: async (cb) => {
+          try {
+            const { accessToken } = await spotifyApi.getToken();
+            cb(accessToken);
+          } catch (err) {
+            console.error("Failed to get Spotify token:", err);
+            setSpotifyError("Failed to authenticate with Spotify");
+            setSpotifyConnected(false);
+          }
+        },
+        volume: 0.5,
+      });
+
+      player.addListener("ready", ({ device_id }) => {
+        setSpotifyDeviceId(device_id);
+        setSpotifyPlayer(player);
+        setSpotifyLoading(false);
+      });
+
+      player.addListener("not_ready", () => {
+        setSpotifyDeviceId(null);
+      });
+
+      player.addListener("player_state_changed", (state) => {
+        if (!state) {
+          setSpotifyTrack(null);
+          return;
+        }
+        setSpotifyTrack(state.track_window.current_track);
+        setSpotifyPaused(state.paused);
+      });
+
+      player.addListener("initialization_error", ({ message }) => {
+        console.error("Spotify init error:", message);
+        setSpotifyError("Failed to initialize player");
+        setSpotifyLoading(false);
+      });
+
+      player.addListener("authentication_error", ({ message }) => {
+        console.error("Spotify auth error:", message);
+        setSpotifyError("Authentication failed - please reconnect");
+        setSpotifyConnected(false);
+        setSpotifyLoading(false);
+      });
+
+      player.addListener("account_error", ({ message }) => {
+        console.error("Spotify account error:", message);
+        setSpotifyPremiumRequired(true);
+        setSpotifyLoading(false);
+      });
+
+      spotifyPlayerRef.current = player;
+      setSpotifyLoading(true);
+      await player.connect();
+    } catch (err) {
+      console.error("Spotify player error:", err);
+      setSpotifyError("Failed to connect to Spotify");
+      setSpotifyLoading(false);
+    }
+  }
+
+  // Handle Spotify connect button
+  async function handleSpotifyConnect() {
+    if (!isAuthed) {
+      openLoginModal();
+      return;
+    }
+
+    setSpotifyLoading(true);
+    setSpotifyError(null);
+
+    try {
+      const result = await spotifyApi.connectWithPopup();
+      setSpotifyConnected(true);
+      if (!result.isPremium) {
+        setSpotifyPremiumRequired(true);
+        setSpotifyLoading(false);
+      }
+      // If premium, loading continues until SDK initializes
+    } catch (err) {
+      console.error("Spotify connect error:", err);
+      setSpotifyError(err.message || "Failed to connect to Spotify");
+      setSpotifyLoading(false);
+    }
+  }
+
+  // Handle Spotify disconnect
+  async function handleSpotifyDisconnect() {
+    try {
+      if (spotifyPlayerRef.current) {
+        spotifyPlayerRef.current.disconnect();
+        spotifyPlayerRef.current = null;
+      }
+      await spotifyApi.disconnect();
+    } catch {
+      // Ignore errors
+    }
+    setSpotifyConnected(false);
+    setSpotifyPlayer(null);
+    setSpotifyDeviceId(null);
+    setSpotifyTrack(null);
+    setSpotifyPaused(true);
+    setSpotifyPremiumRequired(false);
+    setSpotifyError(null);
+  }
+
+  // Spotify playback controls
+  function spotifyTogglePlay() {
+    if (spotifyPlayerRef.current) {
+      spotifyPlayerRef.current.togglePlay();
+    }
+  }
+
+  function spotifyPreviousTrack() {
+    if (spotifyPlayerRef.current) {
+      spotifyPlayerRef.current.previousTrack();
+    }
+  }
+
+  function spotifyNextTrack() {
+    if (spotifyPlayerRef.current) {
+      spotifyPlayerRef.current.nextTrack();
+    }
   }
 
   // Persist view prefs per-user
@@ -1128,46 +1326,170 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                       <div className="wv-providerConnect">
                         {spotifyConnected ? (
                           <div className="wv-connectedState">
-                            <div className="wv-connectedBadge">
-                              <span className="wv-connectedDot" />
-                              Connected to Spotify
-                            </div>
-                            <div className="wv-miniRow">
-                              <div className="wv-miniLabel">Search or paste link</div>
-                              <input
-                                className="wv-miniInput"
-                                placeholder="Search tracks, albums, playlists..."
-                                aria-label="Spotify search"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              className="wv-disconnectBtn"
-                              onClick={() => setSpotifyConnected(false)}
-                            >
-                              Disconnect
-                            </button>
+                            {/* Premium required message */}
+                            {spotifyPremiumRequired ? (
+                              <div className="wv-spotifyPremiumRequired">
+                                <div className="wv-premiumIcon">
+                                  <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                                  </svg>
+                                </div>
+                                <div className="wv-premiumTitle">Spotify Premium Required</div>
+                                <div className="wv-premiumText">
+                                  Web playback requires a Spotify Premium subscription.
+                                  You can still use Spotify on your phone and select "Sable Reader" as the playback device.
+                                </div>
+                                <button
+                                  type="button"
+                                  className="wv-disconnectBtn"
+                                  onClick={handleSpotifyDisconnect}
+                                >
+                                  Disconnect
+                                </button>
+                              </div>
+                            ) : spotifyLoading ? (
+                              <div className="wv-spotifyLoading">
+                                <div className="wv-loadingSpinner" />
+                                <div className="wv-loadingText">Connecting to Spotify...</div>
+                              </div>
+                            ) : spotifyError ? (
+                              <div className="wv-spotifyError">
+                                <div className="wv-errorText">{spotifyError}</div>
+                                <button
+                                  type="button"
+                                  className="wv-connectBtn wv-connectBtn--spotify"
+                                  onClick={handleSpotifyConnect}
+                                >
+                                  Try Again
+                                </button>
+                                <button
+                                  type="button"
+                                  className="wv-disconnectBtn"
+                                  onClick={handleSpotifyDisconnect}
+                                >
+                                  Disconnect
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="wv-connectedBadge">
+                                  <span className="wv-connectedDot" />
+                                  Connected to Spotify
+                                </div>
+
+                                {/* Now Playing */}
+                                {spotifyTrack ? (
+                                  <div className="wv-spotifyNowPlaying">
+                                    <img
+                                      src={spotifyTrack.album?.images?.[0]?.url || ""}
+                                      alt=""
+                                      className="wv-spotifyAlbumArt"
+                                    />
+                                    <div className="wv-spotifyTrackInfo">
+                                      <div className="wv-spotifyTrackName">{spotifyTrack.name}</div>
+                                      <div className="wv-spotifyArtistName">
+                                        {spotifyTrack.artists?.map(a => a.name).join(", ")}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="wv-spotifyNoTrack">
+                                    <div className="wv-noTrackText">No track playing</div>
+                                    <div className="wv-noTrackHint">
+                                      Open Spotify and select "Sable Reader" as your device
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Playback Controls */}
+                                <div className="wv-spotifyControls">
+                                  <button
+                                    type="button"
+                                    className="wv-spotifyBtn"
+                                    onClick={spotifyPreviousTrack}
+                                    aria-label="Previous track"
+                                    disabled={!spotifyTrack}
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                      <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                                    </svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="wv-spotifyBtn wv-spotifyBtn--play"
+                                    onClick={spotifyTogglePlay}
+                                    aria-label={spotifyPaused ? "Play" : "Pause"}
+                                    disabled={!spotifyTrack}
+                                  >
+                                    {spotifyPaused ? (
+                                      <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                                        <path d="M8 5v14l11-7z"/>
+                                      </svg>
+                                    ) : (
+                                      <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                      </svg>
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="wv-spotifyBtn"
+                                    onClick={spotifyNextTrack}
+                                    aria-label="Next track"
+                                    disabled={!spotifyTrack}
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                      <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                                    </svg>
+                                  </button>
+                                </div>
+
+                                <div className="wv-spotifyDeviceHint">
+                                  Device: Sable Reader
+                                </div>
+
+                                <button
+                                  type="button"
+                                  className="wv-disconnectBtn"
+                                  onClick={handleSpotifyDisconnect}
+                                >
+                                  Disconnect
+                                </button>
+                              </>
+                            )}
                           </div>
                         ) : (
                           <div className="wv-connectPrompt">
-                            <div className="wv-providerLogo wv-providerLogo--spotify">
-                              <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
-                                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
-                              </svg>
-                            </div>
-                            <div className="wv-connectText">
-                              Connect your Spotify account to play music while you read
-                            </div>
-                            <button
-                              type="button"
-                              className="wv-connectBtn wv-connectBtn--spotify"
-                              onClick={() => setSpotifyConnected(true)}
-                            >
-                              Connect Spotify
-                            </button>
-                            <div className="wv-connectNote">
-                              Requires Spotify Premium for full playback
-                            </div>
+                            {spotifyLoading ? (
+                              <div className="wv-spotifyLoading">
+                                <div className="wv-loadingSpinner" />
+                                <div className="wv-loadingText">Connecting...</div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="wv-providerLogo wv-providerLogo--spotify">
+                                  <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
+                                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                                  </svg>
+                                </div>
+                                <div className="wv-connectText">
+                                  Connect your Spotify account to play music while you read
+                                </div>
+                                {spotifyError && (
+                                  <div className="wv-connectError">{spotifyError}</div>
+                                )}
+                                <button
+                                  type="button"
+                                  className="wv-connectBtn wv-connectBtn--spotify"
+                                  onClick={handleSpotifyConnect}
+                                >
+                                  Connect Spotify
+                                </button>
+                                <div className="wv-connectNote">
+                                  Requires Spotify Premium for full playback
+                                </div>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
