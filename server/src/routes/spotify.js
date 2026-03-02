@@ -204,6 +204,12 @@ router.get("/callback", async (req, res) => {
       throw new Error("Failed to get Spotify profile");
     }
 
+    // Remove this Spotify account from any other user first (if exists)
+    await User.updateMany(
+      { "providers.spotify.spotifyId": profile.id, _id: { $ne: userId } },
+      { $unset: { "providers.spotify": 1 } }
+    );
+
     // Store tokens in user document
     await User.findByIdAndUpdate(userId, {
       "providers.spotify": {
