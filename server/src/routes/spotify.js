@@ -90,7 +90,7 @@ router.get("/auth", (req, res, next) => {
 });
 
 // GET /spotify/callback - Handle OAuth callback
-router.get("/callback", requireAuth, async (req, res) => {
+router.get("/callback", async (req, res) => {
   const { code, state, error } = req.query;
   const storedState = req.cookies.spotify_auth_state;
   const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
@@ -113,6 +113,25 @@ router.get("/callback", requireAuth, async (req, res) => {
       </html>
     `);
   };
+
+  // Verify user is authenticated
+  const jwt = require("jsonwebtoken");
+  const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-change-me";
+  const token = req.cookies.token;
+
+  if (!token) {
+    console.error("Spotify callback: No auth token cookie");
+    return sendError("not_authenticated");
+  }
+
+  let userId;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    userId = decoded.userId;
+  } catch (err) {
+    console.error("Spotify callback: Invalid token", err.message);
+    return sendError("invalid_token");
+  }
 
   // Clear the state cookie
   res.clearCookie("spotify_auth_state");
@@ -159,7 +178,7 @@ router.get("/callback", requireAuth, async (req, res) => {
     const profile = await profileResponse.json();
 
     // Store tokens in user document
-    await User.findByIdAndUpdate(req.user._id, {
+    await User.findByIdAndUpdate(userId, {
       "providers.spotify": {
         spotifyId: profile.id,
         accessToken: tokens.access_token,
