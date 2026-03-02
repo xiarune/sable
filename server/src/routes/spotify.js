@@ -179,19 +179,30 @@ router.get("/callback", async (req, res) => {
     let tokens;
     try {
       tokens = JSON.parse(responseText);
+      console.log("Token exchange successful, got access token:", tokens.access_token ? "yes" : "no");
     } catch (e) {
       console.error("Failed to parse Spotify response as JSON:", responseText.slice(0, 500));
       throw new Error("Invalid response from Spotify");
     }
 
     // Get user profile to check Premium status
+    console.log("Fetching Spotify user profile...");
     const profileResponse = await fetch("https://api.spotify.com/v1/me", {
       headers: {
         "Authorization": `Bearer ${tokens.access_token}`,
       },
     });
 
-    const profile = await profileResponse.json();
+    const profileText = await profileResponse.text();
+    console.log("Profile response status:", profileResponse.status);
+
+    let profile;
+    try {
+      profile = JSON.parse(profileText);
+    } catch (e) {
+      console.error("Failed to parse profile response:", profileText.slice(0, 500));
+      throw new Error("Failed to get Spotify profile");
+    }
 
     // Store tokens in user document
     await User.findByIdAndUpdate(userId, {
