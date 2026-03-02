@@ -26,6 +26,7 @@ const reportsRoutes = require("./reports");
 const readingListsRoutes = require("./readingLists");
 const donationsRoutes = require("./donations");
 const impressionsRoutes = require("./impressions");
+const spotifyRoutes = require("./spotify");
 
 const router = express.Router();
 
@@ -55,5 +56,6 @@ router.use("/reports", reportsRoutes);
 router.use("/reading-lists", readingListsRoutes);
 router.use("/donations", donationsRoutes);
 router.use("/impressions", impressionsRoutes);
+router.use("/spotify", spotifyRoutes);
 
 module.exports = router;

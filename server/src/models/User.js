@@ -53,6 +53,16 @@ const userSchema = new mongoose.Schema(
         discordId: { type: String, unique: true, sparse: true },
         username: String,
       },
+      spotify: {
+        spotifyId: { type: String, unique: true, sparse: true },
+        accessToken: String,
+        refreshToken: String,
+        tokenExpiresAt: Date,
+        displayName: String,
+        email: String,
+        isPremium: { type: Boolean, default: false },
+        connectedAt: Date,
+      },
     },
 
     // Online presence
