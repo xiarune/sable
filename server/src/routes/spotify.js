@@ -147,6 +147,11 @@ router.get("/callback", async (req, res) => {
   }
 
   try {
+    // Log what we're using (mask secrets)
+    console.log("Spotify token exchange attempt:");
+    console.log("  Client ID:", SPOTIFY_CLIENT_ID ? SPOTIFY_CLIENT_ID.slice(0, 8) + "..." : "NOT SET");
+    console.log("  Redirect URI:", SPOTIFY_REDIRECT_URI);
+
     // Exchange code for tokens
     const tokenResponse = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
@@ -161,14 +166,23 @@ router.get("/callback", async (req, res) => {
       }),
     });
 
+    // Get response as text first to see what Spotify returns
+    const responseText = await tokenResponse.text();
+
     if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.json();
-      console.error("Spotify token exchange failed:", errorData);
-      console.error("Used redirect_uri:", SPOTIFY_REDIRECT_URI);
-      throw new Error(errorData.error_description || errorData.error || "Failed to exchange code");
+      console.error("Spotify token exchange failed. Status:", tokenResponse.status);
+      console.error("Response:", responseText.slice(0, 500));
+      throw new Error("Token exchange failed: " + tokenResponse.status);
     }
 
-    const tokens = await tokenResponse.json();
+    // Parse the successful response
+    let tokens;
+    try {
+      tokens = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Failed to parse Spotify response as JSON:", responseText.slice(0, 500));
+      throw new Error("Invalid response from Spotify");
+    }
 
     // Get user profile to check Premium status
     const profileResponse = await fetch("https://api.spotify.com/v1/me", {
