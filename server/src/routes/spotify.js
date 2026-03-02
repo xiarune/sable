@@ -163,7 +163,9 @@ router.get("/callback", async (req, res) => {
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json();
-      throw new Error(errorData.error_description || "Failed to exchange code");
+      console.error("Spotify token exchange failed:", errorData);
+      console.error("Used redirect_uri:", SPOTIFY_REDIRECT_URI);
+      throw new Error(errorData.error_description || errorData.error || "Failed to exchange code");
     }
 
     const tokens = await tokenResponse.json();
