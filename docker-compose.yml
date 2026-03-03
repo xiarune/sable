@@ -45,6 +45,10 @@ services:
       # - SMTP_USER=apikey
       # - SMTP_PASS=your-sendgrid-key
       # - EMAIL_FROM=Sable <your-email>
+      # Spotify Web Playback SDK (optional - requires Premium account)
+      # - SPOTIFY_CLIENT_ID=your-spotify-client-id
+      # - SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
+      # - SPOTIFY_REDIRECT_URI=http://localhost:5050/api/spotify/callback
     depends_on:
       mongodb:
         condition: service_healthy
