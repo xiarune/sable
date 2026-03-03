@@ -4,17 +4,14 @@ A creative writing and community platform built with React and Express.js.
 
 ---
 
-## Quick Start with Docker (Recommended)
+## Quick Start with Docker
 
-### Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
-
-### Project Root
 All commands should be executed from the project root directory (`./sable`). This directory contains the `Dockerfile`, `docker-compose.yml`, and `package.json` required to run the application.
 
 ### Running the Project
 
-1. Clone the repository:
+1. Clone the repo:
    ```bash
    git clone https://github.com/xiarune/sable.git
    cd sable
@@ -25,7 +22,7 @@ All commands should be executed from the project root directory (`./sable`). Thi
    docker compose up --build
    ```
 
-3. Wait for all services to start (first build takes 2-3 minutes). You'll see:
+3. Wait for all services to start, you will see:
    ```
    sable_mongodb  | Waiting for connections
    sable_backend  | Connected to MongoDB
@@ -33,7 +30,7 @@ All commands should be executed from the project root directory (`./sable`). Thi
    sable_frontend | nginx ready
    ```
 
-4. Open your browser:
+4. Open browser:
    - **Frontend**: http://localhost:3000
    - **Backend API**: http://localhost:5050/health
 
@@ -54,6 +51,16 @@ All commands should be executed from the project root directory (`./sable`). Thi
 | Frontend | http://localhost:3000 | React application |
 | Backend | http://localhost:5050 | Express.js API |
 | MongoDB | localhost:27017 | Database (internal) |
+
+---
+
+## Alternative Access (Non-Docker)
+
+If Docker is not available, a live deployment is available:
+
+**Live Site**: https://sable-two.vercel.app
+
+---
 
 ### Troubleshooting Docker
 
@@ -92,16 +99,6 @@ docker compose up --build
 docker compose ps
 docker logs sable_mongodb
 ```
-
----
-
-## Alternative Access (Non-Docker)
-
-If Docker is not available, a live deployment is available:
-
-**Live Site**: https://sable-two.vercel.app
-
----
 
 ## Local Development (Without Docker)
 
@@ -173,42 +170,6 @@ sable/
 ├── nginx.conf             # Nginx configuration for SPA
 └── package.json           # Frontend dependencies
 ```
-
----
-
-## Environment Variables
-
-### Frontend (.env)
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `REACT_APP_API_URL` | Backend API URL | `http://localhost:5050/api` |
-
-### Backend (server/.env)
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `MONGO_URI` | MongoDB connection string | Yes |
-| `JWT_SECRET` | Secret for JWT signing | Yes |
-| `CLIENT_ORIGIN` | Frontend URL for CORS | Yes |
-| `PORT` | Server port | No (5050) |
-| `AWS_*` | S3 credentials for uploads | For uploads |
-| `GOOGLE_*` | OAuth credentials | For Google login |
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| POST | `/api/auth/register` | User registration |
-| POST | `/api/auth/login` | User login |
-| GET | `/api/auth/google` | Google OAuth |
-| GET | `/api/works` | List works |
-| GET | `/api/communities` | List communities |
-
-See `server/src/routes/` for full API documentation.
 
 ---
 
