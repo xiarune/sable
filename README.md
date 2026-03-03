@@ -57,6 +57,19 @@ All commands should be executed from the project root directory (`./sable`). Thi
 
 ### Troubleshooting Docker
 
+**"command not found: docker" error:**
+
+*Mac:*
+```bash
+export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
+docker compose up --build
+```
+
+*Windows:*
+- Open Docker Desktop
+- Go to Settings → Advanced
+- Enable "Add Docker to PATH" or use Docker Desktop's integrated terminal
+
 **Port already in use:**
 ```bash
 # Check what's using port 3000 or 5050
