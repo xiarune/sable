@@ -9,6 +9,16 @@ A creative writing and community platform built with React and Express.js.
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
 All commands should be executed from the project root directory (`./sable`). This directory contains the `Dockerfile`, `docker-compose.yml`, and `package.json` required to run the application.
 
+---
+
+## Alternative Access (Non-Docker)
+
+If Docker is not available, a live deployment is available:
+
+**Live Site**: https://sable-two.vercel.app
+
+---
+
 ### Running the Project
 
 1. Clone the repo:
@@ -22,7 +32,7 @@ All commands should be executed from the project root directory (`./sable`). Thi
    docker compose up --build
    ```
 
-3. Wait for all services to start, you will see:
+3. Wait for all services to start, you should see:
    ```
    sable_mongodb  | Waiting for connections
    sable_backend  | Connected to MongoDB
@@ -50,17 +60,8 @@ All commands should be executed from the project root directory (`./sable`). Thi
 |---------|-----|-------------|
 | Frontend | http://localhost:3000 | React application |
 | Backend | http://localhost:5050 | Express.js API |
-| MongoDB | localhost:27017 | Database (internal) |
+| MongoDB | localhost:27017 | Database|
 
----
-
-## Alternative Access (Non-Docker)
-
-If Docker is not available, a live deployment is available:
-
-**Live Site**: https://sable-two.vercel.app
-
----
 
 ### Troubleshooting Docker
 
@@ -173,7 +174,7 @@ sable/
 
 ---
 
-## License
+##Contributions
 
-MIT
+Debugging Help/Support with Claude
 
