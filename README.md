@@ -174,7 +174,9 @@ sable/
 
 ---
 
-##Contributions
+## Contributions
 
 Debugging Help/Support with Claude
+https://claude.com/product/overview
+
 
