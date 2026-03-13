@@ -1,6 +1,6 @@
 # Sable
 
-A creative writing and community platform built with React and Express.js.
+A creative audio immersive reading and writing/community platform
 
 ---
 
