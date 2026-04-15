@@ -45,6 +45,14 @@ const messageSchema = new mongoose.Schema(
 
     // Message reactions (thumbs up, heart, etc.)
     reactions: [reactionSchema],
+
+    // Edit tracking
+    isEdited: { type: Boolean, default: false },
+    editedAt: { type: Date, default: null },
+
+    // Unsend tracking (soft delete)
+    isUnsent: { type: Boolean, default: false },
+    unsentAt: { type: Date, default: null },
   },
   {
     timestamps: true,

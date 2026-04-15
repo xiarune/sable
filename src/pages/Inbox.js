@@ -15,6 +15,8 @@ import {
   onNewMessage,
   onMessageSeen,
   onMessageReaction,
+  onMessageEdited,
+  onMessageUnsent,
 } from "../api/socket";
 
 function uid(prefix = "id") {
@@ -158,7 +160,7 @@ function ReactionPicker({ onSelect, onClose }) {
 }
 
 // Message bubble with reaction indicator on corner (like presence dots)
-function MessageBubble({ message, isMe, currentUserId, onAddReaction, onRemoveReaction }) {
+function MessageBubble({ message, isMe, currentUserId, onAddReaction, onRemoveReaction, onStartEdit, onUnsend, isEditing, editText, onEditTextChange, onSaveEdit, onCancelEdit }) {
   const [showReactionPicker, setShowReactionPicker] = React.useState(false);
 
   const reactions = message.reactions || [];
@@ -167,6 +169,11 @@ function MessageBubble({ message, isMe, currentUserId, onAddReaction, onRemoveRe
   const myReaction = reactions.find((r) => r.userId === currentUserId);
   const primaryReaction = myReaction || reactions[reactions.length - 1];
   const hasReaction = reactions.length > 0;
+
+  // Check if message can be edited (within 1 hour)
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const canEdit = isMe && !message.isUnsent && new Date(message.createdAt) > oneHourAgo;
+  const canUnsend = isMe && !message.isUnsent;
 
   // Handle clicking the reaction indicator
   function handleReactionClick() {
@@ -179,44 +186,145 @@ function MessageBubble({ message, isMe, currentUserId, onAddReaction, onRemoveRe
     }
   }
 
+  // Render unsent message
+  if (message.isUnsent) {
+    return (
+      <div className={`in-bubbleRow ${isMe ? "in-bubbleRow--me" : ""}`}>
+        <div className={`in-bubbleWrap ${isMe ? "in-bubbleWrap--me" : ""}`}>
+          <div className={isMe ? "in-bubble in-bubble--me" : "in-bubble"}>
+            <span className="in-unsentMessage">This message was unsent</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if attachment is an image
+  const isImageAttachment = message.attachmentUrl && message.attachmentType?.startsWith("image/");
+
   return (
     <div className={`in-bubbleRow ${isMe ? "in-bubbleRow--me" : ""}`}>
       <div className={`in-bubbleWrap ${isMe ? "in-bubbleWrap--me" : ""}`}>
+        {/* Edit/Unsend action buttons (only for own messages) */}
+        {isMe && !isEditing && (
+          <div className="in-messageActions">
+            {canEdit && (
+              <button
+                type="button"
+                className="in-editBtn"
+                onClick={() => onStartEdit(message._id, message.text)}
+                title="Edit message"
+              >
+                ✏️
+              </button>
+            )}
+            {canUnsend && (
+              <button
+                type="button"
+                className="in-unsendBtn"
+                onClick={() => onUnsend(message._id)}
+                title="Unsend message"
+              >
+                🗑️
+              </button>
+            )}
+          </div>
+        )}
+
         <div
           className={isMe ? "in-bubble in-bubble--me" : "in-bubble"}
-          onDoubleClick={() => setShowReactionPicker(true)}
+          onDoubleClick={() => !isEditing && setShowReactionPicker(true)}
         >
-          {message.text}
+          {isEditing ? (
+            <>
+              <input
+                type="text"
+                className="in-editInput"
+                value={editText}
+                onChange={(e) => onEditTextChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    onSaveEdit();
+                  } else if (e.key === "Escape") {
+                    onCancelEdit();
+                  }
+                }}
+                autoFocus
+              />
+              <div className="in-editActions">
+                <button type="button" className="in-editSaveBtn" onClick={onSaveEdit}>
+                  Save
+                </button>
+                <button type="button" className="in-editCancelBtn" onClick={onCancelEdit}>
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {message.text}
 
-          {message.attachmentUrl && (
-            <div className="in-attachment">
-              <a href={message.attachmentUrl} target="_blank" rel="noopener noreferrer">
-                {message.attachmentName || "Attachment"}
-              </a>
-            </div>
+              {/* Inline image attachment */}
+              {isImageAttachment && (
+                <div className="in-imageAttachment">
+                  <img
+                    src={message.attachmentUrl}
+                    alt={message.attachmentName || "Image"}
+                    className="in-attachmentImage"
+                    onClick={() => window.open(message.attachmentUrl, "_blank")}
+                  />
+                  <a
+                    href={message.attachmentUrl}
+                    download={message.attachmentName}
+                    className="in-downloadBtn"
+                    title="Download"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    ⬇
+                  </a>
+                </div>
+              )}
+
+              {/* Non-image attachment (file link) */}
+              {message.attachmentUrl && !isImageAttachment && (
+                <div className="in-attachment">
+                  <a href={message.attachmentUrl} target="_blank" rel="noopener noreferrer">
+                    {message.attachmentName || "Attachment"}
+                  </a>
+                </div>
+              )}
+
+              {/* Edited indicator */}
+              {message.isEdited && (
+                <div className="in-editedIndicator">(edited)</div>
+              )}
+            </>
           )}
         </div>
 
         {/* Reaction indicator on corner (like presence status dot) */}
-        <button
-          type="button"
-          className={`in-reactionIndicator ${hasReaction ? "in-reactionIndicator--active" : ""} ${myReaction ? "in-reactionIndicator--mine" : ""}`}
-          onClick={handleReactionClick}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setShowReactionPicker(true);
-          }}
-          title={hasReaction ? `${reactions.length} reaction${reactions.length > 1 ? "s" : ""} - ${reactions.map(r => r.username).join(", ")}` : "Add reaction"}
-        >
-          {hasReaction ? (
-            <>
-              <span className="in-reactionEmoji">{primaryReaction.emoji}</span>
-              {reactions.length > 1 && <span className="in-reactionBadge">{reactions.length}</span>}
-            </>
-          ) : (
-            <span className="in-reactionPlus">+</span>
-          )}
-        </button>
+        {!isEditing && (
+          <button
+            type="button"
+            className={`in-reactionIndicator ${hasReaction ? "in-reactionIndicator--active" : ""} ${myReaction ? "in-reactionIndicator--mine" : ""}`}
+            onClick={handleReactionClick}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setShowReactionPicker(true);
+            }}
+            title={hasReaction ? `${reactions.length} reaction${reactions.length > 1 ? "s" : ""} - ${reactions.map(r => r.username).join(", ")}` : "Add reaction"}
+          >
+            {hasReaction ? (
+              <>
+                <span className="in-reactionEmoji">{primaryReaction.emoji}</span>
+                {reactions.length > 1 && <span className="in-reactionBadge">{reactions.length}</span>}
+              </>
+            ) : (
+              <span className="in-reactionPlus">+</span>
+            )}
+          </button>
+        )}
 
         {showReactionPicker && (
           <ReactionPicker
@@ -297,6 +405,10 @@ export default function Inbox() {
   // Delete modal state
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const [deleteInProgress, setDeleteInProgress] = React.useState(false);
+
+  // Edit message state
+  const [editingMessageId, setEditingMessageId] = React.useState(null);
+  const [editText, setEditText] = React.useState("");
 
   // Load initial data
   React.useEffect(() => {
@@ -423,7 +535,13 @@ export default function Inbox() {
           if (m._id !== messageId) return m;
           let reactions = m.reactions || [];
           if (action === "add") {
-            reactions = [...reactions, reaction];
+            // Check for duplicates before adding
+            const exists = reactions.some(
+              (r) => r.userId === reaction.userId && r.emoji === reaction.emoji
+            );
+            if (!exists) {
+              reactions = [...reactions, reaction];
+            }
           } else {
             reactions = reactions.filter(
               (r) => !(r.userId === reaction.userId && r.emoji === reaction.emoji)
@@ -431,6 +549,24 @@ export default function Inbox() {
           }
           return { ...m, reactions };
         })
+      );
+    });
+
+    const unsubEdited = onMessageEdited(({ messageId, text, isEdited, editedAt }) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m._id === messageId ? { ...m, text, isEdited, editedAt } : m
+        )
+      );
+    });
+
+    const unsubUnsent = onMessageUnsent(({ messageId, isUnsent, unsentAt }) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m._id === messageId
+            ? { ...m, text: "", isUnsent, unsentAt, reactions: [], attachmentUrl: "" }
+            : m
+        )
       );
     });
 
@@ -453,6 +589,8 @@ export default function Inbox() {
       unsubSeen();
       unsubReaction();
       unsubTyping();
+      unsubEdited();
+      unsubUnsent();
     };
   }, [activeThreadId, currentUser?._id, settings.readReceipts]);
 
@@ -576,18 +714,130 @@ export default function Inbox() {
   }
 
   async function handleAddReaction(messageId, emoji) {
+    // Optimistic update
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m._id !== messageId) return m;
+        const reactions = m.reactions || [];
+        // Check if already has this reaction from current user
+        const exists = reactions.some(
+          (r) => r.userId === currentUser?._id && r.emoji === emoji
+        );
+        if (exists) return m;
+        return {
+          ...m,
+          reactions: [
+            ...reactions,
+            { emoji, userId: currentUser?._id, username: currentUser?.username },
+          ],
+        };
+      })
+    );
+
     try {
       await messagesApi.addReaction(messageId, emoji);
     } catch (err) {
       console.error("Failed to add reaction:", err);
+      // Revert optimistic update on error
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m._id !== messageId) return m;
+          return {
+            ...m,
+            reactions: (m.reactions || []).filter(
+              (r) => !(r.userId === currentUser?._id && r.emoji === emoji)
+            ),
+          };
+        })
+      );
     }
   }
 
   async function handleRemoveReaction(messageId, emoji) {
+    // Optimistic update
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m._id !== messageId) return m;
+        return {
+          ...m,
+          reactions: (m.reactions || []).filter(
+            (r) => !(r.userId === currentUser?._id && r.emoji === emoji)
+          ),
+        };
+      })
+    );
+
     try {
       await messagesApi.removeReaction(messageId, emoji);
     } catch (err) {
       console.error("Failed to remove reaction:", err);
+      // Revert optimistic update on error
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m._id !== messageId) return m;
+          return {
+            ...m,
+            reactions: [
+              ...(m.reactions || []),
+              { emoji, userId: currentUser?._id, username: currentUser?.username },
+            ],
+          };
+        })
+      );
+    }
+  }
+
+  // Edit message handlers
+  function startEditing(messageId, text) {
+    setEditingMessageId(messageId);
+    setEditText(text);
+  }
+
+  function cancelEditing() {
+    setEditingMessageId(null);
+    setEditText("");
+  }
+
+  async function saveEdit() {
+    if (!editingMessageId || !editText.trim()) return;
+
+    try {
+      await messagesApi.editMessage(editingMessageId, editText.trim());
+      // Update will come via socket, but also update locally for responsiveness
+      setMessages((prev) =>
+        prev.map((m) =>
+          m._id === editingMessageId
+            ? { ...m, text: editText.trim(), isEdited: true, editedAt: new Date() }
+            : m
+        )
+      );
+      setEditingMessageId(null);
+      setEditText("");
+    } catch (err) {
+      console.error("Failed to edit message:", err);
+      alert(err.response?.data?.error || "Failed to edit message");
+    }
+  }
+
+  // Unsend message handler
+  async function handleUnsend(messageId) {
+    if (!window.confirm("Are you sure you want to unsend this message? This cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await messagesApi.unsendMessage(messageId);
+      // Update will come via socket, but also update locally for responsiveness
+      setMessages((prev) =>
+        prev.map((m) =>
+          m._id === messageId
+            ? { ...m, text: "", isUnsent: true, unsentAt: new Date(), reactions: [], attachmentUrl: "" }
+            : m
+        )
+      );
+    } catch (err) {
+      console.error("Failed to unsend message:", err);
+      alert(err.response?.data?.error || "Failed to unsend message");
     }
   }
 
@@ -1418,6 +1668,13 @@ export default function Inbox() {
                 currentUserId={currentUser?._id}
                 onAddReaction={handleAddReaction}
                 onRemoveReaction={handleRemoveReaction}
+                onStartEdit={startEditing}
+                onUnsend={handleUnsend}
+                isEditing={editingMessageId === m._id}
+                editText={editingMessageId === m._id ? editText : ""}
+                onEditTextChange={setEditText}
+                onSaveEdit={saveEdit}
+                onCancelEdit={cancelEditing}
               />
             ))
           )}

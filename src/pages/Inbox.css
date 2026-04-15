@@ -637,10 +637,10 @@
 /* Reaction indicator on corner of message (like presence status dot) */
 .in-reactionIndicator {
   position: absolute;
-  bottom: -4px;
-  right: -4px;
-  width: 22px;
-  height: 22px;
+  bottom: -3px;
+  right: -3px;
+  width: 18px;
+  height: 18px;
   border-radius: 999px;
   border: none;
   background: rgba(240, 238, 235, 0.95);
@@ -656,7 +656,7 @@
 /* Position on left for received messages */
 .in-bubbleWrap:not(.in-bubbleWrap--me) .in-reactionIndicator {
   right: auto;
-  left: -4px;
+  left: -3px;
 }
 
 .in-bubbleRow:hover .in-reactionIndicator {
@@ -677,12 +677,12 @@
 }
 
 .in-reactionEmoji {
-  font-size: 12px;
+  font-size: 10px;
   line-height: 1;
 }
 
 .in-reactionPlus {
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 700;
   color: rgba(95, 85, 80, 0.55);
   line-height: 1;
@@ -690,15 +690,15 @@
 
 .in-reactionBadge {
   position: absolute;
-  top: -3px;
-  right: -3px;
-  min-width: 12px;
-  height: 12px;
-  padding: 0 3px;
+  top: -2px;
+  right: -2px;
+  min-width: 10px;
+  height: 10px;
+  padding: 0 2px;
   border-radius: 999px;
   background: rgba(30, 76, 160, 0.85);
   color: white;
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 700;
   display: grid;
   place-items: center;
@@ -1081,5 +1081,162 @@
 
 .in-modalBtn--danger:hover:not(:disabled) {
   background: rgba(200, 60, 60, 0.95);
+}
+
+/* Inline image attachments */
+.in-imageAttachment {
+  margin-top: 8px;
+  position: relative;
+}
+
+.in-attachmentImage {
+  max-width: 250px;
+  max-height: 200px;
+  border-radius: 8px;
+  display: block;
+  cursor: pointer;
+}
+
+.in-downloadBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.in-imageAttachment:hover .in-downloadBtn {
+  opacity: 1;
+}
+
+.in-downloadBtn:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Edit message styles */
+.in-editedIndicator {
+  font-family: "Libre Baskerville", serif;
+  font-size: 10px;
+  color: rgba(95, 85, 80, 0.55);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.in-bubble--me .in-editedIndicator {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.in-messageActions {
+  display: flex;
+  gap: 4px;
+  position: absolute;
+  top: -24px;
+  right: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.in-bubbleWrap:not(.in-bubbleWrap--me) .in-messageActions {
+  right: auto;
+  left: 4px;
+}
+
+.in-bubbleRow:hover .in-messageActions {
+  opacity: 1;
+}
+
+.in-editBtn,
+.in-unsendBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  font-size: 11px;
+  display: grid;
+  place-items: center;
+}
+
+.in-editBtn:hover {
+  background: rgba(30, 76, 160, 0.15);
+}
+
+.in-unsendBtn:hover {
+  background: rgba(200, 60, 60, 0.15);
+}
+
+.in-editInput {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(30, 76, 160, 0.3);
+  background: rgba(255, 255, 255, 0.95);
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  color: rgba(60, 55, 52, 0.85);
+  outline: none;
+}
+
+.in-editInput:focus {
+  border-color: rgba(30, 76, 160, 0.6);
+}
+
+.in-editActions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.in-editSaveBtn,
+.in-editCancelBtn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.in-editSaveBtn {
+  background: rgba(30, 76, 160, 0.85);
+  color: white;
+}
+
+.in-editSaveBtn:hover {
+  background: rgba(30, 76, 160, 0.95);
+}
+
+.in-editCancelBtn {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(70, 60, 55, 0.85);
+}
+
+.in-editCancelBtn:hover {
+  background: rgba(0, 0, 0, 0.10);
+}
+
+/* Unsent message styles */
+.in-unsentMessage {
+  font-family: "Libre Baskerville", serif;
+  font-size: 13px;
+  font-style: italic;
+  color: rgba(95, 85, 80, 0.55);
+}
+
+.in-bubble--me .in-unsentMessage {
+  color: rgba(255, 255, 255, 0.65);
 }
 

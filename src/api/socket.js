@@ -263,6 +263,40 @@ export function onMessageReaction(callback) {
   };
 }
 
+/**
+ * Subscribe to message edited events
+ * @param {Function} callback - Called when a message is edited
+ * @returns {Function} Unsubscribe function
+ */
+export function onMessageEdited(callback) {
+  if (!socket) {
+    initSocket();
+  }
+
+  socket.on("message:edited", callback);
+
+  return () => {
+    socket?.off("message:edited", callback);
+  };
+}
+
+/**
+ * Subscribe to message unsent events
+ * @param {Function} callback - Called when a message is unsent
+ * @returns {Function} Unsubscribe function
+ */
+export function onMessageUnsent(callback) {
+  if (!socket) {
+    initSocket();
+  }
+
+  socket.on("message:unsent", callback);
+
+  return () => {
+    socket?.off("message:unsent", callback);
+  };
+}
+
 export default {
   initSocket,
   getSocket,
@@ -282,4 +316,6 @@ export default {
   onNewMessage,
   onMessageSeen,
   onMessageReaction,
+  onMessageEdited,
+  onMessageUnsent,
 };

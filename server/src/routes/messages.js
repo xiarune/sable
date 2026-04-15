@@ -455,6 +455,128 @@ router.post("/:messageId/reactions", async (req, res, next) => {
   }
 });
 
+// PUT /messages/:messageId - Edit a message
+router.put("/:messageId", async (req, res, next) => {
+  try {
+    const { text } = req.body;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: "Message text required" });
+    }
+
+    const message = await Message.findById(req.params.messageId);
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    // Only sender can edit
+    if (message.senderId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: "Only the sender can edit this message" });
+    }
+
+    // Cannot edit unsent messages
+    if (message.isUnsent) {
+      return res.status(400).json({ error: "Cannot edit an unsent message" });
+    }
+
+    // 1-hour time limit
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    if (message.createdAt < oneHourAgo) {
+      return res.status(400).json({ error: "Messages can only be edited within 1 hour of sending" });
+    }
+
+    // Verify user is in the thread
+    const thread = await Thread.findOne({
+      _id: message.threadId,
+      participants: req.user._id,
+    });
+
+    if (!thread) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    // Update the message
+    message.text = text.trim();
+    message.isEdited = true;
+    message.editedAt = new Date();
+    await message.save();
+
+    // Emit socket event
+    const io = req.app.get("io");
+    if (io) {
+      thread.participants.forEach((pId) => {
+        io.to(`user:${pId}`).emit("message:edited", {
+          messageId: message._id,
+          threadId: thread._id,
+          text: message.text,
+          isEdited: true,
+          editedAt: message.editedAt,
+        });
+      });
+    }
+
+    res.json({ message });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /messages/:messageId - Unsend a message (soft delete)
+router.delete("/:messageId", async (req, res, next) => {
+  try {
+    const message = await Message.findById(req.params.messageId);
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    // Only sender can unsend
+    if (message.senderId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: "Only the sender can unsend this message" });
+    }
+
+    // Cannot unsend already unsent messages
+    if (message.isUnsent) {
+      return res.status(400).json({ error: "Message already unsent" });
+    }
+
+    // Verify user is in the thread
+    const thread = await Thread.findOne({
+      _id: message.threadId,
+      participants: req.user._id,
+    });
+
+    if (!thread) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    // Soft delete: clear content but keep the message record
+    message.text = "";
+    message.attachmentUrl = "";
+    message.attachmentType = "";
+    message.attachmentName = "";
+    message.reactions = [];
+    message.isUnsent = true;
+    message.unsentAt = new Date();
+    await message.save();
+
+    // Emit socket event
+    const io = req.app.get("io");
+    if (io) {
+      thread.participants.forEach((pId) => {
+        io.to(`user:${pId}`).emit("message:unsent", {
+          messageId: message._id,
+          threadId: thread._id,
+          isUnsent: true,
+          unsentAt: message.unsentAt,
+        });
+      });
+    }
+
+    res.json({ message: "Message unsent" });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // DELETE /messages/:messageId/reactions/:emoji - Remove reaction
 router.delete("/:messageId/reactions/:emoji", async (req, res, next) => {
   try {
