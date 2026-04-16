@@ -36,18 +36,31 @@ router.post("/:userId", requireAuth, async (req, res, next) => {
     const isPrivate = followee.preferences?.visibility === "private";
 
     if (isPrivate) {
-      // Check if there's already a pending request
+      // Check if there's already a request (any status)
       const existingRequest = await FollowRequest.findOne({
         requesterId: req.user._id,
         targetId: followeeId,
-        status: "pending",
       });
 
       if (existingRequest) {
-        return res.status(400).json({ error: "Follow request already pending" });
+        if (existingRequest.status === "pending") {
+          return res.status(400).json({ error: "Follow request already pending" });
+        }
+        // If previously declined or accepted, reset to pending
+        existingRequest.status = "pending";
+        await existingRequest.save();
+
+        // Send notification to the private user
+        await notifyFollowRequest(followeeId, req.user._id, existingRequest._id);
+
+        return res.status(201).json({
+          message: "Follow request sent",
+          status: "pending",
+          followRequest: existingRequest,
+        });
       }
 
-      // Create a follow request
+      // Create a new follow request
       const followRequest = new FollowRequest({
         requesterId: req.user._id,
         targetId: followeeId,
