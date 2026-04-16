@@ -1114,6 +1114,34 @@
   color: rgba(0, 0, 0, 0.5);
 }
 
+/* Private Profile Indicator */
+.pcp-privateIndicator {
+  margin-top: 8px;
+}
+
+.pcp-privateBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(60, 55, 52, 0.08);
+  border-radius: 12px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(60, 55, 52, 0.7);
+}
+
+/* Disabled follow stats for private profiles */
+.pcp-followStat--disabled {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-family: "Libre Baskerville", serif;
+  cursor: default;
+  opacity: 0.6;
+}
+
 /* Followers/Following Modal */
 .pcp-modal-overlay {
   position: fixed;

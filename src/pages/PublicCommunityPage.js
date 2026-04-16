@@ -48,6 +48,7 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   const [userId, setUserId] = React.useState(null);
   const [announcements, setAnnouncements] = React.useState([]);
   const [accessDenied, setAccessDenied] = React.useState(null); // null | "private" | "following"
+  const [isPrivateProfile, setIsPrivateProfile] = React.useState(false);
 
   // Following state: "none" | "following" | "pending"
   const [followStatus, setFollowStatus] = React.useState("none");
@@ -112,6 +113,14 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
           if (communityData.page.userId) {
             setUserId(communityData.page.userId._id || communityData.page.userId);
           }
+
+          // Also check if this is a private profile
+          try {
+            const userData = await usersApi.getProfile(normalizedHandle);
+            setIsPrivateProfile(userData.isPrivate || false);
+          } catch {
+            // Ignore - if we can see the community page, we have access
+          }
         }
       } catch (err) {
         // Check if this is a visibility error from the API response
@@ -131,6 +140,7 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
           const userData = await usersApi.getProfile(normalizedHandle);
           if (userData.user) {
             setAccessDenied(null);
+            setIsPrivateProfile(userData.isPrivate || false);
             setProfile({
               displayName: userData.user.displayName || normalizedHandle.toUpperCase(),
               handle: normalizedHandle,
@@ -549,23 +559,45 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
 
             <div className="pcp-handle">@{profile.handle}</div>
 
+            {/* Private profile indicator */}
+            {isPrivateProfile && followStatus !== "following" && (
+              <div className="pcp-privateIndicator">
+                <span className="pcp-privateBadge">🔒 Private Profile</span>
+              </div>
+            )}
+
             <div className="pcp-followStats">
-              <button
-                type="button"
-                className="pcp-followStat"
-                onClick={() => openFollowModal("followers")}
-              >
-                <span className="pcp-followStatCount">{followers.length}</span>
-                <span className="pcp-followStatLabel">Followers</span>
-              </button>
-              <button
-                type="button"
-                className="pcp-followStat"
-                onClick={() => openFollowModal("following")}
-              >
-                <span className="pcp-followStatCount">{following.length}</span>
-                <span className="pcp-followStatLabel">Following</span>
-              </button>
+              {isPrivateProfile && followStatus !== "following" ? (
+                <>
+                  <div className="pcp-followStat pcp-followStat--disabled">
+                    <span className="pcp-followStatCount">{followers.length}</span>
+                    <span className="pcp-followStatLabel">Followers</span>
+                  </div>
+                  <div className="pcp-followStat pcp-followStat--disabled">
+                    <span className="pcp-followStatCount">{following.length}</span>
+                    <span className="pcp-followStatLabel">Following</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="pcp-followStat"
+                    onClick={() => openFollowModal("followers")}
+                  >
+                    <span className="pcp-followStatCount">{followers.length}</span>
+                    <span className="pcp-followStatLabel">Followers</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="pcp-followStat"
+                    onClick={() => openFollowModal("following")}
+                  >
+                    <span className="pcp-followStatCount">{following.length}</span>
+                    <span className="pcp-followStatLabel">Following</span>
+                  </button>
+                </>
+              )}
             </div>
 
             {isSearchOpen && (
