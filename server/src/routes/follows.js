@@ -177,11 +177,20 @@ router.put("/requests/:requestId/accept", requireAuth, async (req, res, next) =>
     const request = await FollowRequest.findOne({
       _id: req.params.requestId,
       targetId: req.user._id,
-      status: "pending",
     });
 
     if (!request) {
       return res.status(404).json({ error: "Follow request not found" });
+    }
+
+    // If already accepted, just return success
+    if (request.status === "accepted") {
+      return res.json({ message: "Follow request already accepted" });
+    }
+
+    // If declined, can still accept it
+    if (request.status !== "pending" && request.status !== "declined") {
+      return res.status(400).json({ error: "Cannot accept this request" });
     }
 
     // Update request status
@@ -221,11 +230,20 @@ router.put("/requests/:requestId/decline", requireAuth, async (req, res, next) =
     const request = await FollowRequest.findOne({
       _id: req.params.requestId,
       targetId: req.user._id,
-      status: "pending",
     });
 
     if (!request) {
       return res.status(404).json({ error: "Follow request not found" });
+    }
+
+    // If already declined, just return success
+    if (request.status === "declined") {
+      return res.json({ message: "Follow request already declined" });
+    }
+
+    // If already accepted, can't decline
+    if (request.status === "accepted") {
+      return res.status(400).json({ error: "Cannot decline an accepted request. Unfollow instead." });
     }
 
     // Update request status

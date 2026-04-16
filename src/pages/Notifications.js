@@ -272,7 +272,7 @@ export default function Notifications() {
     } else if (notification.actorId) {
       const username = notification.actor?.username || notification.actorUsername;
       if (username) {
-        navigate(`/user/${username}`);
+        navigate(`/communities/${username}`);
       }
     }
   }, [handleMarkAsRead, navigate]);
