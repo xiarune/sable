@@ -1376,12 +1376,6 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
                 </button>
               ))}
             </div>
-
-            <div className="co-filters" aria-label="Feed filters">
-              <button type="button" className="co-filter co-filter--ghost" onClick={() => {}}>
-                Sort: Trending ▾
-              </button>
-            </div>
           </div>
 
           {/* Composer */}

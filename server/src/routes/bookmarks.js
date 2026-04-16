@@ -2,15 +2,14 @@ const express = require("express");
 const Bookmark = require("../models/Bookmark");
 const Work = require("../models/Work");
 const Post = require("../models/Post");
-const { requireAuth } = require("../middleware/auth");
+const User = require("../models/User");
+const Follow = require("../models/Follow");
+const { requireAuth, optionalAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
-// All routes require auth
-router.use(requireAuth);
-
 // GET /bookmarks - List my bookmarks
-router.get("/", async (req, res, next) => {
+router.get("/", requireAuth, async (req, res, next) => {
   try {
     const { type, page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -41,7 +40,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // POST /bookmarks/work/:workId - Bookmark a work
-router.post("/work/:workId", async (req, res, next) => {
+router.post("/work/:workId", requireAuth, async (req, res, next) => {
   try {
     const { workId } = req.params;
 
@@ -73,7 +72,7 @@ router.post("/work/:workId", async (req, res, next) => {
 });
 
 // DELETE /bookmarks/work/:workId - Remove work bookmark
-router.delete("/work/:workId", async (req, res, next) => {
+router.delete("/work/:workId", requireAuth, async (req, res, next) => {
   try {
     const { workId } = req.params;
 
@@ -95,7 +94,7 @@ router.delete("/work/:workId", async (req, res, next) => {
 });
 
 // POST /bookmarks/post/:postId - Bookmark a post
-router.post("/post/:postId", async (req, res, next) => {
+router.post("/post/:postId", requireAuth, async (req, res, next) => {
   try {
     const { postId } = req.params;
 
@@ -125,7 +124,7 @@ router.post("/post/:postId", async (req, res, next) => {
 });
 
 // DELETE /bookmarks/post/:postId - Remove post bookmark
-router.delete("/post/:postId", async (req, res, next) => {
+router.delete("/post/:postId", requireAuth, async (req, res, next) => {
   try {
     const { postId } = req.params;
 
@@ -145,7 +144,7 @@ router.delete("/post/:postId", async (req, res, next) => {
 });
 
 // POST /bookmarks/audio/:audioId - Bookmark an audio track
-router.post("/audio/:audioId", async (req, res, next) => {
+router.post("/audio/:audioId", requireAuth, async (req, res, next) => {
   try {
     const { audioId } = req.params;
     const { workId, title, authorUsername } = req.body;
@@ -185,7 +184,7 @@ router.post("/audio/:audioId", async (req, res, next) => {
 });
 
 // DELETE /bookmarks/audio/:audioId - Remove audio bookmark
-router.delete("/audio/:audioId", async (req, res, next) => {
+router.delete("/audio/:audioId", requireAuth, async (req, res, next) => {
   try {
     const { audioId } = req.params;
 
@@ -205,7 +204,7 @@ router.delete("/audio/:audioId", async (req, res, next) => {
 });
 
 // GET /bookmarks/check - Check if bookmarked
-router.get("/check", async (req, res, next) => {
+router.get("/check", requireAuth, async (req, res, next) => {
   try {
     const { workId, postId, audioId } = req.query;
 
@@ -223,7 +222,7 @@ router.get("/check", async (req, res, next) => {
 });
 
 // PUT /bookmarks/:bookmarkId/reading-list - Toggle reading list visibility
-router.put("/:bookmarkId/reading-list", async (req, res, next) => {
+router.put("/:bookmarkId/reading-list", requireAuth, async (req, res, next) => {
   try {
     const { bookmarkId } = req.params;
     const { showInReadingList } = req.body;
@@ -247,7 +246,7 @@ router.put("/:bookmarkId/reading-list", async (req, res, next) => {
 });
 
 // GET /bookmarks/reading-list - Get my reading list (bookmarks marked for reading list)
-router.get("/reading-list", async (req, res, next) => {
+router.get("/reading-list", requireAuth, async (req, res, next) => {
   try {
     const { page = 1, limit = 50 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -283,13 +282,36 @@ router.get("/reading-list", async (req, res, next) => {
 });
 
 // GET /bookmarks/reading-list/user/:username - Get a user's public reading list
-router.get("/reading-list/user/:username", async (req, res, next) => {
+router.get("/reading-list/user/:username", optionalAuth, async (req, res, next) => {
   try {
-    const User = require("../models/User");
     const user = await User.findOne({ username: req.params.username.toLowerCase() });
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
+    }
+
+    const isOwner = req.user && req.user._id.toString() === user._id.toString();
+
+    // Check account visibility
+    if (!isOwner) {
+      const visibility = user.preferences?.visibility;
+
+      if (visibility === "invisible") {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      if (visibility === "private") {
+        if (!req.user) {
+          return res.status(403).json({ error: "This user has a private profile" });
+        }
+        const isFollowing = await Follow.findOne({
+          followerId: req.user._id,
+          followeeId: user._id,
+        });
+        if (!isFollowing) {
+          return res.status(403).json({ error: "This user has a private profile" });
+        }
+      }
     }
 
     const bookmarks = await Bookmark.find({

@@ -1,12 +1,45 @@
 const express = require("express");
 const { z } = require("zod");
 const Post = require("../models/Post");
+const User = require("../models/User");
+const Follow = require("../models/Follow");
 const { requireAuth, optionalAuth } = require("../middleware/auth");
 const { MAX_POST_LENGTH } = require("../config/limits");
 const { notifyNewPost, notifyMentions } = require("../services/notificationService");
 const { getPostRecommendations } = require("../services/recommendation");
 
 const router = express.Router();
+
+// Helper to get user IDs that should be excluded based on visibility
+async function getHiddenUserIds(viewerId) {
+  // Get all users with invisible visibility - always hidden
+  const invisibleUsers = await User.find({
+    "preferences.visibility": "invisible",
+  }).select("_id");
+
+  const hiddenIds = invisibleUsers.map(u => u._id);
+
+  // Get all users with private visibility
+  const privateUsers = await User.find({
+    "preferences.visibility": "private",
+  }).select("_id");
+
+  if (viewerId) {
+    for (const privateUser of privateUsers) {
+      const isFollowing = await Follow.findOne({
+        followerId: viewerId,
+        followeeId: privateUser._id,
+      });
+      if (!isFollowing) {
+        hiddenIds.push(privateUser._id);
+      }
+    }
+  } else {
+    hiddenIds.push(...privateUsers.map(u => u._id));
+  }
+
+  return hiddenIds;
+}
 
 // Validation
 const createPostSchema = z.object({
@@ -56,13 +89,20 @@ router.get("/", optionalAuth, async (req, res, next) => {
     const { page = 1, limit = 20, type, author } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    // Get users whose content should be hidden based on visibility settings
+    const hiddenUserIds = await getHiddenUserIds(req.user?._id);
+
     const query = {};
     if (type) query.type = type;
     if (author) query.authorUsername = author.toLowerCase();
 
-    // Filter out posts from blocked users if user is logged in
+    // Combine blocked users and hidden users (based on visibility)
+    const excludedUserIds = [...hiddenUserIds];
     if (req.user && req.user.blockedUsers && req.user.blockedUsers.length > 0) {
-      query.authorId = { $nin: req.user.blockedUsers };
+      excludedUserIds.push(...req.user.blockedUsers);
+    }
+    if (excludedUserIds.length > 0) {
+      query.authorId = { $nin: excludedUserIds };
     }
 
     const [posts, total] = await Promise.all([
@@ -115,10 +155,17 @@ router.get("/feed", optionalAuth, async (req, res, next) => {
   try {
     const { limit = 20, mode = "ranked" } = req.query;
 
-    // Build query to exclude blocked users
+    // Get users whose content should be hidden based on visibility settings
+    const hiddenUserIds = await getHiddenUserIds(req.user?._id);
+
+    // Build query to exclude blocked users and hidden users
     const feedQuery = {};
+    const excludedUserIds = [...hiddenUserIds];
     if (req.user && req.user.blockedUsers && req.user.blockedUsers.length > 0) {
-      feedQuery.authorId = { $nin: req.user.blockedUsers };
+      excludedUserIds.push(...req.user.blockedUsers);
+    }
+    if (excludedUserIds.length > 0) {
+      feedQuery.authorId = { $nin: excludedUserIds };
     }
 
     // If mode is "chronological", use the existing logic
@@ -215,6 +262,30 @@ router.get("/:id", optionalAuth, async (req, res, next) => {
     const post = await Post.findById(req.params.id);
     if (!post) {
       return res.status(404).json({ error: "Post not found" });
+    }
+
+    // Check if viewer can see this author's content
+    const isOwner = req.user && post.authorId.toString() === req.user._id.toString();
+    if (!isOwner) {
+      const author = await User.findById(post.authorId).select("preferences.visibility");
+      const visibility = author?.preferences?.visibility;
+
+      if (visibility === "invisible") {
+        return res.status(404).json({ error: "Post not found" });
+      }
+
+      if (visibility === "private") {
+        if (!req.user) {
+          return res.status(403).json({ error: "This user has a private profile" });
+        }
+        const isFollowing = await Follow.findOne({
+          followerId: req.user._id,
+          followeeId: post.authorId,
+        });
+        if (!isFollowing) {
+          return res.status(403).json({ error: "This user has a private profile" });
+        }
+      }
     }
 
     res.json({ post });

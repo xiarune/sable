@@ -12,6 +12,70 @@ const { MAX_WORKS_PER_USER, MAX_CHAPTERS, MAX_BODY_LENGTH, MAX_TAGS, MAX_TAG_LEN
 
 const router = express.Router();
 
+// Helper to get user IDs that should be excluded based on visibility
+// Returns array of user IDs whose content should be hidden from the viewer
+async function getHiddenUserIds(viewerId) {
+  // Get all users with invisible visibility - always hidden from everyone except themselves
+  const invisibleUsers = await User.find({
+    "preferences.visibility": "invisible",
+  }).select("_id");
+
+  const hiddenIds = invisibleUsers.map(u => u._id);
+
+  // Get all users with private visibility
+  const privateUsers = await User.find({
+    "preferences.visibility": "private",
+  }).select("_id");
+
+  // For private users, check if viewer is following them
+  if (viewerId) {
+    for (const privateUser of privateUsers) {
+      // Check if viewer follows this private user
+      const isFollowing = await Follow.findOne({
+        followerId: viewerId,
+        followeeId: privateUser._id,
+      });
+      // If not following, add to hidden list
+      if (!isFollowing) {
+        hiddenIds.push(privateUser._id);
+      }
+    }
+  } else {
+    // Not logged in - all private users are hidden
+    hiddenIds.push(...privateUsers.map(u => u._id));
+  }
+
+  return hiddenIds;
+}
+
+// Helper to check if viewer can see a specific user's content
+async function canViewUserContent(targetUserId, viewerId) {
+  const targetUser = await User.findById(targetUserId).select("preferences.visibility");
+  if (!targetUser) return false;
+
+  const visibility = targetUser.preferences?.visibility || "public";
+
+  // Owner can always see their own content
+  if (viewerId && targetUserId.toString() === viewerId.toString()) {
+    return true;
+  }
+
+  if (visibility === "invisible") {
+    return false;
+  }
+
+  if (visibility === "private") {
+    if (!viewerId) return false;
+    const isFollowing = await Follow.findOne({
+      followerId: viewerId,
+      followeeId: targetUserId,
+    });
+    return !!isFollowing;
+  }
+
+  return true; // public
+}
+
 // Helper to create slug from name
 function slugify(name) {
   return String(name || "")
@@ -187,7 +251,16 @@ router.get("/", optionalAuth, async (req, res, next) => {
     const { page = 1, limit = 20, genre, fandom, language, tag, author, q, sort = "newest" } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    // Get users whose content should be hidden based on visibility settings
+    const hiddenUserIds = await getHiddenUserIds(req.user?._id);
+
     const query = { privacy: "Public", status: "published" };
+
+    // Exclude works from users with restricted visibility
+    if (hiddenUserIds.length > 0) {
+      query.authorId = { $nin: hiddenUserIds };
+    }
+
     if (genre) query.genre = genre;
     if (fandom) query.fandom = fandom;
     if (language) query.language = language;
@@ -283,7 +356,13 @@ router.get("/:id", optionalAuth, async (req, res, next) => {
     // Check author's account privacy setting
     if (!isAuthor) {
       const author = await User.findById(work.authorId).select("preferences.visibility");
-      if (author?.preferences?.visibility === "private") {
+      const visibility = author?.preferences?.visibility;
+
+      if (visibility === "invisible") {
+        return res.status(404).json({ error: "Work not found" });
+      }
+
+      if (visibility === "private") {
         if (!req.user) {
           return res.status(403).json({ error: "This user has a private profile" });
         }

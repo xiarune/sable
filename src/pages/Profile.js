@@ -184,7 +184,6 @@ export default function Profile({ username = "guest" }) {
                       <span className="pf-meta">{user.bio}</span>
                     </>
                   )}
-                  <span className="pf-badge">Logged In</span>
                 </div>
 
                 <div className="pf-metaRow">

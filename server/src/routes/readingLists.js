@@ -1,6 +1,7 @@
 const express = require("express");
 const ReadingList = require("../models/ReadingList");
 const Work = require("../models/Work");
+const Follow = require("../models/Follow");
 const { requireAuth, optionalAuth } = require("../middleware/auth");
 
 const router = express.Router();
@@ -28,10 +29,34 @@ router.get("/user/:username", optionalAuth, async (req, res, next) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    const isOwner = req.user && req.user._id.toString() === user._id.toString();
+
+    // Check account visibility
+    if (!isOwner) {
+      const visibility = user.preferences?.visibility;
+
+      if (visibility === "invisible") {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      if (visibility === "private") {
+        if (!req.user) {
+          return res.status(403).json({ error: "This user has a private profile" });
+        }
+        const isFollowing = await Follow.findOne({
+          followerId: req.user._id,
+          followeeId: user._id,
+        });
+        if (!isFollowing) {
+          return res.status(403).json({ error: "This user has a private profile" });
+        }
+      }
+    }
+
     const query = { userId: user._id };
 
     // If not the owner, only show public lists
-    if (!req.user || req.user._id.toString() !== user._id.toString()) {
+    if (!isOwner) {
       query.isPublic = true;
     }
 

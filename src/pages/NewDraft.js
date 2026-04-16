@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import "./NewDraft.css";
 import { draftsApi } from "../api/drafts";
 import { uploadsApi } from "../api/uploads";
+import { skinsApi } from "../api";
 import importApi from "../api/import";
 import { SableLoader } from "../components";
 
@@ -201,6 +202,8 @@ export default function NewDraft() {
 
   const [tags, setTags] = React.useState([]);
   const [skin, setSkin] = React.useState("Default");
+  const [customSkinId, setCustomSkinId] = React.useState(null);
+  const [customSkins, setCustomSkins] = React.useState([]);
   const [privacy, setPrivacy] = React.useState("Public");
   const [language, setLanguage] = React.useState("English");
   const [genre, setGenre] = React.useState("");
@@ -376,6 +379,7 @@ export default function NewDraft() {
         }
         setTags(Array.isArray(draft.tags) ? draft.tags : []);
         setSkin(draft.skin || "Default");
+        setCustomSkinId(draft.customSkinId || null);
         setPrivacy(draft.privacy || "Public");
         setLanguage(draft.language || "English");
         setGenre(draft.genre || "");
@@ -394,6 +398,20 @@ export default function NewDraft() {
     loadDraft();
   }, [draftId]);
 
+  // Load custom skins
+  React.useEffect(() => {
+    async function loadCustomSkins() {
+      try {
+        const data = await skinsApi.list("work");
+        setCustomSkins(data.skins || []);
+      } catch {
+        // Ignore errors
+      }
+    }
+
+    loadCustomSkins();
+  }, []);
+
   async function saveDraft() {
     const payload = {
       title: title.trim() || "Untitled",
@@ -406,6 +424,7 @@ export default function NewDraft() {
       })),
       tags,
       skin,
+      customSkinId,
       privacy,
       language,
       genre: genre.trim() || "",
@@ -796,16 +815,47 @@ export default function NewDraft() {
           {activeTool === "skin" && (
             <div className="nd-toolPanel">
               <div className="nd-toolTitle">Skin</div>
+              <div className="nd-toolSubtitle">Built-in Skins</div>
               <div className="nd-choiceRow">
                 {SKIN_OPTIONS.map((opt) => (
                   <label key={opt} className="nd-choice">
-                    <input type="radio" checked={skin === opt} onChange={() => setSkin(opt)} />
+                    <input
+                      type="radio"
+                      checked={skin === opt && !customSkinId}
+                      onChange={() => {
+                        setSkin(opt);
+                        setCustomSkinId(null);
+                      }}
+                    />
                     <span>{opt}</span>
                   </label>
                 ))}
               </div>
+              {customSkins.length > 0 && (
+                <>
+                  <div className="nd-toolSubtitle" style={{ marginTop: 12 }}>Custom Skins</div>
+                  <div className="nd-choiceRow">
+                    {customSkins.map((cs) => (
+                      <label key={cs._id} className="nd-choice">
+                        <input
+                          type="radio"
+                          checked={customSkinId === cs._id}
+                          onChange={() => {
+                            setSkin(cs.name);
+                            setCustomSkinId(cs._id);
+                          }}
+                        />
+                        <span>{cs.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
               <div className="nd-toolHint">
                 Choose a reading skin for your work. Readers will see this theme when viewing.
+                {customSkins.length === 0 && (
+                  <> Create custom skins in <a href="/settings" style={{ color: "#244b2b" }}>Settings &rarr; Skins</a>.</>
+                )}
               </div>
             </div>
           )}

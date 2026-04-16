@@ -164,14 +164,34 @@ router.get("/:username", optionalAuth, async (req, res, next) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    const isOwner = req.user && req.user._id.toString() === user._id.toString();
+
+    // Check account visibility
+    const visibility = user.preferences?.visibility;
+
+    if (!isOwner && visibility === "invisible") {
+      return res.status(404).json({ error: "User not found" });
+    }
+
     // Check if current user is following
     let isFollowing = false;
-    if (req.user) {
+    if (req.user && !isOwner) {
       const follow = await Follow.findOne({
         followerId: req.user._id,
         followeeId: user._id,
       });
       isFollowing = !!follow;
+    }
+
+    // For private profiles, only show content to followers
+    if (!isOwner && visibility === "private" && !isFollowing) {
+      // Return limited profile info but no works
+      return res.json({
+        user: user.toPublicJSON(),
+        isFollowing: false,
+        works: [],
+        isPrivate: true,
+      });
     }
 
     // Get public works
