@@ -241,13 +241,14 @@ router.post("/threads", async (req, res, next) => {
     }
 
     // For 1-on-1, check if it should be a request
+    // DM is a request if the sender is NOT following the recipient
     let isRequest = false;
     if (!isGroup) {
-      const isFollowedByRecipient = await Follow.findOne({
-        followerId: targetIds[0],
-        followeeId: req.user._id,
+      const senderFollowsRecipient = await Follow.findOne({
+        followerId: req.user._id,
+        followeeId: targetIds[0],
       });
-      isRequest = !isFollowedByRecipient;
+      isRequest = !senderFollowsRecipient;
     }
 
     // Create the thread
