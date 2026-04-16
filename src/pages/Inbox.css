@@ -227,6 +227,11 @@
   text-overflow: ellipsis;
 }
 
+.in-pendingRequest {
+  font-style: italic;
+  color: rgba(180, 140, 80, 0.85);
+}
+
 .in-avatarWrap {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
@@ -234,6 +239,22 @@
   place-items: center;
   position: relative;
   flex: 0 0 auto;
+}
+
+.in-avatarWrap--xs {
+  width: 24px;
+  height: 24px;
+}
+
+.in-avatarWrap--xs .in-avatarImg {
+  width: 20px;
+  height: 20px;
+}
+
+.in-avatarWrap--xs .in-avatarFallback {
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
 }
 
 .in-avatarWrap--sm {
@@ -1083,6 +1104,15 @@
 
 .in-modalBtn--danger:hover:not(:disabled) {
   background: rgba(200, 60, 60, 0.95);
+}
+
+.in-modalBtn--primary {
+  background: rgba(70, 60, 55, 0.85);
+  color: white;
+}
+
+.in-modalBtn--primary:hover:not(:disabled) {
+  background: rgba(70, 60, 55, 0.95);
 }
 
 /* Inline image attachments */

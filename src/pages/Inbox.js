@@ -19,6 +19,7 @@ import {
   onMessageUnsent,
   onThreadUpdated,
   onMemberLeft,
+  onMembersAdded,
 } from "../api/socket";
 
 function uid(prefix = "id") {
@@ -424,6 +425,13 @@ export default function Inbox() {
   const [editingGroupName, setEditingGroupName] = React.useState(false);
   const [newGroupName, setNewGroupName] = React.useState("");
 
+  // Add members modal state
+  const [showAddMembersModal, setShowAddMembersModal] = React.useState(false);
+  const [addMemberQuery, setAddMemberQuery] = React.useState("");
+  const [addMemberSearchResults, setAddMemberSearchResults] = React.useState([]);
+  const [selectedNewMembers, setSelectedNewMembers] = React.useState([]);
+  const [addingMembers, setAddingMembers] = React.useState(false);
+
   // Load initial data
   React.useEffect(() => {
     async function loadData() {
@@ -618,6 +626,31 @@ export default function Inbox() {
       }
     });
 
+    const unsubMembersAdded = onMembersAdded(({ threadId, newMembers }) => {
+      setThreads((prev) =>
+        prev.map((t) => {
+          if (t._id !== threadId) return t;
+          return {
+            ...t,
+            participants: [...(t.participants || []), ...newMembers.map((m) => m._id)],
+            participantDetails: [...(t.participantDetails || []), ...newMembers],
+            participantUsernames: [...(t.participantUsernames || []), ...newMembers.map((m) => m.username)],
+          };
+        })
+      );
+      if (activeThread?._id === threadId) {
+        setActiveThread((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            participants: [...(prev.participants || []), ...newMembers.map((m) => m._id)],
+            participantDetails: [...(prev.participantDetails || []), ...newMembers],
+            participantUsernames: [...(prev.participantUsernames || []), ...newMembers.map((m) => m.username)],
+          };
+        });
+      }
+    });
+
     const unsubTyping = onTyping(({ userId, threadId, typing }) => {
       if (threadId === activeThreadId && userId !== currentUser?._id) {
         setTypingUsers((prev) => {
@@ -641,6 +674,7 @@ export default function Inbox() {
       unsubUnsent();
       unsubThreadUpdated();
       unsubMemberLeft();
+      unsubMembersAdded();
     };
   }, [activeThreadId, activeThread?._id, currentUser?._id, settings.readReceipts]);
 
@@ -661,6 +695,27 @@ export default function Inbox() {
 
     return () => clearTimeout(timer);
   }, [userQuery]);
+
+  // Search users for add members modal
+  React.useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (addMemberQuery.trim()) {
+        try {
+          const data = await messagesApi.searchUsers(addMemberQuery);
+          // Filter out users already in the group
+          const existingIds = activeThread?.participants || [];
+          const filtered = (data.users || []).filter((u) => !existingIds.includes(u._id));
+          setAddMemberSearchResults(filtered);
+        } catch (err) {
+          console.error("Failed to search users:", err);
+        }
+      } else {
+        setAddMemberSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [addMemberQuery, activeThread?.participants]);
 
   // Get other participant from thread
   function getOtherParticipant(thread) {
@@ -1048,6 +1103,65 @@ export default function Inbox() {
     }
   }
 
+  // Open add members modal
+  function openAddMembersModal() {
+    setShowAddMembersModal(true);
+    setAddMemberQuery("");
+    setAddMemberSearchResults([]);
+    setSelectedNewMembers([]);
+    setIsInfoOpen(false);
+  }
+
+  // Toggle selection of a user for adding to group
+  function toggleNewMember(user) {
+    setSelectedNewMembers((prev) => {
+      const isSelected = prev.some((u) => u._id === user._id);
+      if (isSelected) {
+        return prev.filter((u) => u._id !== user._id);
+      }
+      return [...prev, user];
+    });
+  }
+
+  // Add selected members to group
+  async function addMembersToGroup() {
+    if (!activeThreadId || selectedNewMembers.length === 0 || addingMembers) return;
+
+    setAddingMembers(true);
+    try {
+      const userIds = selectedNewMembers.map((u) => u._id);
+      await messagesApi.addMembers(activeThreadId, userIds);
+      // Update will come via socket, but also update locally
+      setActiveThread((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          participants: [...(prev.participants || []), ...userIds],
+          participantDetails: [...(prev.participantDetails || []), ...selectedNewMembers],
+          participantUsernames: [...(prev.participantUsernames || []), ...selectedNewMembers.map((u) => u.username)],
+        };
+      });
+      setThreads((prev) =>
+        prev.map((t) => {
+          if (t._id !== activeThreadId) return t;
+          return {
+            ...t,
+            participants: [...(t.participants || []), ...userIds],
+            participantDetails: [...(t.participantDetails || []), ...selectedNewMembers],
+            participantUsernames: [...(t.participantUsernames || []), ...selectedNewMembers.map((u) => u.username)],
+          };
+        })
+      );
+      setShowAddMembersModal(false);
+      setSelectedNewMembers([]);
+    } catch (err) {
+      console.error("Failed to add members:", err);
+      alert(err.response?.data?.error || "Failed to add members");
+    } finally {
+      setAddingMembers(false);
+    }
+  }
+
   // Start editing group name
   function startEditingGroupName() {
     setEditingGroupName(true);
@@ -1412,7 +1526,11 @@ export default function Inbox() {
                         <div className="in-threadMeta">{formatTime(t.lastMessageAt)}</div>
                       </div>
                       <div className="in-threadLast">
-                        {t.lastMessage || "Start a conversation..."}
+                        {t.isPendingRequest ? (
+                          <span className="in-pendingRequest">Pending request...</span>
+                        ) : (
+                          t.lastMessage || "Start a conversation..."
+                        )}
                       </div>
                     </div>
 
@@ -1973,6 +2091,16 @@ export default function Inbox() {
                       role="menuitem"
                       className="in-thread"
                       style={{ width: "100%" }}
+                      onClick={openAddMembersModal}
+                    >
+                      Add Members
+                    </button>
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="in-thread"
+                      style={{ width: "100%" }}
                       onClick={muteThread}
                     >
                       Mute
@@ -2252,6 +2380,119 @@ export default function Inbox() {
                 disabled={deleteInProgress}
               >
                 {deleteInProgress ? "Deleting..." : "Delete Chat"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Members Modal */}
+      {showAddMembersModal && (
+        <div className="in-modalOverlay" onClick={() => !addingMembers && setShowAddMembersModal(false)}>
+          <div className="in-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="in-modalHeader">
+              <h3 className="in-modalTitle">Add Members</h3>
+              <button
+                type="button"
+                className="in-modalClose"
+                onClick={() => setShowAddMembersModal(false)}
+                disabled={addingMembers}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="in-modalBody">
+              <input
+                type="text"
+                className="in-search"
+                placeholder="Search users..."
+                value={addMemberQuery}
+                onChange={(e) => setAddMemberQuery(e.target.value)}
+                autoFocus
+              />
+
+              {/* Selected users */}
+              {selectedNewMembers.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+                  {selectedNewMembers.map((u) => (
+                    <div
+                      key={u._id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "4px 8px",
+                        background: "rgba(0,0,0,0.08)",
+                        borderRadius: 12,
+                        fontSize: 13,
+                      }}
+                    >
+                      <Avatar name={u.username} avatar={u.avatarUrl} size="xs" />
+                      <span>@{u.username}</span>
+                      <button
+                        type="button"
+                        onClick={() => toggleNewMember(u)}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: 0, opacity: 0.6 }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Search results */}
+              {addMemberSearchResults.length > 0 && (
+                <div style={{ marginTop: 12, maxHeight: 200, overflowY: "auto" }}>
+                  {addMemberSearchResults.map((u) => {
+                    const isSelected = selectedNewMembers.some((s) => s._id === u._id);
+                    return (
+                      <button
+                        key={u._id}
+                        type="button"
+                        className="in-memberItem"
+                        onClick={() => toggleNewMember(u)}
+                        style={{
+                          cursor: "pointer",
+                          background: isSelected ? "rgba(0,0,0,0.08)" : "none",
+                          border: "none",
+                          width: "100%",
+                          textAlign: "left",
+                          padding: "8px",
+                          borderRadius: 6,
+                        }}
+                      >
+                        <Avatar name={u.username} avatar={u.avatarUrl} size="sm" />
+                        <span>@{u.username}</span>
+                        {isSelected && <span style={{ marginLeft: "auto", opacity: 0.6 }}>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {addMemberQuery.trim() && addMemberSearchResults.length === 0 && (
+                <div style={{ marginTop: 12, opacity: 0.6, textAlign: "center" }}>
+                  No users found
+                </div>
+              )}
+            </div>
+            <div className="in-modalFooter">
+              <button
+                type="button"
+                className="in-modalBtn in-modalBtn--secondary"
+                onClick={() => setShowAddMembersModal(false)}
+                disabled={addingMembers}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="in-modalBtn in-modalBtn--primary"
+                onClick={addMembersToGroup}
+                disabled={addingMembers || selectedNewMembers.length === 0}
+              >
+                {addingMembers ? "Adding..." : `Add ${selectedNewMembers.length} Member${selectedNewMembers.length !== 1 ? "s" : ""}`}
               </button>
             </div>
           </div>

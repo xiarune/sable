@@ -35,9 +35,13 @@ function sanitizePresence(user) {
 // GET /messages/unread-count - Get total unread message count
 router.get("/unread-count", async (req, res, next) => {
   try {
+    // Count unread in regular threads (not requests to this user)
     const threads = await Thread.find({
       participants: req.user._id,
-      isRequest: { $ne: true },
+      $or: [
+        { isRequest: { $ne: true } },
+        { isRequest: true, requestRecipient: { $ne: req.user._id } },
+      ],
     });
 
     let totalUnread = 0;
@@ -46,10 +50,11 @@ router.get("/unread-count", async (req, res, next) => {
       totalUnread += unread;
     });
 
-    // Also count message requests as unread
+    // Also count message requests where user IS the recipient
     const requestCount = await Thread.countDocuments({
       participants: req.user._id,
       isRequest: true,
+      requestRecipient: req.user._id,
     });
 
     res.json({ count: totalUnread, requestCount, total: totalUnread + requestCount });
@@ -61,9 +66,15 @@ router.get("/unread-count", async (req, res, next) => {
 // GET /messages/threads - List accepted threads (not requests)
 router.get("/threads", async (req, res, next) => {
   try {
+    // Show threads where:
+    // - isRequest is false, OR
+    // - isRequest is true but current user is NOT the requestRecipient (they're the sender)
     const threads = await Thread.find({
       participants: req.user._id,
-      isRequest: { $ne: true },
+      $or: [
+        { isRequest: { $ne: true } },
+        { isRequest: true, requestRecipient: { $ne: req.user._id } },
+      ],
     })
       .sort({ lastMessageAt: -1 })
       .limit(50);
@@ -79,6 +90,10 @@ router.get("/threads", async (req, res, next) => {
     const threadsWithUsers = threads.map((t) => {
       const thread = t.toObject();
       thread.participantDetails = t.participants.map((pId) => userMap[pId.toString()] || null);
+      // Add flag if this is a pending request (sender is waiting for recipient to accept)
+      if (t.isRequest && t.requestRecipient?.toString() !== req.user._id.toString()) {
+        thread.isPendingRequest = true;
+      }
       return thread;
     });
 
@@ -91,9 +106,11 @@ router.get("/threads", async (req, res, next) => {
 // GET /messages/requests - List message requests (from non-followers)
 router.get("/requests", async (req, res, next) => {
   try {
+    // Only show requests where current user IS the requestRecipient
     const threads = await Thread.find({
       participants: req.user._id,
       isRequest: true,
+      requestRecipient: req.user._id,
     })
       .sort({ lastMessageAt: -1 })
       .limit(50);
@@ -121,10 +138,12 @@ router.get("/requests", async (req, res, next) => {
 // PUT /messages/requests/:threadId/accept - Accept a message request
 router.put("/requests/:threadId/accept", async (req, res, next) => {
   try {
+    // Only the requestRecipient can accept the request
     const thread = await Thread.findOne({
       _id: req.params.threadId,
       participants: req.user._id,
       isRequest: true,
+      requestRecipient: req.user._id,
     });
 
     if (!thread) {
@@ -145,10 +164,12 @@ router.put("/requests/:threadId/accept", async (req, res, next) => {
 // DELETE /messages/requests/:threadId - Decline a message request
 router.delete("/requests/:threadId", async (req, res, next) => {
   try {
+    // Only the requestRecipient can decline the request
     const thread = await Thread.findOne({
       _id: req.params.threadId,
       participants: req.user._id,
       isRequest: true,
+      requestRecipient: req.user._id,
     });
 
     if (!thread) {
@@ -243,12 +264,17 @@ router.post("/threads", async (req, res, next) => {
     // For 1-on-1, check if it should be a request
     // DM is a request if the sender is NOT following the recipient
     let isRequest = false;
+    let requestRecipient = null;
     if (!isGroup) {
       const senderFollowsRecipient = await Follow.findOne({
         followerId: req.user._id,
         followeeId: targetIds[0],
       });
       isRequest = !senderFollowsRecipient;
+      // The recipient should see this as a request, not the sender
+      if (isRequest) {
+        requestRecipient = targetIds[0];
+      }
     }
 
     // Create the thread
@@ -259,6 +285,7 @@ router.post("/threads", async (req, res, next) => {
       participants: allParticipants,
       participantUsernames: allUsernames,
       isRequest,
+      requestRecipient,
       isGroup,
       groupName: isGroup ? (groupName || null) : null,
       groupCreatedBy: isGroup ? req.user._id : null,
@@ -364,6 +391,98 @@ router.delete("/threads/:threadId/leave", async (req, res, next) => {
     }
 
     res.json({ message: "Left group successfully" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /messages/threads/:threadId/members - Add members to a group chat
+router.post("/threads/:threadId/members", async (req, res, next) => {
+  try {
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: "userIds array is required" });
+    }
+
+    const thread = await Thread.findOne({
+      _id: req.params.threadId,
+      participants: req.user._id,
+    });
+
+    if (!thread) {
+      return res.status(404).json({ error: "Thread not found" });
+    }
+
+    if (!thread.isGroup) {
+      return res.status(400).json({ error: "Cannot add members to a direct message" });
+    }
+
+    // Get the users to add
+    const usersToAdd = await User.find({
+      _id: { $in: userIds },
+    }).select("_id username displayName avatarUrl");
+
+    if (usersToAdd.length === 0) {
+      return res.status(400).json({ error: "No valid users found" });
+    }
+
+    // Filter out users already in the group
+    const existingIds = thread.participants.map((p) => p.toString());
+    const newUsers = usersToAdd.filter((u) => !existingIds.includes(u._id.toString()));
+
+    if (newUsers.length === 0) {
+      return res.status(400).json({ error: "All users are already in the group" });
+    }
+
+    // Add new participants
+    newUsers.forEach((user) => {
+      thread.participants.push(user._id);
+      thread.participantUsernames.push(user.username);
+      thread.unreadCounts.set(user._id.toString(), 0);
+    });
+
+    await thread.save();
+
+    // Create a system message about new members
+    const newUsernames = newUsers.map((u) => u.username).join(", ");
+    const systemMessage = await Message.create({
+      threadId: thread._id,
+      senderId: req.user._id,
+      senderUsername: req.user.username,
+      text: `${req.user.username} added ${newUsernames} to the group`,
+      isSystemMessage: true,
+    });
+
+    // Update thread's last message
+    thread.lastMessageAt = systemMessage.createdAt;
+    thread.lastMessageText = systemMessage.text;
+    thread.lastSenderId = req.user._id;
+    await thread.save();
+
+    // Emit socket events
+    const io = req.app.get("io");
+    if (io) {
+      // Notify existing members
+      thread.participants.forEach((pId) => {
+        io.to(`user:${pId}`).emit("thread:membersAdded", {
+          threadId: thread._id,
+          newMembers: newUsers.map((u) => ({
+            _id: u._id,
+            username: u.username,
+            displayName: u.displayName,
+            avatarUrl: u.avatarUrl,
+          })),
+          addedBy: req.user.username,
+        });
+      });
+    }
+
+    res.json({
+      message: `Added ${newUsers.length} member(s) to the group`,
+      thread,
+      addedUsers: newUsers,
+    });
   } catch (err) {
     next(err);
   }

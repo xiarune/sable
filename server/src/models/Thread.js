@@ -29,6 +29,11 @@ const threadSchema = new mongoose.Schema(
 
     // Message request handling (from non-followers)
     isRequest: { type: Boolean, default: false },
+    // Who should see this as a request (the recipient, not the sender)
+    requestRecipient: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     requestAcceptedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

@@ -331,6 +331,23 @@ export function onMemberLeft(callback) {
   };
 }
 
+/**
+ * Subscribe to members added events (group chat)
+ * @param {Function} callback - Called when members are added to a group
+ * @returns {Function} Unsubscribe function
+ */
+export function onMembersAdded(callback) {
+  if (!socket) {
+    initSocket();
+  }
+
+  socket.on("thread:membersAdded", callback);
+
+  return () => {
+    socket?.off("thread:membersAdded", callback);
+  };
+}
+
 export default {
   initSocket,
   getSocket,
@@ -354,4 +371,5 @@ export default {
   onMessageUnsent,
   onThreadUpdated,
   onMemberLeft,
+  onMembersAdded,
 };

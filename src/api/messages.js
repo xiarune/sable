@@ -31,6 +31,9 @@ const messagesApi = {
   // Leave a group chat
   leaveGroup: (threadId) => api.delete(`/messages/threads/${threadId}/leave`),
 
+  // Add members to a group chat
+  addMembers: (threadId, userIds) => api.post(`/messages/threads/${threadId}/members`, { userIds }),
+
   // Get a single thread with messages
   getThread: (threadId) => api.get(`/messages/threads/${threadId}`),
 
