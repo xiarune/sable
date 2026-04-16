@@ -670,7 +670,7 @@ router.delete("/:messageId", async (req, res, next) => {
     }
 
     // Soft delete: clear content but keep the message record
-    message.text = "";
+    message.text = "[Message unsent]";
     message.attachmentUrl = "";
     message.attachmentType = "";
     message.attachmentName = "";
