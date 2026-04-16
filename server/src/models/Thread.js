@@ -11,6 +11,14 @@ const threadSchema = new mongoose.Schema(
     // Denormalized for quick display
     participantUsernames: [{ type: String }],
 
+    // Group chat fields
+    isGroup: { type: Boolean, default: false },
+    groupName: { type: String, default: null },
+    groupCreatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
     // Last message preview
     lastMessage: { type: String, default: "" },
     lastMessageAt: { type: Date, default: Date.now },

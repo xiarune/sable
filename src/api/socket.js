@@ -297,6 +297,40 @@ export function onMessageUnsent(callback) {
   };
 }
 
+/**
+ * Subscribe to thread updated events (group name changes)
+ * @param {Function} callback - Called when a thread is updated
+ * @returns {Function} Unsubscribe function
+ */
+export function onThreadUpdated(callback) {
+  if (!socket) {
+    initSocket();
+  }
+
+  socket.on("thread:updated", callback);
+
+  return () => {
+    socket?.off("thread:updated", callback);
+  };
+}
+
+/**
+ * Subscribe to member left events (group chat)
+ * @param {Function} callback - Called when a member leaves a group
+ * @returns {Function} Unsubscribe function
+ */
+export function onMemberLeft(callback) {
+  if (!socket) {
+    initSocket();
+  }
+
+  socket.on("thread:memberLeft", callback);
+
+  return () => {
+    socket?.off("thread:memberLeft", callback);
+  };
+}
+
 export default {
   initSocket,
   getSocket,
@@ -318,4 +352,6 @@ export default {
   onMessageReaction,
   onMessageEdited,
   onMessageUnsent,
+  onThreadUpdated,
+  onMemberLeft,
 };

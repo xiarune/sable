@@ -17,6 +17,8 @@ import {
   onMessageReaction,
   onMessageEdited,
   onMessageUnsent,
+  onThreadUpdated,
+  onMemberLeft,
 } from "../api/socket";
 
 function uid(prefix = "id") {
@@ -160,7 +162,7 @@ function ReactionPicker({ onSelect, onClose }) {
 }
 
 // Message bubble with reaction indicator on corner (like presence dots)
-function MessageBubble({ message, isMe, currentUserId, onAddReaction, onRemoveReaction, onStartEdit, onUnsend, isEditing, editText, onEditTextChange, onSaveEdit, onCancelEdit }) {
+function MessageBubble({ message, isMe, currentUserId, onAddReaction, onRemoveReaction, onStartEdit, onUnsend, isEditing, editText, onEditTextChange, onSaveEdit, onCancelEdit, isGroupChat }) {
   const [showReactionPicker, setShowReactionPicker] = React.useState(false);
 
   const reactions = message.reactions || [];
@@ -263,6 +265,11 @@ function MessageBubble({ message, isMe, currentUserId, onAddReaction, onRemoveRe
             </>
           ) : (
             <>
+              {/* Sender name for group chats (non-self messages only) */}
+              {isGroupChat && !isMe && (
+                <div className="in-senderName">@{message.senderUsername}</div>
+              )}
+
               {message.text}
 
               {/* Inline image attachment */}
@@ -409,6 +416,13 @@ export default function Inbox() {
   // Edit message state
   const [editingMessageId, setEditingMessageId] = React.useState(null);
   const [editText, setEditText] = React.useState("");
+
+  // Group chat compose state
+  const [selectedUsers, setSelectedUsers] = React.useState([]);
+  const [groupName, setGroupName] = React.useState("");
+  const [isCreatingGroup, setIsCreatingGroup] = React.useState(false);
+  const [editingGroupName, setEditingGroupName] = React.useState(false);
+  const [newGroupName, setNewGroupName] = React.useState("");
 
   // Load initial data
   React.useEffect(() => {
@@ -570,6 +584,40 @@ export default function Inbox() {
       );
     });
 
+    const unsubThreadUpdated = onThreadUpdated(({ threadId, groupName }) => {
+      setThreads((prev) =>
+        prev.map((t) => (t._id === threadId ? { ...t, groupName } : t))
+      );
+      if (activeThread?._id === threadId) {
+        setActiveThread((prev) => prev ? { ...prev, groupName } : prev);
+      }
+    });
+
+    const unsubMemberLeft = onMemberLeft(({ threadId, userId, username }) => {
+      setThreads((prev) =>
+        prev.map((t) => {
+          if (t._id !== threadId) return t;
+          return {
+            ...t,
+            participants: t.participants?.filter((p) => p !== userId),
+            participantDetails: t.participantDetails?.filter((p) => p?._id !== userId),
+            participantUsernames: t.participantUsernames?.filter((u) => u !== username),
+          };
+        })
+      );
+      if (activeThread?._id === threadId) {
+        setActiveThread((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            participants: prev.participants?.filter((p) => p !== userId),
+            participantDetails: prev.participantDetails?.filter((p) => p?._id !== userId),
+            participantUsernames: prev.participantUsernames?.filter((u) => u !== username),
+          };
+        });
+      }
+    });
+
     const unsubTyping = onTyping(({ userId, threadId, typing }) => {
       if (threadId === activeThreadId && userId !== currentUser?._id) {
         setTypingUsers((prev) => {
@@ -591,8 +639,10 @@ export default function Inbox() {
       unsubTyping();
       unsubEdited();
       unsubUnsent();
+      unsubThreadUpdated();
+      unsubMemberLeft();
     };
-  }, [activeThreadId, currentUser?._id, settings.readReceipts]);
+  }, [activeThreadId, activeThread?._id, currentUser?._id, settings.readReceipts]);
 
   // Search users for compose
   React.useEffect(() => {
@@ -619,7 +669,30 @@ export default function Inbox() {
     return details.find((p) => p && p._id !== currentUser._id) || details[0];
   }
 
+  // Get all other participants (for groups)
+  function getOtherParticipants(thread) {
+    if (!thread || !currentUser) return [];
+    const details = thread.participantDetails || [];
+    return details.filter((p) => p && p._id !== currentUser._id);
+  }
+
+  // Get display name for thread (group name or participant names)
+  function getThreadDisplayName(thread) {
+    if (!thread) return "Unknown";
+    if (thread.isGroup && thread.groupName) return thread.groupName;
+    if (thread.isGroup) {
+      const others = getOtherParticipants(thread);
+      if (others.length === 0) return "Empty Group";
+      if (others.length <= 2) return others.map(p => p.username).join(", ");
+      return `${others[0]?.username}, ${others[1]?.username} +${others.length - 2}`;
+    }
+    // 1-on-1 DM
+    const other = getOtherParticipant(thread);
+    return other?.username || "Unknown";
+  }
+
   const otherUser = activeThread ? getOtherParticipant(activeThread) : null;
+  const otherUsers = activeThread ? getOtherParticipants(activeThread) : [];
 
   const filteredThreads = React.useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -872,6 +945,10 @@ export default function Inbox() {
     setUserQuery("");
     setComposeDraft("");
     setSearchUsers([]);
+    // Reset group state
+    setSelectedUsers([]);
+    setGroupName("");
+    setIsCreatingGroup(false);
 
     // Refresh mutuals when opening compose
     try {
@@ -902,6 +979,96 @@ export default function Inbox() {
     } catch (err) {
       console.error("Failed to start chat:", err);
       alert("Failed to start conversation");
+    }
+  }
+
+  // Toggle user selection for group chat
+  function toggleUserSelection(user) {
+    setSelectedUsers((prev) => {
+      const exists = prev.find((u) => u._id === user._id);
+      if (exists) {
+        return prev.filter((u) => u._id !== user._id);
+      }
+      return [...prev, user];
+    });
+  }
+
+  // Create group chat
+  async function createGroupChat() {
+    if (selectedUsers.length < 2) {
+      alert("Select at least 2 users to create a group");
+      return;
+    }
+
+    try {
+      const recipientIds = selectedUsers.map((u) => u._id);
+      const data = await messagesApi.createThread(recipientIds, groupName.trim() || null);
+      const thread = data.thread;
+
+      // Send initial message if provided
+      if (composeDraft.trim() && thread._id) {
+        await messagesApi.sendMessage(thread._id, { text: composeDraft.trim() });
+      }
+
+      // Refresh threads
+      const threadsData = await messagesApi.getThreads();
+      setThreads(threadsData.threads || []);
+
+      setActiveThreadId(thread._id);
+      setRightMode("chat");
+      setComposeDraft("");
+      setSelectedUsers([]);
+      setGroupName("");
+      setIsCreatingGroup(false);
+    } catch (err) {
+      console.error("Failed to create group:", err);
+      alert(err.response?.data?.error || "Failed to create group");
+    }
+  }
+
+  // Leave group chat
+  async function leaveGroup() {
+    if (!activeThreadId || !activeThread?.isGroup) return;
+
+    if (!window.confirm("Are you sure you want to leave this group?")) {
+      return;
+    }
+
+    try {
+      await messagesApi.leaveGroup(activeThreadId);
+      // Remove from threads list
+      setThreads((prev) => prev.filter((t) => t._id !== activeThreadId));
+      setActiveThreadId(null);
+      setActiveThread(null);
+      setMessages([]);
+      setIsInfoOpen(false);
+    } catch (err) {
+      console.error("Failed to leave group:", err);
+      alert(err.response?.data?.error || "Failed to leave group");
+    }
+  }
+
+  // Start editing group name
+  function startEditingGroupName() {
+    setEditingGroupName(true);
+    setNewGroupName(activeThread?.groupName || "");
+  }
+
+  // Save group name
+  async function saveGroupName() {
+    if (!activeThreadId) return;
+
+    try {
+      await messagesApi.updateGroupName(activeThreadId, newGroupName.trim() || null);
+      setEditingGroupName(false);
+      // Update will come via socket, but also update locally
+      setActiveThread((prev) => prev ? { ...prev, groupName: newGroupName.trim() || null } : prev);
+      setThreads((prev) =>
+        prev.map((t) => t._id === activeThreadId ? { ...t, groupName: newGroupName.trim() || null } : t)
+      );
+    } catch (err) {
+      console.error("Failed to update group name:", err);
+      alert(err.response?.data?.error || "Failed to update group name");
     }
   }
 
@@ -1194,7 +1361,9 @@ export default function Inbox() {
             <>
               {filteredThreads.map((t) => {
                 const other = getOtherParticipant(t);
+                const others = getOtherParticipants(t);
                 const unread = t.unreadCounts?.[currentUser?._id] || 0;
+                const displayName = getThreadDisplayName(t);
 
                 return (
                   <button
@@ -1209,27 +1378,46 @@ export default function Inbox() {
                       setIsInfoOpen(false);
                     }}
                     role="listitem"
-                    aria-label={`Open chat with ${other?.username}`}
+                    aria-label={`Open chat with ${displayName}`}
                   >
-                    <Avatar
-                      name={other?.username}
-                      avatar={other?.avatarUrl}
-                      status={other?.presence?.status}
-                      size="sm"
-                    />
+                    {t.isGroup ? (
+                      // Group avatar stack
+                      <div className="in-avatarStack">
+                        {others.slice(0, 2).map((u) => (
+                          <Avatar
+                            key={u._id}
+                            name={u.username}
+                            avatar={u.avatarUrl}
+                            size="sm"
+                          />
+                        ))}
+                        {others.length > 2 && (
+                          <span className="in-memberCountBadge">+{others.length - 2}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <Avatar
+                        name={other?.username}
+                        avatar={other?.avatarUrl}
+                        status={other?.presence?.status}
+                        size="sm"
+                      />
+                    )}
 
                     <div className="in-threadText">
                       <div className="in-threadNameRow">
-                        <div className="in-threadName">{other?.username || "Unknown"}</div>
+                        <div className="in-threadName">
+                          {t.isGroup ? displayName : (other?.username || "Unknown")}
+                        </div>
                         <div className="in-threadMeta">{formatTime(t.lastMessageAt)}</div>
                       </div>
-                    <div className="in-threadLast">
-                      {t.lastMessage || "Start a conversation..."}
+                      <div className="in-threadLast">
+                        {t.lastMessage || "Start a conversation..."}
+                      </div>
                     </div>
-                  </div>
 
-                  {unread > 0 && <div className="in-unreadBadge">{unread}</div>}
-                </button>
+                    {unread > 0 && <div className="in-unreadBadge">{unread}</div>}
+                  </button>
                 );
               })}
 
@@ -1409,8 +1597,10 @@ export default function Inbox() {
           <div className="in-chatHeader">
             <div className="in-chatHeaderLeft">
               <div className="in-chatTitleWrap">
-                <div className="in-chatTitle">New Message</div>
-                <div className="in-chatSub">Start a conversation with someone</div>
+                <div className="in-chatTitle">{isCreatingGroup ? "New Group" : "New Message"}</div>
+                <div className="in-chatSub">
+                  {isCreatingGroup ? "Select members for your group" : "Start a conversation with someone"}
+                </div>
               </div>
             </div>
 
@@ -1428,6 +1618,64 @@ export default function Inbox() {
           </div>
 
           <div className="in-chatBody" aria-label="Compose body">
+            {/* Toggle between DM and Group */}
+            <div className="in-groupToggle">
+              <button
+                type="button"
+                className={`in-toggleBtn ${!isCreatingGroup ? "in-toggleBtn--active" : ""}`}
+                onClick={() => {
+                  setIsCreatingGroup(false);
+                  setSelectedUsers([]);
+                  setGroupName("");
+                }}
+              >
+                Direct Message
+              </button>
+              <button
+                type="button"
+                className={`in-toggleBtn ${isCreatingGroup ? "in-toggleBtn--active" : ""}`}
+                onClick={() => setIsCreatingGroup(true)}
+              >
+                Group Chat
+              </button>
+            </div>
+
+            <div style={{ height: 10 }} />
+
+            {/* Group name input (only for groups) */}
+            {isCreatingGroup && (
+              <>
+                <input
+                  className="in-search"
+                  placeholder="Group name (optional)"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  aria-label="Group name"
+                />
+                <div style={{ height: 10 }} />
+              </>
+            )}
+
+            {/* Selected users chips (for group mode) */}
+            {isCreatingGroup && selectedUsers.length > 0 && (
+              <div className="in-selectedUsers">
+                {selectedUsers.map((u) => (
+                  <span key={u._id} className="in-selectedChip">
+                    @{u.username}
+                    <button
+                      type="button"
+                      className="in-chipRemove"
+                      onClick={() => toggleUserSelection(u)}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {isCreatingGroup && selectedUsers.length > 0 && <div style={{ height: 10 }} />}
+
             <input
               className="in-search"
               placeholder="Search users..."
@@ -1448,31 +1696,39 @@ export default function Inbox() {
                   {userQuery.trim() ? "No users found" : "No mutuals yet. Follow someone who follows you back!"}
                 </div>
               ) : (
-                usersToShow.map((u) => (
-                  <button
-                    key={u._id}
-                    type="button"
-                    className="in-thread"
-                    onClick={() => startChatWithUser(u)}
-                    aria-label={`Start chat with ${u.username}`}
-                  >
-                    <Avatar
-                      name={u.username}
-                      avatar={u.avatarUrl}
-                      status={u.presence?.status}
-                      size="sm"
-                    />
-                    <div className="in-threadText">
-                      <div className="in-threadNameRow">
-                        <div className="in-threadName">@{u.username}</div>
-                        <div className="in-threadMeta">{getPresenceText(u.presence)}</div>
+                usersToShow.map((u) => {
+                  const isSelected = selectedUsers.some((s) => s._id === u._id);
+                  return (
+                    <button
+                      key={u._id}
+                      type="button"
+                      className={`in-thread ${isSelected ? "in-thread--selected" : ""}`}
+                      onClick={() => isCreatingGroup ? toggleUserSelection(u) : startChatWithUser(u)}
+                      aria-label={isCreatingGroup ? `Toggle ${u.username}` : `Start chat with ${u.username}`}
+                    >
+                      {isCreatingGroup && (
+                        <span className={`in-userCheckbox ${isSelected ? "in-userCheckbox--checked" : ""}`}>
+                          {isSelected ? "✓" : ""}
+                        </span>
+                      )}
+                      <Avatar
+                        name={u.username}
+                        avatar={u.avatarUrl}
+                        status={u.presence?.status}
+                        size="sm"
+                      />
+                      <div className="in-threadText">
+                        <div className="in-threadNameRow">
+                          <div className="in-threadName">@{u.username}</div>
+                          <div className="in-threadMeta">{getPresenceText(u.presence)}</div>
+                        </div>
+                        <div className="in-threadLast">
+                          {u.displayName || (isCreatingGroup ? "Click to select" : "Click to start a chat")}
+                        </div>
                       </div>
-                      <div className="in-threadLast">
-                        {u.displayName || "Click to start a chat"}
-                      </div>
-                    </div>
-                  </button>
-                ))
+                    </button>
+                  );
+                })
               )}
             </div>
 
@@ -1489,17 +1745,34 @@ export default function Inbox() {
                   aria-label="Intro message"
                 />
                 <div style={{ marginTop: 10, opacity: 0.85 }}>
-                  Pick a user above to start the conversation.
+                  {isCreatingGroup
+                    ? `Select at least 2 users to create a group.${selectedUsers.length > 0 ? ` (${selectedUsers.length} selected)` : ""}`
+                    : "Pick a user above to start the conversation."}
                 </div>
               </div>
             </div>
           </div>
 
           <div className="in-chatComposer" aria-label="Compose footer">
-            <span style={{ opacity: 0.7 }}>Select a user to begin</span>
-            <button type="button" className="in-sendBtn" onClick={() => setRightMode("chat")}>
-              Cancel
-            </button>
+            <span style={{ opacity: 0.7 }}>
+              {isCreatingGroup
+                ? `${selectedUsers.length} user${selectedUsers.length !== 1 ? "s" : ""} selected`
+                : "Select a user to begin"}
+            </span>
+            {isCreatingGroup ? (
+              <button
+                type="button"
+                className="in-sendBtn"
+                onClick={createGroupChat}
+                disabled={selectedUsers.length < 2}
+              >
+                Create Group
+              </button>
+            ) : (
+              <button type="button" className="in-sendBtn" onClick={() => setRightMode("chat")}>
+                Cancel
+              </button>
+            )}
           </div>
         </section>
       );
@@ -1507,9 +1780,10 @@ export default function Inbox() {
 
     // Chat mode
     const typingUserIds = Object.keys(typingUsers);
+    const isGroupChat = activeThread?.isGroup;
 
     // Show welcome state if no thread selected
-    if (!activeThreadId || !otherUser) {
+    if (!activeThreadId || (!otherUser && !isGroupChat)) {
       return (
         <section className="in-col in-col--right" aria-label="Welcome">
           <div className="in-welcomeState">
@@ -1526,31 +1800,66 @@ export default function Inbox() {
       );
     }
 
-    // Get presence info for other user
+    // Get presence info for other user (DM only)
     const otherPresence = otherUser?.presence;
     const presenceText = getPresenceText(otherPresence);
+
+    // Typing text for groups
+    const typingText = typingUserIds.length > 0
+      ? (isGroupChat
+        ? `${typingUserIds.length} typing...`
+        : "Typing...")
+      : null;
 
     return (
       <section className="in-col in-col--right" aria-label="Conversation">
         <div className="in-chatHeader">
           <div className="in-chatHeaderLeft">
-            <Avatar
-              name={otherUser?.username}
-              avatar={otherUser?.avatarUrl}
-              status={otherPresence?.status}
-              size="sm"
-            />
-            <div className="in-chatTitleWrap">
-              <button
-                type="button"
-                className="in-chatTitleLink"
-                onClick={() => goToUserProfile(otherUser?.username)}
-              >
-                @{otherUser?.username}
-              </button>
-              <div className="in-chatSub">
-                {typingUserIds.length > 0 ? "Typing..." : presenceText || otherUser?.displayName || ""}
+            {isGroupChat ? (
+              // Group chat avatar stack
+              <div className="in-avatarStack">
+                {otherUsers.slice(0, 2).map((u, i) => (
+                  <Avatar
+                    key={u._id}
+                    name={u.username}
+                    avatar={u.avatarUrl}
+                    size="sm"
+                  />
+                ))}
+                {otherUsers.length > 2 && (
+                  <span className="in-memberCountBadge">+{otherUsers.length - 2}</span>
+                )}
               </div>
+            ) : (
+              <Avatar
+                name={otherUser?.username}
+                avatar={otherUser?.avatarUrl}
+                status={otherPresence?.status}
+                size="sm"
+              />
+            )}
+            <div className="in-chatTitleWrap">
+              {isGroupChat ? (
+                <>
+                  <div className="in-chatTitle">{getThreadDisplayName(activeThread)}</div>
+                  <div className="in-chatSub">
+                    {typingText || `${otherUsers.length + 1} members`}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="in-chatTitleLink"
+                    onClick={() => goToUserProfile(otherUser?.username)}
+                  >
+                    @{otherUser?.username}
+                  </button>
+                  <div className="in-chatSub">
+                    {typingText || presenceText || otherUser?.displayName || ""}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -1588,49 +1897,145 @@ export default function Inbox() {
                 aria-label="Chat info menu"
                 className="in-infoDropdown"
               >
-                <div style={{ padding: "6px 8px", marginBottom: 6, opacity: 0.85, fontWeight: 700 }}>
-                  @{otherUser?.username}
-                </div>
-                {otherUser?.displayName && (
-                  <div style={{ padding: "0 8px 8px", opacity: 0.75, fontSize: 13 }}>
-                    {otherUser.displayName}
-                  </div>
+                {isGroupChat ? (
+                  // Group info dropdown
+                  <>
+                    {editingGroupName ? (
+                      <div style={{ padding: "6px 8px" }}>
+                        <input
+                          className="in-search"
+                          value={newGroupName}
+                          onChange={(e) => setNewGroupName(e.target.value)}
+                          placeholder="Group name"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveGroupName();
+                            if (e.key === "Escape") setEditingGroupName(false);
+                          }}
+                        />
+                        <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                          <button type="button" className="in-editSaveBtn" onClick={saveGroupName}>Save</button>
+                          <button type="button" className="in-editCancelBtn" onClick={() => setEditingGroupName(false)}>Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ padding: "6px 8px", marginBottom: 6, opacity: 0.85, fontWeight: 700 }}>
+                        {getThreadDisplayName(activeThread)}
+                      </div>
+                    )}
+
+                    <div style={{ padding: "0 8px 8px", opacity: 0.75, fontSize: 12 }}>
+                      {otherUsers.length + 1} members
+                    </div>
+
+                    <div style={{ height: 1, background: "rgba(0,0,0,0.10)", margin: "8px 0" }} />
+
+                    <div className="in-memberList">
+                      {/* Current user */}
+                      <div className="in-memberItem">
+                        <Avatar name={currentUser?.username} avatar={currentUser?.avatarUrl} size="sm" />
+                        <span>@{currentUser?.username} (you)</span>
+                      </div>
+                      {/* Other members */}
+                      {otherUsers.map((u) => (
+                        <button
+                          key={u._id}
+                          type="button"
+                          className="in-memberItem"
+                          onClick={() => {
+                            goToUserProfile(u.username);
+                            setIsInfoOpen(false);
+                          }}
+                          style={{ cursor: "pointer", background: "none", border: "none", width: "100%", textAlign: "left" }}
+                        >
+                          <Avatar name={u.username} avatar={u.avatarUrl} status={u.presence?.status} size="sm" />
+                          <span>@{u.username}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ height: 1, background: "rgba(0,0,0,0.10)", margin: "8px 0" }} />
+
+                    {activeThread?.groupCreatedBy === currentUser?._id && !editingGroupName && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="in-thread"
+                        style={{ width: "100%" }}
+                        onClick={startEditingGroupName}
+                      >
+                        Edit Group Name
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="in-thread"
+                      style={{ width: "100%" }}
+                      onClick={muteThread}
+                    >
+                      Mute
+                    </button>
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="in-thread in-thread--danger"
+                      style={{ width: "100%" }}
+                      onClick={leaveGroup}
+                    >
+                      Leave Group
+                    </button>
+                  </>
+                ) : (
+                  // DM info dropdown
+                  <>
+                    <div style={{ padding: "6px 8px", marginBottom: 6, opacity: 0.85, fontWeight: 700 }}>
+                      @{otherUser?.username}
+                    </div>
+                    {otherUser?.displayName && (
+                      <div style={{ padding: "0 8px 8px", opacity: 0.75, fontSize: 13 }}>
+                        {otherUser.displayName}
+                      </div>
+                    )}
+
+                    <div style={{ height: 1, background: "rgba(0,0,0,0.10)", margin: "8px 0" }} />
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="in-thread"
+                      style={{ width: "100%" }}
+                      onClick={() => {
+                        goToUserProfile(otherUser?.username);
+                        setIsInfoOpen(false);
+                      }}
+                    >
+                      View Profile
+                    </button>
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="in-thread"
+                      style={{ width: "100%" }}
+                      onClick={muteThread}
+                    >
+                      Mute
+                    </button>
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="in-thread in-thread--danger"
+                      style={{ width: "100%" }}
+                      onClick={openDeleteModal}
+                    >
+                      Delete Chat
+                    </button>
+                  </>
                 )}
-
-                <div style={{ height: 1, background: "rgba(0,0,0,0.10)", margin: "8px 0" }} />
-
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="in-thread"
-                  style={{ width: "100%" }}
-                  onClick={() => {
-                    goToUserProfile(otherUser?.username);
-                    setIsInfoOpen(false);
-                  }}
-                >
-                  View Profile
-                </button>
-
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="in-thread"
-                  style={{ width: "100%" }}
-                  onClick={muteThread}
-                >
-                  Mute
-                </button>
-
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="in-thread in-thread--danger"
-                  style={{ width: "100%" }}
-                  onClick={openDeleteModal}
-                >
-                  Delete Chat
-                </button>
               </div>
             )}
           </div>
@@ -1675,6 +2080,7 @@ export default function Inbox() {
                 onEditTextChange={setEditText}
                 onSaveEdit={saveEdit}
                 onCancelEdit={cancelEditing}
+                isGroupChat={isGroupChat}
               />
             ))
           )}

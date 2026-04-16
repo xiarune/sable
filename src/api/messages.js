@@ -19,8 +19,17 @@ const messagesApi = {
   // Decline a message request
   declineRequest: (threadId) => api.delete(`/messages/requests/${threadId}`),
 
-  // Create a new thread with a user
-  createThread: (recipientId) => api.post("/messages/threads", { recipientId }),
+  // Create a new thread (DM or group)
+  createThread: (recipientIds, groupName) => api.post("/messages/threads", {
+    recipientIds: Array.isArray(recipientIds) ? recipientIds : [recipientIds],
+    groupName,
+  }),
+
+  // Update group name
+  updateGroupName: (threadId, groupName) => api.put(`/messages/threads/${threadId}`, { groupName }),
+
+  // Leave a group chat
+  leaveGroup: (threadId) => api.delete(`/messages/threads/${threadId}/leave`),
 
   // Get a single thread with messages
   getThread: (threadId) => api.get(`/messages/threads/${threadId}`),
@@ -45,6 +54,12 @@ const messagesApi = {
 
   // Remove reaction from a message
   removeReaction: (messageId, emoji) => api.delete(`/messages/${messageId}/reactions/${encodeURIComponent(emoji)}`),
+
+  // Edit a message
+  editMessage: (messageId, text) => api.put(`/messages/${messageId}`, { text }),
+
+  // Unsend a message (soft delete)
+  unsendMessage: (messageId) => api.delete(`/messages/${messageId}`),
 
   // Get files shared in inbox (all threads)
   getFiles: () => api.get("/messages/files"),

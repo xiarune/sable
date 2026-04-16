@@ -174,74 +174,195 @@ async function areMutuals(userId1, userId2) {
   return !!(follow1 && follow2);
 }
 
-// POST /messages/threads - Start new thread
+// POST /messages/threads - Start new thread (DM or group)
 router.post("/threads", async (req, res, next) => {
   try {
-    const { recipientId } = req.body;
+    const { recipientId, recipientIds, groupName } = req.body;
 
-    if (!recipientId) {
-      return res.status(400).json({ error: "recipientId required" });
+    // Support both single recipientId and array recipientIds
+    let targetIds = recipientIds || (recipientId ? [recipientId] : []);
+
+    if (targetIds.length === 0) {
+      return res.status(400).json({ error: "At least one recipient required" });
     }
 
-    if (recipientId === req.user._id.toString()) {
+    // Filter out self
+    targetIds = targetIds.filter(id => id !== req.user._id.toString());
+
+    if (targetIds.length === 0) {
       return res.status(400).json({ error: "Cannot message yourself" });
     }
 
-    const recipient = await User.findById(recipientId);
-    if (!recipient) {
-      return res.status(404).json({ error: "User not found" });
+    const isGroup = targetIds.length > 1;
+
+    // Validate all recipients exist
+    const recipients = await User.find({ _id: { $in: targetIds } });
+    if (recipients.length !== targetIds.length) {
+      return res.status(404).json({ error: "One or more users not found" });
     }
 
-    // Check if thread already exists
-    let thread = await Thread.findOne({
-      participants: { $all: [req.user._id, recipientId] },
-    });
-
-    if (thread) {
-      return res.status(200).json({ thread, existing: true });
-    }
-
-    // Check DM permissions
-    const dmSetting = recipient.preferences?.dmSetting || "everyone";
-
-    if (dmSetting === "none") {
-      return res.status(403).json({ error: "This user has disabled direct messages" });
-    }
-
-    // Check if users are mutuals (used for both "mutuals" and "community" settings)
-    const mutuals = await areMutuals(req.user._id, recipientId);
-
-    if (dmSetting === "mutuals" && !mutuals) {
-      return res.status(403).json({ error: "This user only accepts messages from mutuals" });
-    }
-
-    if (dmSetting === "community") {
-      // For "community" setting, allow if mutuals OR if sender follows recipient
-      // This is a reasonable interpretation since community implies some connection
-      const senderFollowsRecipient = await Follow.findOne({
-        followerId: req.user._id,
-        followeeId: recipientId,
+    // For 1-on-1 DMs, check if thread already exists
+    if (!isGroup) {
+      const existingThread = await Thread.findOne({
+        participants: { $all: [req.user._id, targetIds[0]], $size: 2 },
+        isGroup: { $ne: true },
       });
 
-      if (!mutuals && !senderFollowsRecipient) {
-        return res.status(403).json({ error: "This user only accepts messages from their community" });
+      if (existingThread) {
+        return res.status(200).json({ thread: existingThread, existing: true });
       }
     }
 
-    // Check if sender is followed by the recipient (to determine if it's a request)
-    const isFollowedByRecipient = await Follow.findOne({
-      followerId: recipientId,
-      followeeId: req.user._id,
-    });
+    // Check DM permissions for all recipients (skip for groups - they can leave if unwanted)
+    if (!isGroup) {
+      const recipient = recipients[0];
+      const dmSetting = recipient.preferences?.dmSetting || "everyone";
 
-    thread = new Thread({
-      participants: [req.user._id, recipientId],
-      participantUsernames: [req.user.username, recipient.username],
-      isRequest: !isFollowedByRecipient, // Request if recipient doesn't follow sender
+      if (dmSetting === "none") {
+        return res.status(403).json({ error: "This user has disabled direct messages" });
+      }
+
+      const mutuals = await areMutuals(req.user._id, targetIds[0]);
+
+      if (dmSetting === "mutuals" && !mutuals) {
+        return res.status(403).json({ error: "This user only accepts messages from mutuals" });
+      }
+
+      if (dmSetting === "community") {
+        const senderFollowsRecipient = await Follow.findOne({
+          followerId: req.user._id,
+          followeeId: targetIds[0],
+        });
+
+        if (!mutuals && !senderFollowsRecipient) {
+          return res.status(403).json({ error: "This user only accepts messages from their community" });
+        }
+      }
+    }
+
+    // For 1-on-1, check if it should be a request
+    let isRequest = false;
+    if (!isGroup) {
+      const isFollowedByRecipient = await Follow.findOne({
+        followerId: targetIds[0],
+        followeeId: req.user._id,
+      });
+      isRequest = !isFollowedByRecipient;
+    }
+
+    // Create the thread
+    const allParticipants = [req.user._id, ...targetIds];
+    const allUsernames = [req.user.username, ...recipients.map(r => r.username)];
+
+    const thread = new Thread({
+      participants: allParticipants,
+      participantUsernames: allUsernames,
+      isRequest,
+      isGroup,
+      groupName: isGroup ? (groupName || null) : null,
+      groupCreatedBy: isGroup ? req.user._id : null,
     });
     await thread.save();
 
     res.status(201).json({ thread });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /messages/threads/:threadId - Update thread (group name)
+router.put("/threads/:threadId", async (req, res, next) => {
+  try {
+    const { groupName } = req.body;
+
+    const thread = await Thread.findOne({
+      _id: req.params.threadId,
+      participants: req.user._id,
+    });
+
+    if (!thread) {
+      return res.status(404).json({ error: "Thread not found" });
+    }
+
+    if (!thread.isGroup) {
+      return res.status(400).json({ error: "Cannot edit name of direct message" });
+    }
+
+    // Only group creator can edit name
+    if (thread.groupCreatedBy?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: "Only the group creator can edit the name" });
+    }
+
+    thread.groupName = groupName || null;
+    await thread.save();
+
+    // Emit socket event
+    const io = req.app.get("io");
+    if (io) {
+      thread.participants.forEach((pId) => {
+        io.to(`user:${pId}`).emit("thread:updated", {
+          threadId: thread._id,
+          groupName: thread.groupName,
+        });
+      });
+    }
+
+    res.json({ thread });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /messages/threads/:threadId/leave - Leave a group chat
+router.delete("/threads/:threadId/leave", async (req, res, next) => {
+  try {
+    const thread = await Thread.findOne({
+      _id: req.params.threadId,
+      participants: req.user._id,
+    });
+
+    if (!thread) {
+      return res.status(404).json({ error: "Thread not found" });
+    }
+
+    if (!thread.isGroup) {
+      return res.status(400).json({ error: "Cannot leave a direct message. Use delete instead." });
+    }
+
+    // Remove user from participants
+    thread.participants = thread.participants.filter(
+      (pId) => pId.toString() !== req.user._id.toString()
+    );
+    thread.participantUsernames = thread.participantUsernames.filter(
+      (username) => username !== req.user.username
+    );
+
+    // Remove user's unread count and lastSeenAt
+    thread.unreadCounts.delete(req.user._id.toString());
+    thread.lastSeenAt.delete(req.user._id.toString());
+
+    // If less than 2 participants remain, delete the thread
+    if (thread.participants.length < 2) {
+      await Message.deleteMany({ threadId: thread._id });
+      await Thread.deleteOne({ _id: thread._id });
+      return res.json({ message: "Group deleted (no members remaining)" });
+    }
+
+    await thread.save();
+
+    // Emit socket event to remaining members
+    const io = req.app.get("io");
+    if (io) {
+      thread.participants.forEach((pId) => {
+        io.to(`user:${pId}`).emit("thread:memberLeft", {
+          threadId: thread._id,
+          userId: req.user._id,
+          username: req.user.username,
+        });
+      });
+    }
+
+    res.json({ message: "Left group successfully" });
   } catch (err) {
     next(err);
   }
