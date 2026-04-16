@@ -266,6 +266,8 @@ userSchema.methods.toPublicJSON = function () {
     pronouns: this.pronouns,
     needsUsername: this.needsUsername,
     interests: this.interests || { genres: [], fandoms: [], completedOnboarding: false },
+    preferences: this.preferences,
+    contentFilters: this.contentFilters,
     stats: this.stats,
     createdAt: this.createdAt,
   };
