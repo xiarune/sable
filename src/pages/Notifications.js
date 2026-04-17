@@ -4,6 +4,7 @@ import notificationsApi from "../api/notifications";
 import followsApi from "../api/follows";
 import { onNotification, onNotificationsRead, initSocket } from "../api/socket";
 import "./Notifications.css";
+import techSupportAvatar from "../assets/images/Tech Support.png";
 
 function TypeIcon({ type }) {
   const map = {
@@ -43,10 +44,14 @@ function TypeChip({ type }) {
 function AvatarCircle({ user, avatarUrl }) {
   const letter = (user || "U").trim()[0]?.toUpperCase() || "U";
 
-  if (avatarUrl) {
+  // Use tech support avatar for Sable Support
+  const isSableSupport = user?.toLowerCase().includes("sable") && user?.toLowerCase().includes("support");
+  const finalAvatarUrl = isSableSupport ? techSupportAvatar : avatarUrl;
+
+  if (finalAvatarUrl) {
     return (
       <div className="no-avatar" aria-hidden="true">
-        <img src={avatarUrl} alt="" className="no-avatar-img" />
+        <img src={finalAvatarUrl} alt="" className="no-avatar-img" />
       </div>
     );
   }
@@ -95,6 +100,7 @@ export default function Notifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [processingRequests, setProcessingRequests] = useState(new Set());
+  const [selectedNotification, setSelectedNotification] = useState(null);
 
   // Fetch notifications from API
   const fetchNotifications = useCallback(async () => {
@@ -148,6 +154,17 @@ export default function Notifications() {
       unsubRead();
     };
   }, []);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "Escape" && selectedNotification) {
+        setSelectedNotification(null);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [selectedNotification]);
 
   // Mark notification as read
   const handleMarkAsRead = useCallback(async (notificationId) => {
@@ -254,12 +271,23 @@ export default function Notifications() {
     }
   }, []);
 
-  // Handle notification click
+  // Handle notification click - open modal to view full notification
   const handleNotificationClick = useCallback((notification) => {
     // Mark as read if unread
     if (!notification.read) {
       handleMarkAsRead(notification._id);
     }
+
+    // Open modal to view full notification
+    setSelectedNotification(notification);
+  }, [handleMarkAsRead]);
+
+  // Navigate to related content from modal
+  const handleNavigateFromModal = useCallback(() => {
+    if (!selectedNotification) return;
+
+    const notification = selectedNotification;
+    setSelectedNotification(null);
 
     // Navigate based on notification type
     if (notification.workId) {
@@ -267,7 +295,7 @@ export default function Notifications() {
     } else if (notification.postId) {
       navigate(`/post/${notification.postId}`);
     } else if (notification.type === "follow_request") {
-      // Don't navigate for follow requests - they have action buttons
+      // Don't navigate for follow requests
       return;
     } else if (notification.actorId) {
       const username = notification.actor?.username || notification.actorUsername;
@@ -275,7 +303,12 @@ export default function Notifications() {
         navigate(`/communities/${username}`);
       }
     }
-  }, [handleMarkAsRead, navigate]);
+  }, [selectedNotification, navigate]);
+
+  // Close modal
+  const closeModal = useCallback(() => {
+    setSelectedNotification(null);
+  }, []);
 
   // Filter notifications based on tab and search
   const filtered = useMemo(() => {
@@ -533,6 +566,99 @@ export default function Notifications() {
           </div>
         </section>
       </div>
+
+      {/* Notification Detail Modal */}
+      {selectedNotification && (
+        <div className="no-modalOverlay" onClick={closeModal}>
+          <div className="no-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="no-modalHeader">
+              <div className="no-modalHeaderLeft">
+                <AvatarCircle
+                  user={selectedNotification.actor?.displayName || selectedNotification.actor?.username || selectedNotification.actorUsername}
+                  avatarUrl={selectedNotification.actor?.avatarUrl}
+                />
+                <div className="no-modalHeaderInfo">
+                  <div className="no-modalUser">
+                    {selectedNotification.actor?.displayName || selectedNotification.actor?.username || selectedNotification.actorUsername || "Someone"}
+                  </div>
+                  <div className="no-modalTime">{formatTimeAgo(selectedNotification.createdAt)}</div>
+                </div>
+              </div>
+              <div className="no-modalHeaderRight">
+                <TypeChip type={selectedNotification.type} />
+                <button
+                  type="button"
+                  className="no-modalClose"
+                  onClick={closeModal}
+                  aria-label="Close"
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+
+            <div className="no-modalBody">
+              {selectedNotification.title && (
+                <div className="no-modalTitle">{selectedNotification.title}</div>
+              )}
+              {selectedNotification.body && (
+                <div className="no-modalContent">{selectedNotification.body}</div>
+              )}
+              {!selectedNotification.title && !selectedNotification.body && (
+                <div className="no-modalContent no-modalContent--empty">No additional details.</div>
+              )}
+            </div>
+
+            <div className="no-modalFooter">
+              {selectedNotification.type === "follow_request" && selectedNotification.followRequestId ? (
+                <div className="no-actions">
+                  <button
+                    type="button"
+                    className="no-action no-action--accept"
+                    onClick={(e) => {
+                      handleAcceptRequest(selectedNotification, e);
+                      closeModal();
+                    }}
+                    disabled={processingRequests.has(selectedNotification._id)}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    className="no-action no-action--decline"
+                    onClick={(e) => {
+                      handleDeclineRequest(selectedNotification, e);
+                      closeModal();
+                    }}
+                    disabled={processingRequests.has(selectedNotification._id)}
+                  >
+                    Decline
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {(selectedNotification.workId || selectedNotification.postId || selectedNotification.actorId) && (
+                    <button
+                      type="button"
+                      className="no-cta"
+                      onClick={handleNavigateFromModal}
+                    >
+                      {selectedNotification.workId ? "View Work" : selectedNotification.postId ? "View Post" : "View Profile"}
+                    </button>
+                  )}
+                </>
+              )}
+              <button
+                type="button"
+                className="no-cta no-cta--secondary"
+                onClick={closeModal}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
