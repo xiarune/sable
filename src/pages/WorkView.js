@@ -1144,7 +1144,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
               {audioBarOpen ? (
                 <div className="wv-miniPlayer" aria-label="Audio player">
                   <div className="wv-miniHead">
-                    <div className="wv-miniTitle">Audio</div>
+                    <div className="wv-miniTitle">Author's Audio</div>
                     <button
                       type="button"
                       className="wv-miniClose"
@@ -1157,7 +1157,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   </div>
 
                   <div className="wv-miniBody">
-                    <div className="wv-miniTrackTitle">{currentTrack ? currentTrack.title : "Select an audio track"}</div>
+                    <div className="wv-miniTrackTitle">{currentTrack ? currentTrack.title : "No author audio available"}</div>
                     <div className="wv-miniTrackMeta">
                       <span>{currentTrack ? currentTrack.author : authorHandle}</span>
                       <span className="wv-dot">•</span>
@@ -1237,7 +1237,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
               {musicBarOpen ? (
                 <div className="wv-miniPlayer wv-musicPlayer" aria-label="Music player">
                   <div className="wv-miniHead">
-                    <div className="wv-miniTitle">Music</div>
+                    <div className="wv-miniTitle">Your Background Music</div>
                     <button
                       type="button"
                       className="wv-miniClose"
@@ -1294,7 +1294,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                           </div>
                         ) : (
                           <div className="wv-miniRow">
-                            <div className="wv-miniLabel">Paste YouTube Link</div>
+                            <div className="wv-miniLabel">Play Your Own Music</div>
                             <div className="wv-musicInputRow">
                               <input
                                 className="wv-miniInput"
@@ -1314,7 +1314,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                               </button>
                             </div>
                             <div className="wv-miniHint">
-                              Paste a YouTube video or music link and press Play
+                              Paste any YouTube link to play as background music while reading
                             </div>
                           </div>
                         )}
@@ -1473,7 +1473,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                                   </svg>
                                 </div>
                                 <div className="wv-connectText">
-                                  Connect your Spotify account to play music while you read
+                                  Connect Spotify to play your own music while reading
                                 </div>
                                 {spotifyError && (
                                   <div className="wv-connectError">{spotifyError}</div>
@@ -1483,10 +1483,10 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                                   className="wv-connectBtn wv-connectBtn--spotify"
                                   onClick={handleSpotifyConnect}
                                 >
-                                  Connect Spotify
+                                  Connect Spotify Premium
                                 </button>
-                                <div className="wv-connectNote">
-                                  Requires Spotify Premium for full playback
+                                <div className="wv-connectNote wv-connectNote--warning">
+                                  Spotify Premium subscription required
                                 </div>
                               </>
                             )}
@@ -1652,7 +1652,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   className={`wv-iconBtn ${musicBarOpen ? "wv-iconBtn--active" : ""}`}
                   onClick={toggleMusicBar}
                   aria-label="Toggle music bar"
-                  title="Music"
+                  title="Your Background Music"
                 >
                   <img src={musicIcon} alt="" aria-hidden="true" style={{ width: 18, height: 18, display: "block", objectFit: "contain" }} />
                 </button>
@@ -1663,7 +1663,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                   className={`wv-iconBtn ${audioBarOpen ? "wv-iconBtn--active" : ""}`}
                   onClick={toggleAudioBar}
                   aria-label="Toggle audio bar"
-                  title="Audio"
+                  title="Author's Audio"
                 >
                   🎧
                 </button>
@@ -1800,7 +1800,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
               <div className="wv-panelOverlay" role="dialog" aria-modal="true" aria-label="Modal panel">
                 <div className="wv-panel">
                   <div className="wv-panelTop">
-                    <div className="wv-panelTitle">{panel === "settings" ? "Settings" : "Audio Library"}</div>
+                    <div className="wv-panelTitle">{panel === "settings" ? "Settings" : "Author's Audio Library"}</div>
                     <button type="button" className="wv-panelClose" onClick={() => setPanel(null)} aria-label="Close panel">
                       ✕
                     </button>
@@ -1885,7 +1885,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
                       </>
                     ) : (
                       <>
-                        <div className="wv-panelHint">{audioTracks.length ? "Select a track to play" : "No audio tracks available for this work"}</div>
+                        <div className="wv-panelHint">{audioTracks.length ? "Select a track to play" : "This author has not uploaded audio for this work"}</div>
 
                         <div className="wv-audioList" aria-label="Audio tracks">
                           {audioTracks.map((t) => {

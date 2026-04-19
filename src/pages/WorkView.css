@@ -769,6 +769,15 @@
   color: rgba(255, 255, 255, 0.45);
 }
 
+.wv-connectNote--warning {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.wv-themeDark .wv-connectNote--warning {
+  color: #f59e0b;
+}
+
 /* Connected state */
 .wv-connectedState {
   display: flex;
