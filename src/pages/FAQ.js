@@ -59,6 +59,28 @@ const FAQ_SECTIONS = [
     ]
   },
   {
+    id: "audio-music",
+    title: "Audio & Music",
+    questions: [
+      {
+        q: "What's the difference between Author's Audio and Background Music?",
+        a: "Author's Audio is audio that the work's creator has uploaded, like narration or a custom soundtrack. Most works won't have this—it's up to each author to add it. Background Music lets you play your own music from YouTube or Spotify while reading any work."
+      },
+      {
+        q: "Why doesn't this work have audio?",
+        a: "Author's Audio is optional and must be uploaded by the work's creator. If you don't see an audio option, the author hasn't added audio to that work. You can always use Background Music to play your own music while reading."
+      },
+      {
+        q: "How do I use Background Music?",
+        a: "Click the music icon (labeled 'Your Background Music') while viewing any work. You can paste a YouTube link to play instantly, or connect your Spotify account to control playback from Sable."
+      },
+      {
+        q: "Why do I need Spotify Premium for playback?",
+        a: "Spotify's web playback feature requires a Premium subscription—this is a Spotify limitation, not a Sable one. Free Spotify users can still connect their account and select 'Sable Reader' as a playback device from the Spotify app on their phone."
+      },
+    ]
+  },
+  {
     id: "privacy",
     title: "Privacy & Safety",
     questions: [
