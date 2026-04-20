@@ -4,6 +4,7 @@ const http = require("http");
 const { createApp } = require("./app");
 const { connectDB } = require("./config/db");
 const { initializeSocket } = require("./config/socket");
+const { seedDatabase } = require("./scripts/seedDatabase");
 
 // Register all models
 require("./models");
@@ -19,7 +20,11 @@ async function start() {
 
   try {
     await connectDB(process.env.MONGO_URI);
-    console.log("✅ Connected to MongoDB Atlas");
+    console.log("✅ Connected to MongoDB");
+
+    // Seed database with demo content on first run
+    await seedDatabase();
+
     console.log("✅ Models registered: User, Draft, Work, Upload");
     console.log("✅ Socket.IO initialized");
 

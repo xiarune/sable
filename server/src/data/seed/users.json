@@ -1,0 +1,50 @@
+[
+  {
+    "username": "storyweaver",
+    "displayName": "Story Weaver",
+    "email": "storyweaver@demo.sable.ink",
+    "password": "demo123456",
+    "bio": "Fantasy and romance writer. I love crafting magical worlds and heartfelt love stories.",
+    "interests": {
+      "genres": ["fantasy", "romance", "adventure"],
+      "fandoms": ["harry-potter", "lord-of-the-rings"],
+      "completedOnboarding": true
+    }
+  },
+  {
+    "username": "inkspiller",
+    "displayName": "Ink Spiller",
+    "email": "inkspiller@demo.sable.ink",
+    "password": "demo123456",
+    "bio": "Sci-fi enthusiast exploring the boundaries of imagination. Space operas are my jam.",
+    "interests": {
+      "genres": ["sci-fi", "dystopian", "thriller"],
+      "fandoms": ["star-wars", "stranger-things"],
+      "completedOnboarding": true
+    }
+  },
+  {
+    "username": "wordsmith",
+    "displayName": "The Wordsmith",
+    "email": "wordsmith@demo.sable.ink",
+    "password": "demo123456",
+    "bio": "Mystery and thriller author. Every story is a puzzle waiting to be solved.",
+    "interests": {
+      "genres": ["mystery", "thriller", "horror"],
+      "fandoms": ["sherlock", "supernatural-tv"],
+      "completedOnboarding": true
+    }
+  },
+  {
+    "username": "poeticmuse",
+    "displayName": "Poetic Muse",
+    "email": "poeticmuse@demo.sable.ink",
+    "password": "demo123456",
+    "bio": "Finding beauty in everyday moments. Poetry and slice-of-life are my canvas.",
+    "interests": {
+      "genres": ["poetry", "slice-of-life", "drama"],
+      "fandoms": ["original-fiction", "taylor-swift"],
+      "completedOnboarding": true
+    }
+  }
+]

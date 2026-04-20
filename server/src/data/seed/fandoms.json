@@ -1,0 +1,22 @@
+[
+  { "slug": "harry-potter", "name": "Harry Potter", "description": "J.K. Rowling's wizarding world" },
+  { "slug": "marvel", "name": "Marvel", "description": "Marvel Comics and MCU universe" },
+  { "slug": "dc", "name": "DC", "description": "DC Comics universe" },
+  { "slug": "star-wars", "name": "Star Wars", "description": "Galaxy far, far away" },
+  { "slug": "lord-of-the-rings", "name": "Lord of the Rings", "description": "Tolkien's Middle-earth" },
+  { "slug": "percy-jackson", "name": "Percy Jackson", "description": "Rick Riordan's demigod universe" },
+  { "slug": "hunger-games", "name": "Hunger Games", "description": "Suzanne Collins' dystopian Panem" },
+  { "slug": "twilight", "name": "Twilight", "description": "Stephenie Meyer's vampire romance" },
+  { "slug": "anime-manga", "name": "Anime & Manga", "description": "Japanese animation and comics" },
+  { "slug": "k-pop", "name": "K-Pop", "description": "Korean pop music fanfiction" },
+  { "slug": "supernatural-tv", "name": "Supernatural (TV)", "description": "Winchester brothers hunting monsters" },
+  { "slug": "sherlock", "name": "Sherlock", "description": "BBC's modern Sherlock Holmes" },
+  { "slug": "doctor-who", "name": "Doctor Who", "description": "Time-traveling adventures" },
+  { "slug": "game-of-thrones", "name": "Game of Thrones", "description": "Westeros and beyond" },
+  { "slug": "stranger-things", "name": "Stranger Things", "description": "Hawkins and the Upside Down" },
+  { "slug": "bts", "name": "BTS", "description": "Bangtan Sonyeondan fanfiction" },
+  { "slug": "taylor-swift", "name": "Taylor Swift", "description": "Swiftie creative works" },
+  { "slug": "original-fiction", "name": "Original Fiction", "description": "Original characters and worlds" },
+  { "slug": "video-games", "name": "Video Games", "description": "Gaming-inspired stories" },
+  { "slug": "disney", "name": "Disney", "description": "Disney movies and characters" }
+]

@@ -1,0 +1,17 @@
+[
+  { "slug": "fantasy", "name": "Fantasy", "description": "Magic, mythical creatures, and otherworldly adventures" },
+  { "slug": "romance", "name": "Romance", "description": "Love stories and romantic relationships" },
+  { "slug": "sci-fi", "name": "Sci-Fi", "description": "Science fiction, space exploration, and futuristic technology" },
+  { "slug": "horror", "name": "Horror", "description": "Scary stories, supernatural terror, and psychological fear" },
+  { "slug": "mystery", "name": "Mystery", "description": "Puzzles, detective work, and solving crimes" },
+  { "slug": "thriller", "name": "Thriller", "description": "Suspenseful stories with high stakes and tension" },
+  { "slug": "adventure", "name": "Adventure", "description": "Exciting journeys and daring exploits" },
+  { "slug": "drama", "name": "Drama", "description": "Emotional stories exploring human relationships and conflicts" },
+  { "slug": "comedy", "name": "Comedy", "description": "Humorous stories designed to entertain and amuse" },
+  { "slug": "historical", "name": "Historical", "description": "Stories set in past time periods" },
+  { "slug": "slice-of-life", "name": "Slice of Life", "description": "Everyday experiences and mundane moments" },
+  { "slug": "action", "name": "Action", "description": "Fast-paced stories with physical conflict and excitement" },
+  { "slug": "supernatural", "name": "Supernatural", "description": "Paranormal elements beyond scientific explanation" },
+  { "slug": "dystopian", "name": "Dystopian", "description": "Dark futures and oppressive societies" },
+  { "slug": "poetry", "name": "Poetry", "description": "Verse, prose poetry, and lyrical expression" }
+]
