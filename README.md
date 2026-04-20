@@ -9,6 +9,21 @@ A creative writing and community platform built with React and Express.js.
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
 All commands should be executed from the project root directory (`./sable`). This directory contains the `Dockerfile`, `docker-compose.yml`, and `package.json` required to run the application.
 
+Accounts to use for local Docker MongoDB Database
+Sable data exists within MongoDB Cloud Atlas, for demo purposes, local data will be given to interact with. 
+
+  **General Accounts:**                                                         
+                                                                                
+  - Username: `storyweaver` | Password: `demo123456`                            
+  - Username: `inkspiller` | Password: `demo123456`                             
+  - Username: `poeticmuse` | Password: `demo123456`                             
+  - Username: `wordsmith` | Password: `demo123456`                              
+                                                                                
+  **Admin Account:**                                                            
+                                                                                
+  - Username: `admin` | Password: `SableAdmin2024!`                             
+                                                        
+
 ### Running the Project
 
 1. Clone the repo:
