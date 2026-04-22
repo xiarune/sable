@@ -75,6 +75,15 @@ If Docker is not available, a live deployment is available:
 
 **Live Site**: https://sable-two.vercel.app
 
+**Note** Audio files are large, so for early dev purposes, audio files will be limited. If you want to view works that DO have audio attached to them, please search these titles on Sable:
+
+- Night In The Woods
+- I Love You
+- Between Sunset and Silence
+- Oceans Daughter
+- What Stood Behind Us
+- Abandoned Kingdom
+
 ---
 
 ### Troubleshooting Docker
