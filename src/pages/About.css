@@ -172,7 +172,7 @@
 @media (max-width: 400px) {
   .aboutPage {
     padding: 24px 12px;
-    background-size: 200%;
+    background-size: 100% auto;
     background-position: center top;
   }
 
