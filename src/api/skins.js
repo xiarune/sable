@@ -11,6 +11,10 @@ const skinsApi = {
     return api.get(`/skins?${params}`);
   },
 
+  // Get skins by username (returns public skins, or all if own profile)
+  getByUsername: (username) =>
+    api.get(`/skins/user/${encodeURIComponent(username)}`),
+
   // Get a specific skin
   get: (skinId) => api.get(`/skins/${skinId}`),
 
@@ -21,6 +25,9 @@ const skinsApi = {
   // Update a skin
   update: (skinId, { name, appliesTo, css, isPublic }) =>
     api.put(`/skins/${skinId}`, { name, appliesTo, css, isPublic }),
+
+  // Toggle public visibility
+  togglePublic: (skinId) => api.patch(`/skins/${skinId}/toggle-public`),
 
   // Delete a skin
   delete: (skinId) => api.delete(`/skins/${skinId}`),

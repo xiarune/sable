@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import "./YourCommunityPage.css";
-import { uploadsApi, worksApi, communityApi, bookmarksApi, followsApi, usersApi, authApi, postsApi } from "../api";
+import { uploadsApi, worksApi, communityApi, bookmarksApi, followsApi, usersApi, authApi, postsApi, skinsApi } from "../api";
 import { SableLoader } from "../components";
 import { useAutoSave, getRecoveryData } from "../hooks/useFormRecovery";
 
@@ -77,6 +77,7 @@ export default function YourCommunityPage({ username }) {
   const [userAudios, setUserAudios] = React.useState([]);
   const [readingList, setReadingList] = React.useState([]);
   const [userPosts, setUserPosts] = React.useState([]);
+  const [userSkins, setUserSkins] = React.useState([]);
 
   // Image upload state
   const [uploadingBanner, setUploadingBanner] = React.useState(false);
@@ -168,6 +169,14 @@ export default function YourCommunityPage({ username }) {
       } catch (err) {
         console.error("Failed to load posts:", err);
       }
+
+      // Fetch my skins
+      try {
+        const skinsData = await skinsApi.list();
+        setUserSkins(skinsData.skins || []);
+      } catch (err) {
+        console.error("Failed to load skins:", err);
+      }
     }
 
     loadUserData();
@@ -232,6 +241,29 @@ export default function YourCommunityPage({ username }) {
       await communityApi.update({ widgets: updated });
     } catch (err) {
       console.error("Failed to save widget settings:", err);
+    }
+  }
+
+  // Toggle skin public visibility
+  async function handleToggleSkinPublic(skinId) {
+    try {
+      const data = await skinsApi.togglePublic(skinId);
+      setUserSkins((prev) =>
+        prev.map((s) => (s._id === skinId ? data.skin : s))
+      );
+    } catch (err) {
+      console.error("Failed to toggle skin visibility:", err);
+    }
+  }
+
+  // Delete skin
+  async function handleDeleteSkin(skinId) {
+    if (!window.confirm("Are you sure you want to delete this skin?")) return;
+    try {
+      await skinsApi.delete(skinId);
+      setUserSkins((prev) => prev.filter((s) => s._id !== skinId));
+    } catch (err) {
+      console.error("Failed to delete skin:", err);
     }
   }
 
@@ -619,9 +651,57 @@ export default function YourCommunityPage({ username }) {
 
               {activeTab === "skins" && (
                 <div className="ycp-tabContent" aria-label="Skins">
-                  <div className="ycp-emptyState">
-                    Skins feature coming soon. You'll be able to create and share custom themes here.
-                  </div>
+                  {userSkins.length === 0 ? (
+                    <div className="ycp-emptyState">
+                      <p>No custom skins yet.</p>
+                      <Link to="/settings" className="ycp-createSkinLink">
+                        Create your first skin →
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="ycp-skinsGrid">
+                      {userSkins.map((skin) => (
+                        <div key={skin._id} className="ycp-skinCard">
+                          <div className="ycp-skinPreview">
+                            <div className="ycp-skinPreviewText">Aa</div>
+                          </div>
+                          <div className="ycp-skinInfo">
+                            <div className="ycp-skinName">{skin.name}</div>
+                            <div className="ycp-skinMeta">
+                              {skin.appliesTo === "community" ? "Community" : "Works"}
+                              {" · "}
+                              {skin.isPublic ? "Public" : "Private"}
+                            </div>
+                          </div>
+                          <div className="ycp-skinActions">
+                            <button
+                              type="button"
+                              className={`ycp-skinVisibilityBtn ${skin.isPublic ? "ycp-skinVisibilityBtn--public" : ""}`}
+                              onClick={() => handleToggleSkinPublic(skin._id)}
+                              title={skin.isPublic ? "Make private" : "Make public"}
+                            >
+                              {skin.isPublic ? "🌐" : "🔒"}
+                            </button>
+                            <Link
+                              to="/settings"
+                              className="ycp-skinEditBtn"
+                              title="Edit skin"
+                            >
+                              ✎
+                            </Link>
+                            <button
+                              type="button"
+                              className="ycp-skinDeleteBtn"
+                              onClick={() => handleDeleteSkin(skin._id)}
+                              title="Delete skin"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

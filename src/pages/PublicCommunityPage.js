@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import "./PublicCommunityPage.css";
-import { uploadsApi, worksApi, communityApi, followsApi, usersApi, donationsApi, postsApi } from "../api";
+import { uploadsApi, worksApi, communityApi, followsApi, usersApi, donationsApi, postsApi, skinsApi } from "../api";
 import { SableLoader } from "../components";
 
 function initials(name) {
@@ -72,6 +72,8 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   const [userWorks, setUserWorks] = React.useState([]);
   const [userAudios, setUserAudios] = React.useState([]);
   const [userPosts, setUserPosts] = React.useState([]);
+  const [publicSkins, setPublicSkins] = React.useState([]);
+  const [copiedSkinId, setCopiedSkinId] = React.useState(null);
 
   // Load community page and user data
   React.useEffect(() => {
@@ -187,6 +189,14 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
         setUserPosts(postsData.posts || []);
       } catch (err) {
         console.error("Failed to load posts:", err);
+      }
+
+      // Load public skins
+      try {
+        const skinsData = await skinsApi.getByUsername(normalizedHandle);
+        setPublicSkins(skinsData.skins || []);
+      } catch (err) {
+        console.error("Failed to load skins:", err);
       }
 
       setLoading(false);
@@ -442,6 +452,16 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
 
   function handleSearch() {
     setIsSearchOpen((v) => !v);
+  }
+
+  async function handleCopyCSS(skin) {
+    try {
+      await navigator.clipboard.writeText(skin.css);
+      setCopiedSkinId(skin._id);
+      setTimeout(() => setCopiedSkinId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy CSS:", err);
+    }
   }
 
   // If you're logged in and you navigate to your own handle, show the editable "me" page instead.
@@ -711,9 +731,34 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
 
             {activeTab === "skins" && (
               <div className="pcp-tabContent" aria-label="Skins">
-                <div className="pcp-emptyState">
-                  Skins feature coming soon.
-                </div>
+                {publicSkins.length === 0 ? (
+                  <div className="pcp-emptyState">No public skins yet.</div>
+                ) : (
+                  <div className="pcp-skinsGrid">
+                    {publicSkins.map((skin) => (
+                      <div key={skin._id} className="pcp-skinCard">
+                        <div className="pcp-skinPreview">CSS Preview</div>
+                        <div className="pcp-skinInfo">
+                          <div className="pcp-skinName">{skin.name}</div>
+                          <div className="pcp-skinMeta">
+                            <span className="pcp-skinType">
+                              {skin.appliesTo === "community" ? "Community" : "Work"} skin
+                            </span>
+                          </div>
+                        </div>
+                        <div className="pcp-skinActions">
+                          <button
+                            type="button"
+                            className={`pcp-skinBtn pcp-skinBtn--copy ${copiedSkinId === skin._id ? "pcp-skinBtn--copied" : ""}`}
+                            onClick={() => handleCopyCSS(skin)}
+                          >
+                            {copiedSkinId === skin._id ? "Copied!" : "Copy CSS"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

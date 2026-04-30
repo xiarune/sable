@@ -59,6 +59,13 @@ export const api = {
 
   delete: (endpoint) => request(endpoint, { method: "DELETE" }),
 
+  patch: (endpoint, body) =>
+    request(endpoint, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      ...(body !== undefined && { body: JSON.stringify(body) }),
+    }),
+
   // For file uploads
   upload: (endpoint, formData) =>
     request(endpoint, {

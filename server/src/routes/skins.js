@@ -1,6 +1,7 @@
 const express = require("express");
 const Skin = require("../models/Skin");
-const { requireAuth } = require("../middleware/auth");
+const User = require("../models/User");
+const { requireAuth, optionalAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -15,6 +16,60 @@ router.get("/", requireAuth, async (req, res, next) => {
     const skins = await Skin.find(query).sort({ createdAt: -1 });
 
     res.json({ skins });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /skins/user/:username - Get skins by username (public skins or all if own profile)
+router.get("/user/:username", optionalAuth, async (req, res, next) => {
+  try {
+    const { username } = req.params;
+
+    // Find user by username
+    const user = await User.findOne({ username: username.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Check if this is the authenticated user viewing their own skins
+    const isOwnProfile = req.user && req.user._id.toString() === user._id.toString();
+
+    // Build query - all skins if own profile, only public otherwise
+    const query = { userId: user._id };
+    if (!isOwnProfile) {
+      query.isPublic = true;
+    }
+
+    const skins = await Skin.find(query).sort({ createdAt: -1 });
+
+    res.json({
+      skins,
+      isOwnProfile,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /skins/:id/toggle-public - Toggle skin visibility
+router.patch("/:id/toggle-public", requireAuth, async (req, res, next) => {
+  try {
+    const skin = await Skin.findById(req.params.id);
+
+    if (!skin) {
+      return res.status(404).json({ error: "Skin not found" });
+    }
+
+    if (skin.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: "You can only modify your own skins" });
+    }
+
+    skin.isPublic = !skin.isPublic;
+    await skin.save();
+
+    res.json({ skin });
   } catch (err) {
     next(err);
   }

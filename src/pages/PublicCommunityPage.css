@@ -1337,3 +1337,103 @@
   background: rgba(36, 75, 43, 0.2);
 }
 
+/* Skins Grid */
+.pcp-skinsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
+}
+
+.pcp-skinCard {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pcp-skinPreview {
+  height: 60px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #e8e4dc 0%, #d4cfc5 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Libre Baskerville", serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.pcp-skinInfo {
+  flex: 1;
+}
+
+.pcp-skinName {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f3a2a;
+  margin-bottom: 4px;
+}
+
+.pcp-skinMeta {
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.pcp-skinType {
+  text-transform: capitalize;
+}
+
+.pcp-skinActions {
+  display: flex;
+  gap: 8px;
+}
+
+.pcp-skinBtn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #1f3a2a;
+  background: transparent;
+  color: #1f3a2a;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pcp-skinBtn:hover {
+  background: #1f3a2a;
+  color: #fff;
+}
+
+.pcp-skinBtn--copy {
+  background: #1f3a2a;
+  color: #fff;
+}
+
+.pcp-skinBtn--copy:hover {
+  background: #2a4d38;
+}
+
+.pcp-skinBtn--copied {
+  background: #3d7a50;
+  border-color: #3d7a50;
+}
+
+.pcp-skinBtn--copied:hover {
+  background: #3d7a50;
+}
+
+@media (max-width: 560px) {
+  .pcp-skinsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+

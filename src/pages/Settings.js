@@ -88,6 +88,7 @@ export default function Settings({ username, onLogout }) {
   const [skinCss, setSkinCss] = React.useState(
     "/* Example */\n.wv-card {\n  background: rgba(255,255,255,0.8);\n}\n"
   );
+  const [skinIsPublic, setSkinIsPublic] = React.useState(false);
   const [skinSaving, setSkinSaving] = React.useState(false);
   const [skinError, setSkinError] = React.useState("");
   const [editingSkin, setEditingSkin] = React.useState(null); // skin object being edited
@@ -1165,7 +1166,7 @@ export default function Settings({ username, onLogout }) {
 
     try {
       const appliesTo = skinAppliesTo === "Community Page" ? "community" : "work";
-      const data = await skinsApi.create(skinName.trim(), appliesTo, skinCss.trim());
+      const data = await skinsApi.create(skinName.trim(), appliesTo, skinCss.trim(), skinIsPublic);
 
       // Add to local list
       setCustomSkins((prev) => [data.skin, ...prev]);
@@ -1174,6 +1175,7 @@ export default function Settings({ username, onLogout }) {
       setSkinName("");
       setSkinAppliesTo("work");
       setSkinCss("/* Example */\n.wv-card {\n  background: rgba(255,255,255,0.8);\n}\n");
+      setSkinIsPublic(false);
       closeModal();
     } catch (err) {
       setSkinError(err.message || "Failed to save skin. Please try again.");
@@ -1198,6 +1200,7 @@ export default function Settings({ username, onLogout }) {
     setSkinName(skin.name);
     setSkinAppliesTo(skin.appliesTo === "community" ? "Community Page" : "work");
     setSkinCss(skin.css);
+    setSkinIsPublic(skin.isPublic || false);
     setSkinError("");
     openModal("createSkin");
   }
@@ -1221,6 +1224,7 @@ export default function Settings({ username, onLogout }) {
         name: skinName.trim(),
         appliesTo,
         css: skinCss.trim(),
+        isPublic: skinIsPublic,
       });
 
       // Update in local list
@@ -1233,6 +1237,7 @@ export default function Settings({ username, onLogout }) {
       setSkinName("");
       setSkinAppliesTo("work");
       setSkinCss("/* Example */\n.wv-card {\n  background: rgba(255,255,255,0.8);\n}\n");
+      setSkinIsPublic(false);
       closeModal();
     } catch (err) {
       setSkinError(err.message || "Failed to update skin. Please try again.");
@@ -1917,6 +1922,21 @@ export default function Settings({ username, onLogout }) {
                   disabled={skinSaving}
                   style={{ minHeight: 300, fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, monospace" }}
                 />
+              </div>
+
+              <div className="st-field">
+                <label className="st-checkboxRow">
+                  <input
+                    type="checkbox"
+                    checked={skinIsPublic}
+                    onChange={(e) => setSkinIsPublic(e.target.checked)}
+                    disabled={skinSaving}
+                  />
+                  <span className="st-checkboxText">
+                    <span className="st-checkboxLabel">Make this skin public</span>
+                    <span className="st-checkboxHint">Public skins appear on your community profile and can be copied by others.</span>
+                  </span>
+                </label>
               </div>
 
               {skinError && (
