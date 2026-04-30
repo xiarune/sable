@@ -322,33 +322,81 @@ router.post("/file", uploadFile.single("file"), async (req, res, next) => {
   }
 });
 
-// GET /uploads/audio/user/:username - Get a user's public audio uploads
+// GET /uploads/audio/user/:username - Get a user's public audio uploads (includes work-embedded audios)
 router.get("/audio/user/:username", async (req, res, next) => {
   try {
     const User = require("../models/User");
+    const Work = require("../models/Work");
     const user = await User.findOne({ username: req.params.username.toLowerCase() });
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Only return public audios (isPublic: true or undefined for backward compat)
-    const audios = await Upload.find({
+    // Get ALL audio Upload records for this user (to check visibility)
+    const allUploadAudios = await Upload.find({
       ownerId: user._id,
       type: "audio",
-      isPublic: { $ne: false },
-    })
-      .populate("workId", "title")
-      .sort({ createdAt: -1 })
-      .limit(50);
+    }).populate("workId", "title");
 
-    res.json({ audios });
+    // Filter to public ones for display
+    const uploadAudios = allUploadAudios.filter(a => a.isPublic !== false);
+
+    // Track URLs that have Upload records (both public and private)
+    const uploadUrlMap = new Map(allUploadAudios.map(a => [a.url, a]));
+    const seenUrls = new Set(allUploadAudios.map(a => a.url));
+
+    // Get audios embedded in works (work-level and chapter-level)
+    const works = await Work.find({ authorId: user._id }).select("_id title audioUrl chapters createdAt");
+    const workAudios = [];
+
+    for (const work of works) {
+      // Work-level audio
+      if (work.audioUrl && !seenUrls.has(work.audioUrl)) {
+        seenUrls.add(work.audioUrl);
+        // No Upload record exists, default to public
+        workAudios.push({
+          _id: `work-${work._id}`,
+          url: work.audioUrl,
+          title: `${work.title} - Audio`,
+          workId: { _id: work._id, title: work.title },
+          isPublic: true,
+          createdAt: work.createdAt,
+          source: "work",
+        });
+      }
+      // Chapter-level audios
+      if (work.chapters) {
+        for (const chapter of work.chapters) {
+          if (chapter.audioUrl && !seenUrls.has(chapter.audioUrl)) {
+            seenUrls.add(chapter.audioUrl);
+            // No Upload record exists, default to public
+            workAudios.push({
+              _id: `chapter-${work._id}-${chapter.id}`,
+              url: chapter.audioUrl,
+              title: chapter.title || `${work.title} - Chapter Audio`,
+              workId: { _id: work._id, title: work.title },
+              isPublic: true,
+              createdAt: work.createdAt,
+              source: "chapter",
+            });
+          }
+        }
+      }
+    }
+
+    // Combine and sort by createdAt
+    const allAudios = [...uploadAudios.map(a => a.toObject()), ...workAudios]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 50);
+
+    res.json({ audios: allAudios });
   } catch (err) {
     next(err);
   }
 });
 
-// GET /uploads - List my uploads
+// GET /uploads - List my uploads (includes work-embedded audios when type=audio)
 router.get("/", async (req, res, next) => {
   try {
     const { type } = req.query;
@@ -363,6 +411,56 @@ router.get("/", async (req, res, next) => {
       .sort({ createdAt: -1 })
       .limit(50);
 
+    // If requesting audio, also include work-embedded audios
+    if (type === "audio") {
+      const Work = require("../models/Work");
+      const works = await Work.find({ authorId: req.user._id }).select("_id title audioUrl chapters createdAt");
+      const workAudios = [];
+
+      // Track URLs that already have Upload records
+      const seenUrls = new Set(uploads.map(a => a.url));
+
+      for (const work of works) {
+        // Work-level audio
+        if (work.audioUrl && !seenUrls.has(work.audioUrl)) {
+          seenUrls.add(work.audioUrl);
+          workAudios.push({
+            _id: `work-${work._id}`,
+            url: work.audioUrl,
+            title: `${work.title} - Audio`,
+            workId: { _id: work._id, title: work.title },
+            isPublic: true, // Default to public if no Upload record
+            createdAt: work.createdAt,
+            source: "work",
+          });
+        }
+        // Chapter-level audios
+        if (work.chapters) {
+          for (const chapter of work.chapters) {
+            if (chapter.audioUrl && !seenUrls.has(chapter.audioUrl)) {
+              seenUrls.add(chapter.audioUrl);
+              workAudios.push({
+                _id: `chapter-${work._id}-${chapter.id}`,
+                url: chapter.audioUrl,
+                title: chapter.title || `${work.title} - Chapter Audio`,
+                workId: { _id: work._id, title: work.title },
+                isPublic: true, // Default to public if no Upload record
+                createdAt: work.createdAt,
+                source: "chapter",
+              });
+            }
+          }
+        }
+      }
+
+      // Combine and sort by createdAt
+      const allAudios = [...uploads.map(a => a.toObject()), ...workAudios]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 50);
+
+      return res.json({ uploads: allAudios });
+    }
+
     res.json({ uploads });
   } catch (err) {
     next(err);
@@ -372,7 +470,74 @@ router.get("/", async (req, res, next) => {
 // PATCH /uploads/:id/toggle-public - Toggle audio visibility
 router.patch("/:id/toggle-public", async (req, res, next) => {
   try {
-    const upload = await Upload.findById(req.params.id);
+    const id = req.params.id;
+    const Work = require("../models/Work");
+
+    // Check if this is a work-embedded audio (work-xxx or chapter-xxx-yyy)
+    if (id.startsWith("work-") || id.startsWith("chapter-")) {
+      let workId, audioUrl, title, chapterId;
+
+      if (id.startsWith("work-")) {
+        workId = id.replace("work-", "");
+        const work = await Work.findById(workId);
+        if (!work) {
+          return res.status(404).json({ error: "Work not found" });
+        }
+        if (work.authorId.toString() !== req.user._id.toString()) {
+          return res.status(403).json({ error: "Not authorized" });
+        }
+        audioUrl = work.audioUrl;
+        title = `${work.title} - Audio`;
+      } else {
+        // chapter-workId-chapterId
+        const parts = id.split("-");
+        workId = parts[1];
+        chapterId = parts.slice(2).join("-");
+        const work = await Work.findById(workId);
+        if (!work) {
+          return res.status(404).json({ error: "Work not found" });
+        }
+        if (work.authorId.toString() !== req.user._id.toString()) {
+          return res.status(403).json({ error: "Not authorized" });
+        }
+        const chapter = work.chapters.find(c => c.id === chapterId);
+        if (!chapter || !chapter.audioUrl) {
+          return res.status(404).json({ error: "Chapter audio not found" });
+        }
+        audioUrl = chapter.audioUrl;
+        title = chapter.title || `${work.title} - Chapter Audio`;
+      }
+
+      // Find or create Upload record for this audio
+      let upload = await Upload.findOne({ url: audioUrl, ownerId: req.user._id });
+
+      if (!upload) {
+        // Create new Upload record (currently public, so toggle to private)
+        upload = await Upload.create({
+          ownerId: req.user._id,
+          type: "audio",
+          url: audioUrl,
+          mimeType: "audio/mpeg",
+          size: 0,
+          title,
+          workId,
+          isPublic: false, // Toggling from public (default) to private
+        });
+      } else {
+        // Toggle existing record
+        upload.isPublic = upload.isPublic === false ? true : false;
+        await upload.save();
+      }
+
+      await upload.populate("workId", "title");
+      // Return with original synthetic ID for frontend matching
+      const response = upload.toObject();
+      response._id = id; // Preserve original work-xxx or chapter-xxx-yyy ID
+      return res.json({ upload: response });
+    }
+
+    // Regular Upload record
+    const upload = await Upload.findById(id);
 
     if (!upload) {
       return res.status(404).json({ error: "Upload not found" });
