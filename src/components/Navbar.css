@@ -787,6 +787,97 @@
   font-family: "Libre Baskerville", serif;
 }
 
+/* ==================== */
+/* Sidebar - appears on scroll */
+/* ==================== */
+
+.sable-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 56px;
+  height: 100vh;
+  background: #0b3f87;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 8px;
+  z-index: 1000;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.15);
+  animation: slideInRight 0.2s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.sidebar-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f7f1e6;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.sidebar-icon:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-icon img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.sidebar-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.sidebar-divider {
+  width: 28px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 4px 0;
+}
+
+/* Badge for notifications/inbox in sidebar */
+.sidebar-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+  background: #e53935;
+  border-radius: 50%;
+  border: 2px solid #0b3f87;
+  box-sizing: border-box;
+}
+
+/* Hide sidebar on mobile - use hamburger menu instead */
+@media (max-width: 768px) {
+  .sable-sidebar {
+    display: none;
+  }
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .topnav {
