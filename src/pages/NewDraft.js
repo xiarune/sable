@@ -213,6 +213,7 @@ export default function NewDraft() {
 
   const [audioUrl, setAudioUrl] = React.useState("");
   const [imageUrls, setImageUrls] = React.useState([]);
+  const [loadingDraft, setLoadingDraft] = React.useState(false);
 
   // Form recovery state
   const [recoveredData, setRecoveredData] = React.useState(false);
@@ -274,7 +275,6 @@ export default function NewDraft() {
   const [status, setStatus] = React.useState("");
   const [previewOn, setPreviewOn] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  const [loadingDraft, setLoadingDraft] = React.useState(false);
 
   const bodyRef = React.useRef(null);
 
