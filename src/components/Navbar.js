@@ -73,6 +73,7 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
 
   // Scroll state for sidebar
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const headerRef = React.useRef(null);
 
   // Notification and inbox counts for red dot indicators
   const [notificationCount, setNotificationCount] = React.useState(0);
@@ -330,17 +331,24 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
     closeMobileMenu();
   }, [location.pathname]);
 
-  // Scroll detection for sidebar
+  // Scroll detection for sidebar using Intersection Observer
   React.useEffect(() => {
-    const handleScroll = () => {
-      const scrolled = window.scrollY > 64;
-      console.log("Scroll Y:", window.scrollY, "isScrolled:", scrolled);
-      setIsScrolled(scrolled);
-    };
-    window.addEventListener("scroll", handleScroll);
-    // Check initial scroll position
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    const header = headerRef.current;
+    if (!header) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // When navbar is NOT intersecting (scrolled out of view), show sidebar
+        setIsScrolled(!entry.isIntersecting);
+      },
+      {
+        threshold: 0,
+        rootMargin: "0px",
+      }
+    );
+
+    observer.observe(header);
+    return () => observer.disconnect();
   }, []);
 
   React.useEffect(() => {
@@ -417,7 +425,7 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   const browseItems = isAuthed ? ["Genre", "Fandom", "Tags", "Bookmarks"] : ["Genre", "Fandom", "Tags"];
 
   return (
-    <header className="sable-header">
+    <header className="sable-header" ref={headerRef}>
       <div className="topbar">
         <div className="topbar-left">
           <button
@@ -797,9 +805,7 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
       ) : null}
 
       {/* Sidebar - appears when scrolled past navbar */}
-      {console.log("Render check - isScrolled:", isScrolled, "isMobileMenuOpen:", isMobileMenuOpen)}
-      {/* TEMP: Always show sidebar for testing */}
-      {(true || (isScrolled && !isMobileMenuOpen)) && (
+      {isScrolled && !isMobileMenuOpen && (
         <aside className="sable-sidebar" aria-label="Quick navigation">
           <button
             type="button"
