@@ -333,7 +333,9 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
   // Scroll detection for sidebar
   React.useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 64);
+      const scrolled = window.scrollY > 64;
+      console.log("Scroll Y:", window.scrollY, "isScrolled:", scrolled);
+      setIsScrolled(scrolled);
     };
     window.addEventListener("scroll", handleScroll);
     // Check initial scroll position
@@ -795,7 +797,9 @@ export default function Navbar({ isAuthed, username, onLogin, onLogout }) {
       ) : null}
 
       {/* Sidebar - appears when scrolled past navbar */}
-      {isScrolled && !isMobileMenuOpen && (
+      {console.log("Render check - isScrolled:", isScrolled, "isMobileMenuOpen:", isMobileMenuOpen)}
+      {/* TEMP: Always show sidebar for testing */}
+      {(true || (isScrolled && !isMobileMenuOpen)) && (
         <aside className="sable-sidebar" aria-label="Quick navigation">
           <button
             type="button"
