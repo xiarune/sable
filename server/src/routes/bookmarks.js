@@ -284,6 +284,8 @@ router.get("/reading-list", requireAuth, async (req, res, next) => {
 // GET /bookmarks/reading-list/user/:username - Get a user's public reading list
 router.get("/reading-list/user/:username", optionalAuth, async (req, res, next) => {
   try {
+    const CommunityPage = require("../models/CommunityPage");
+
     const user = await User.findOne({ username: req.params.username.toLowerCase() });
 
     if (!user) {
@@ -312,6 +314,16 @@ router.get("/reading-list/user/:username", optionalAuth, async (req, res, next) 
           return res.status(403).json({ error: "This user has a private profile" });
         }
       }
+
+      // Check if user has made their reading list private
+      const communityPage = await CommunityPage.findOne({ userId: user._id });
+      if (communityPage?.readingListPublic === false) {
+        return res.json({
+          bookmarks: [],
+          isPrivate: true,
+          user: { username: user.username, displayName: user.displayName },
+        });
+      }
     }
 
     const bookmarks = await Bookmark.find({
@@ -324,6 +336,7 @@ router.get("/reading-list/user/:username", optionalAuth, async (req, res, next) 
 
     res.json({
       bookmarks,
+      isPrivate: false,
       user: { username: user.username, displayName: user.displayName },
     });
   } catch (err) {

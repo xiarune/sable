@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import "./PublicCommunityPage.css";
-import { uploadsApi, worksApi, communityApi, followsApi, usersApi, donationsApi, postsApi, skinsApi } from "../api";
+import { uploadsApi, worksApi, communityApi, followsApi, usersApi, donationsApi, postsApi, skinsApi, bookmarksApi } from "../api";
 import { SableLoader } from "../components";
 
 function initials(name) {
@@ -74,6 +74,8 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
   const [userPosts, setUserPosts] = React.useState([]);
   const [publicSkins, setPublicSkins] = React.useState([]);
   const [copiedSkinId, setCopiedSkinId] = React.useState(null);
+  const [readingList, setReadingList] = React.useState([]);
+  const [readingListPrivate, setReadingListPrivate] = React.useState(false);
 
   // Load community page and user data
   React.useEffect(() => {
@@ -197,6 +199,15 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
         setPublicSkins(skinsData.skins || []);
       } catch (err) {
         console.error("Failed to load skins:", err);
+      }
+
+      // Load reading list
+      try {
+        const readingData = await bookmarksApi.getUserReadingList(normalizedHandle);
+        setReadingList(readingData.bookmarks || []);
+        setReadingListPrivate(readingData.isPrivate || false);
+      } catch (err) {
+        console.error("Failed to load reading list:", err);
       }
 
       setLoading(false);
@@ -723,9 +734,34 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
 
             {activeTab === "reading" && (
               <div className="pcp-tabContent" aria-label="Reading List">
-                <div className="pcp-emptyState">
-                  Reading lists are private. Only the user can see their own reading list.
-                </div>
+                {readingListPrivate ? (
+                  <div className="pcp-emptyState">
+                    <span className="pcp-privateBadge">🔒</span> This user's reading list is private.
+                  </div>
+                ) : readingList.length === 0 ? (
+                  <div className="pcp-emptyState">No works in reading list yet.</div>
+                ) : (
+                  <div className="pcp-listItems">
+                    {readingList.map((item) => (
+                      <div
+                        key={item._id}
+                        className="pcp-listItem pcp-readingListItem"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => item.workId && navigate(`/works/${item.workId}`)}
+                        onKeyDown={(e) => e.key === "Enter" && item.workId && navigate(`/works/${item.workId}`)}
+                      >
+                        {item.coverUrl && (
+                          <img className="pcp-listItemCover" src={item.coverUrl} alt="" />
+                        )}
+                        <div className="pcp-listItemMain">
+                          <div className="pcp-listItemTitle">{item.title}</div>
+                          <div className="pcp-listItemMeta">by @{item.authorUsername}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -765,7 +801,7 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
             {activeTab === "audios" && (
               <div className="pcp-tabContent" aria-label="Audios">
                 {userAudios.length === 0 ? (
-                  <div className="pcp-emptyState">No audio uploads yet.</div>
+                  <div className="pcp-emptyState">No public audio uploads yet.</div>
                 ) : (
                   <div className="pcp-listItems">
                     {userAudios.map((audio) => (
@@ -773,6 +809,14 @@ export default function PublicCommunityPage({ isAuthed = false, username = "john
                         <div className="pcp-listItemMain">
                           <div className="pcp-listItemTitle">{audio.title || "Audio Track"}</div>
                           <div className="pcp-listItemMeta">
+                            {audio.workId ? (
+                              <Link to={`/works/${audio.workId._id || audio.workId}`} className="pcp-audioWorkLink">
+                                From: {audio.workId.title || "Work"}
+                              </Link>
+                            ) : (
+                              <span>Standalone audio</span>
+                            )}
+                            {" · "}
                             {audio.plays || 0} plays · {new Date(audio.createdAt).toLocaleDateString()}
                           </div>
                         </div>

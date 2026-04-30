@@ -56,6 +56,12 @@ const communityPageSchema = new mongoose.Schema(
 
     // Announcements
     announcements: [announcementSchema],
+
+    // Reading list visibility
+    readingListPublic: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,

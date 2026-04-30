@@ -14,6 +14,7 @@ const updateCommunitySchema = z.object({
   bannerImageUrl: z.string().optional(),
   profileImageUrl: z.string().optional(),
   visibility: z.enum(["public", "private", "following"]).optional(),
+  readingListPublic: z.boolean().optional(),
   widgets: z
     .object({
       announcements: z.boolean().optional(),

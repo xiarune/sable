@@ -42,6 +42,11 @@ const uploadSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Visibility for audio files
+    isPublic: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,

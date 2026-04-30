@@ -322,7 +322,7 @@ router.post("/file", uploadFile.single("file"), async (req, res, next) => {
   }
 });
 
-// GET /uploads/audio/user/:username - Get a user's audio uploads (public)
+// GET /uploads/audio/user/:username - Get a user's public audio uploads
 router.get("/audio/user/:username", async (req, res, next) => {
   try {
     const User = require("../models/User");
@@ -332,7 +332,13 @@ router.get("/audio/user/:username", async (req, res, next) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const audios = await Upload.find({ ownerId: user._id, type: "audio" })
+    // Only return public audios (isPublic: true or undefined for backward compat)
+    const audios = await Upload.find({
+      ownerId: user._id,
+      type: "audio",
+      isPublic: { $ne: false },
+    })
+      .populate("workId", "title")
       .sort({ createdAt: -1 })
       .limit(50);
 
@@ -353,10 +359,37 @@ router.get("/", async (req, res, next) => {
     }
 
     const uploads = await Upload.find(query)
+      .populate("workId", "title")
       .sort({ createdAt: -1 })
       .limit(50);
 
     res.json({ uploads });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /uploads/:id/toggle-public - Toggle audio visibility
+router.patch("/:id/toggle-public", async (req, res, next) => {
+  try {
+    const upload = await Upload.findById(req.params.id);
+
+    if (!upload) {
+      return res.status(404).json({ error: "Upload not found" });
+    }
+
+    if (upload.ownerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    // Toggle visibility
+    upload.isPublic = upload.isPublic === false ? true : false;
+    await upload.save();
+
+    // Populate workId for response
+    await upload.populate("workId", "title");
+
+    res.json({ upload });
   } catch (err) {
     next(err);
   }

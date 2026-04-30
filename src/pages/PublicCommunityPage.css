@@ -236,6 +236,28 @@
   margin-top: 2px;
 }
 
+.pcp-listItemCover {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+.pcp-readingListItem {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pcp-readingListItem:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.pcp-privateBadge {
+  margin-right: 6px;
+}
+
 .pcp-listItemProgress {
   font-family: "Libre Baskerville", serif;
   font-size: 13px;
@@ -279,6 +301,15 @@
   width: 100%;
   height: 32px;
   border-radius: 6px;
+}
+
+.pcp-audioWorkLink {
+  color: #1f3a2a;
+  text-decoration: none;
+}
+
+.pcp-audioWorkLink:hover {
+  text-decoration: underline;
 }
 
 .pcp-handle {

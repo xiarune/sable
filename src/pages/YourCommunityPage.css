@@ -380,6 +380,44 @@
   border-radius: 6px;
 }
 
+.ycp-audioControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ycp-audioVisibilityBtn {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.ycp-audioVisibilityBtn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.ycp-audioVisibilityBtn--public {
+  background: rgba(36, 75, 43, 0.1);
+  border-color: rgba(36, 75, 43, 0.25);
+  color: #1f3a2a;
+}
+
+.ycp-audioWorkLink {
+  color: #1f3a2a;
+  text-decoration: none;
+}
+
+.ycp-audioWorkLink:hover {
+  text-decoration: underline;
+}
+
 /* Right panels*/
 .ycp-right {
   display: flex;
@@ -498,6 +536,57 @@
   font-size: 14px;
   opacity: 0.75;
   margin-top: 2px;
+}
+
+/* Toggle Switch */
+.ycp-toggleSwitch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.ycp-toggleSwitch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ycp-toggleSlider {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.15);
+  position: relative;
+  transition: background 0.2s;
+}
+
+.ycp-toggleSlider::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.ycp-toggleSwitch input:checked + .ycp-toggleSlider {
+  background: #1f3a2a;
+}
+
+.ycp-toggleSwitch input:checked + .ycp-toggleSlider::after {
+  transform: translateX(20px);
+}
+
+.ycp-toggleLabel {
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: #1f3a2a;
 }
 
 .ycp-editActions {

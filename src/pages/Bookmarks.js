@@ -9,6 +9,7 @@ export default function Bookmarks() {
   const [bookmarks, setBookmarks] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [filter, setFilter] = React.useState("all"); // all, work, post, audio
+  const [togglingId, setTogglingId] = React.useState(null);
 
   React.useEffect(() => {
     async function loadBookmarks() {
@@ -38,6 +39,23 @@ export default function Bookmarks() {
       setBookmarks((prev) => prev.filter((b) => b._id !== bookmark._id));
     } catch (err) {
       console.error("Failed to remove bookmark:", err);
+    }
+  }
+
+  async function toggleReadingList(bookmark) {
+    setTogglingId(bookmark._id);
+    try {
+      const newValue = !bookmark.showInReadingList;
+      await bookmarksApi.toggleReadingList(bookmark._id, newValue);
+      setBookmarks((prev) =>
+        prev.map((b) =>
+          b._id === bookmark._id ? { ...b, showInReadingList: newValue } : b
+        )
+      );
+    } catch (err) {
+      console.error("Failed to toggle reading list:", err);
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -120,6 +138,19 @@ export default function Bookmarks() {
                     className="bookmarkCard"
                     aria-label={`Bookmarked work: ${bookmark.title}`}
                   >
+                    <button
+                      type="button"
+                      className={`bookmarkReadingListToggle ${bookmark.showInReadingList ? "active" : ""}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleReadingList(bookmark);
+                      }}
+                      disabled={togglingId === bookmark._id}
+                      aria-label={bookmark.showInReadingList ? "Remove from reading list" : "Add to reading list"}
+                      title={bookmark.showInReadingList ? "In reading list" : "Add to reading list"}
+                    >
+                      {togglingId === bookmark._id ? "..." : bookmark.showInReadingList ? "📖" : "📕"}
+                    </button>
                     <button
                       type="button"
                       className="bookmarkOpen"

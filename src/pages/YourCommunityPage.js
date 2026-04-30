@@ -48,6 +48,7 @@ export default function YourCommunityPage({ username }) {
   const [bio, setBio] = React.useState("");
   const [link, setLink] = React.useState("");
   const [visibility, setVisibility] = React.useState("public");
+  const [readingListPublic, setReadingListPublic] = React.useState(true);
   const [bannerUrl, setBannerUrl] = React.useState("");
   const [profileUrl, setProfileUrl] = React.useState("");
 
@@ -57,6 +58,7 @@ export default function YourCommunityPage({ username }) {
   const [draftBio, setDraftBio] = React.useState(savedProfileDraft?.draftBio || bio);
   const [draftLink, setDraftLink] = React.useState(savedProfileDraft?.draftLink || link);
   const [draftVisibility, setDraftVisibility] = React.useState(savedProfileDraft?.draftVisibility || visibility);
+  const [draftReadingListPublic, setDraftReadingListPublic] = React.useState(readingListPublic);
 
   // Auto-save profile draft while editing
   const { clearRecovery: clearProfileRecovery } = useAutoSave(
@@ -109,6 +111,7 @@ export default function YourCommunityPage({ username }) {
           setBio(communityData.page.bio || "");
           setLink(communityData.page.link || "");
           setVisibility(communityData.page.visibility || "public");
+          setReadingListPublic(communityData.page.readingListPublic !== false);
           setBannerUrl(communityData.page.bannerImageUrl || "");
           // Prefer user's avatarUrl (source of truth) over communityPage.profileImageUrl
           const userAvatar = userData?.user?.avatarUrl || "";
@@ -267,6 +270,18 @@ export default function YourCommunityPage({ username }) {
     }
   }
 
+  // Toggle audio public visibility
+  async function handleToggleAudioPublic(audioId) {
+    try {
+      const data = await uploadsApi.togglePublic(audioId);
+      setUserAudios((prev) =>
+        prev.map((a) => (a._id === audioId ? data.upload : a))
+      );
+    } catch (err) {
+      console.error("Failed to toggle audio visibility:", err);
+    }
+  }
+
   // Handle banner image upload
   async function handleBannerUpload(e) {
     const file = e.target.files?.[0];
@@ -337,6 +352,7 @@ export default function YourCommunityPage({ username }) {
     setDraftBio(bio);
     setDraftLink(link);
     setDraftVisibility(visibility);
+    setDraftReadingListPublic(readingListPublic);
     setIsEditing(true);
   }
 
@@ -345,6 +361,7 @@ export default function YourCommunityPage({ username }) {
     const newBio = draftBio || "";
     const newLink = (draftLink || "").trim();
     const newVisibility = draftVisibility;
+    const newReadingListPublic = draftReadingListPublic;
 
     setSaving(true);
     try {
@@ -353,11 +370,13 @@ export default function YourCommunityPage({ username }) {
         bio: newBio,
         link: newLink,
         visibility: newVisibility,
+        readingListPublic: newReadingListPublic,
       });
       setDisplayName(newName);
       setBio(newBio);
       setLink(newLink);
       setVisibility(newVisibility);
+      setReadingListPublic(newReadingListPublic);
       clearProfileRecovery(); // Clear auto-saved draft on success
     } catch (err) {
       console.error("Failed to save community page:", err);
@@ -716,10 +735,28 @@ export default function YourCommunityPage({ username }) {
                           <div className="ycp-listItemMain">
                             <div className="ycp-listItemTitle">{audio.title || "Audio Track"}</div>
                             <div className="ycp-listItemMeta">
+                              {audio.workId ? (
+                                <Link to={`/works/${audio.workId._id || audio.workId}`} className="ycp-audioWorkLink">
+                                  From: {audio.workId.title || "Work"}
+                                </Link>
+                              ) : (
+                                <span>Standalone audio</span>
+                              )}
+                              {" · "}
                               {audio.plays || 0} plays · {new Date(audio.createdAt).toLocaleDateString()}
                             </div>
                           </div>
-                          <audio controls src={audio.url} className="ycp-audioPlayer" />
+                          <div className="ycp-audioControls">
+                            <button
+                              type="button"
+                              className={`ycp-audioVisibilityBtn ${audio.isPublic !== false ? "ycp-audioVisibilityBtn--public" : ""}`}
+                              onClick={() => handleToggleAudioPublic(audio._id)}
+                              title={audio.isPublic !== false ? "Make private" : "Make public"}
+                            >
+                              {audio.isPublic !== false ? "🌐 Public" : "🔒 Private"}
+                            </button>
+                            <audio controls src={audio.url} className="ycp-audioPlayer" />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -897,6 +934,21 @@ export default function YourCommunityPage({ username }) {
                     </div>
                   </label>
                 </div>
+              </div>
+
+              <div className="ycp-editRow">
+                <label className="ycp-editLabel">Reading List</label>
+                <label className="ycp-toggleSwitch">
+                  <input
+                    type="checkbox"
+                    checked={draftReadingListPublic}
+                    onChange={(e) => setDraftReadingListPublic(e.target.checked)}
+                  />
+                  <span className="ycp-toggleSlider" />
+                  <span className="ycp-toggleLabel">
+                    {draftReadingListPublic ? "Public" : "Private"}
+                  </span>
+                </label>
               </div>
 
               <div className="ycp-editActions">

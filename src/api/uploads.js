@@ -45,6 +45,9 @@ export const uploadsApi = {
   // Delete upload
   delete: (id) => api.delete(`/uploads/${id}`),
 
+  // Toggle audio public/private visibility
+  togglePublic: (id) => api.patch(`/uploads/${id}/toggle-public`),
+
   // Upload generic file (for chat attachments)
   file: async (file) => {
     const formData = new FormData();
