@@ -4,6 +4,7 @@ import "./Inbox.css";
 
 import { messagesApi, authApi, uploadsApi } from "../api";
 import { SableLoader } from "../components";
+import { useAutoSave, getRecoveryData } from "../hooks/useFormRecovery";
 import {
   initSocket,
   getSocket,
@@ -377,6 +378,25 @@ export default function Inbox() {
   // Composer (sending messages)
   const [draft, setDraft] = React.useState("");
   const [sending, setSending] = React.useState(false);
+
+  // Auto-save message draft per thread
+  const messageRecoveryKey = activeThreadId ? `inbox_thread_${activeThreadId}` : null;
+  const { clearRecovery: clearMessageRecovery } = useAutoSave(
+    messageRecoveryKey || "inbox_no_thread",
+    { draft },
+    { enabled: !!activeThreadId && draft.length > 0 }
+  );
+
+  // Restore draft when switching threads
+  React.useEffect(() => {
+    if (!activeThreadId) return;
+    const saved = getRecoveryData(`inbox_thread_${activeThreadId}`);
+    if (saved?.draft) {
+      setDraft(saved.draft);
+    } else {
+      setDraft("");
+    }
+  }, [activeThreadId]);
 
   // Compose-new-message UX
   const [userQuery, setUserQuery] = React.useState("");
@@ -824,6 +844,7 @@ export default function Inbox() {
       const data = await messagesApi.sendMessage(activeThreadId, { text });
       setMessages((prev) => [...prev, data.message]);
       setDraft("");
+      clearMessageRecovery(); // Clear auto-saved draft
 
       // Update thread preview
       setThreads((prev) =>

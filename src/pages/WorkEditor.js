@@ -3,6 +3,7 @@ import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { worksApi, uploadsApi, skinsApi } from "../api";
 import { SableLoader } from "../components";
+import { useAutoSave } from "../hooks/useFormRecovery";
 import "./NewDraft.css";
 
 import chapterIcon from "../assets/images/chapter_icon.png";
@@ -214,6 +215,30 @@ export default function WorkEditor() {
 
   const [audioUrl, setAudioUrl] = React.useState("");
   const [imageUrls, setImageUrls] = React.useState([]);
+
+  // Form recovery
+  const RECOVERY_KEY = `work_edit_${workId}`;
+
+  // Auto-save form data
+  const formDataToSave = React.useMemo(() => ({
+    title,
+    chapters,
+    tags,
+    skin,
+    customSkinId,
+    privacy,
+    language,
+    genre,
+    fandom,
+    progressStatus,
+    coverImageUrl,
+    audioUrl,
+    imageUrls,
+  }), [title, chapters, tags, skin, customSkinId, privacy, language, genre, fandom, progressStatus, coverImageUrl, audioUrl, imageUrls]);
+
+  const { clearRecovery } = useAutoSave(RECOVERY_KEY, formDataToSave, {
+    enabled: !loading, // Don't save while loading
+  });
 
   const [activeTool, setActiveTool] = React.useState("");
   const [tagInput, setTagInput] = React.useState("");
@@ -440,6 +465,7 @@ export default function WorkEditor() {
       };
 
       await worksApi.update(workId, payload);
+      clearRecovery(); // Clear auto-saved data on successful save
       setStatus("Saved!");
       setTimeout(() => setStatus(""), 1500);
     } catch (err) {

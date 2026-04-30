@@ -514,3 +514,33 @@ textarea.nd-textarea {
   margin-top: 0;
 }
 
+/* Recovery notice */
+.nd-recovery-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(36, 75, 43, 0.08);
+  border: 1px solid rgba(36, 75, 43, 0.2);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-family: "Libre Baskerville", serif;
+  font-size: 14px;
+  color: rgba(36, 75, 43, 0.9);
+}
+
+.nd-recovery-dismiss {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  color: rgba(36, 75, 43, 0.6);
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.nd-recovery-dismiss:hover {
+  color: rgba(36, 75, 43, 0.9);
+}
+

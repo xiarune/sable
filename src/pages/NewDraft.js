@@ -7,6 +7,7 @@ import { uploadsApi } from "../api/uploads";
 import { skinsApi } from "../api";
 import importApi from "../api/import";
 import { SableLoader } from "../components";
+import { useAutoSave, getRecoveryData, clearRecoveryData } from "../hooks/useFormRecovery";
 
 import chapterIcon from "../assets/images/chapter_icon.png";
 import importIcon from "../assets/images/import_icon.png";
@@ -212,6 +213,57 @@ export default function NewDraft() {
 
   const [audioUrl, setAudioUrl] = React.useState("");
   const [imageUrls, setImageUrls] = React.useState([]);
+
+  // Form recovery state
+  const [recoveredData, setRecoveredData] = React.useState(false);
+  const RECOVERY_KEY = draftId ? `draft_edit_${draftId}` : "new_draft";
+
+  // Auto-save form data (only for new drafts or when editing)
+  const formDataToSave = React.useMemo(() => ({
+    title,
+    chapters,
+    tags,
+    skin,
+    customSkinId,
+    privacy,
+    language,
+    genre,
+    fandom,
+    coverImageUrl,
+    audioUrl,
+    imageUrls,
+  }), [title, chapters, tags, skin, customSkinId, privacy, language, genre, fandom, coverImageUrl, audioUrl, imageUrls]);
+
+  const { clearRecovery } = useAutoSave(RECOVERY_KEY, formDataToSave, {
+    enabled: !loadingDraft, // Don't save while loading existing draft
+  });
+
+  // Restore form data on mount (only for new drafts, not when editing existing)
+  React.useEffect(() => {
+    // Skip if we're loading an existing draft from URL
+    if (draftId) return;
+
+    const saved = getRecoveryData(RECOVERY_KEY);
+    if (saved) {
+      if (saved.title) setTitle(saved.title);
+      if (Array.isArray(saved.chapters) && saved.chapters.length > 0) {
+        setChapters(saved.chapters);
+        setActiveChapterId(saved.chapters[0].id);
+      }
+      if (Array.isArray(saved.tags)) setTags(saved.tags);
+      if (saved.skin) setSkin(saved.skin);
+      if (saved.customSkinId !== undefined) setCustomSkinId(saved.customSkinId);
+      if (saved.privacy) setPrivacy(saved.privacy);
+      if (saved.language) setLanguage(saved.language);
+      if (saved.genre) setGenre(saved.genre);
+      if (saved.fandom) setFandom(saved.fandom);
+      if (saved.coverImageUrl) setCoverImageUrl(saved.coverImageUrl);
+      if (saved.audioUrl) setAudioUrl(saved.audioUrl);
+      if (Array.isArray(saved.imageUrls)) setImageUrls(saved.imageUrls);
+      setRecoveredData(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [activeTool, setActiveTool] = React.useState("");
   const [tagInput, setTagInput] = React.useState("");
@@ -459,6 +511,7 @@ export default function NewDraft() {
     setStatus("Saving draft...");
     try {
       await saveDraft();
+      clearRecovery(); // Clear auto-saved data on successful save
       setStatus("Draft saved!");
       setTimeout(() => navigate("/drafts"), 500);
     } catch (err) {
@@ -482,6 +535,7 @@ export default function NewDraft() {
     try {
       const savedDraftId = await saveDraft();
       const response = await draftsApi.publish(savedDraftId);
+      clearRecovery(); // Clear auto-saved data on successful publish
       const workId = response.work._id;
       setStatus("Published!");
       setTimeout(() => navigate(`/works/${encodeURIComponent(workId)}`), 500);
@@ -611,6 +665,20 @@ export default function NewDraft() {
     <div className="nd-page">
       <div className="nd-shell">
         <h1 className="nd-title">{draftId ? "Edit Draft" : "New Draft"}</h1>
+
+        {recoveredData && (
+          <div className="nd-recovery-notice">
+            Draft restored from your previous session
+            <button
+              type="button"
+              className="nd-recovery-dismiss"
+              onClick={() => setRecoveredData(false)}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         <section className="nd-card">
           <div className="nd-pillRow">

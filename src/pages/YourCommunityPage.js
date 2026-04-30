@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import "./YourCommunityPage.css";
 import { uploadsApi, worksApi, communityApi, bookmarksApi, followsApi, usersApi, authApi, postsApi } from "../api";
 import { SableLoader } from "../components";
+import { useAutoSave, getRecoveryData } from "../hooks/useFormRecovery";
 
 import editBannerIcon from "../assets/images/edit_banner.png";
 import editProfileIcon from "../assets/images/edit_profile_picture.png";
@@ -50,11 +51,19 @@ export default function YourCommunityPage({ username }) {
   const [bannerUrl, setBannerUrl] = React.useState("");
   const [profileUrl, setProfileUrl] = React.useState("");
 
-  // Draft fields used only in edit mode
-  const [draftName, setDraftName] = React.useState(displayName);
-  const [draftBio, setDraftBio] = React.useState(bio);
-  const [draftLink, setDraftLink] = React.useState(link);
-  const [draftVisibility, setDraftVisibility] = React.useState(visibility);
+  // Draft fields used only in edit mode - restore from localStorage if available
+  const savedProfileDraft = React.useMemo(() => getRecoveryData("community_profile"), []);
+  const [draftName, setDraftName] = React.useState(savedProfileDraft?.draftName || displayName);
+  const [draftBio, setDraftBio] = React.useState(savedProfileDraft?.draftBio || bio);
+  const [draftLink, setDraftLink] = React.useState(savedProfileDraft?.draftLink || link);
+  const [draftVisibility, setDraftVisibility] = React.useState(savedProfileDraft?.draftVisibility || visibility);
+
+  // Auto-save profile draft while editing
+  const { clearRecovery: clearProfileRecovery } = useAutoSave(
+    "community_profile",
+    { draftName, draftBio, draftLink, draftVisibility },
+    { enabled: isEditing }
+  );
 
   // Active tab state
   const [activeTab, setActiveTab] = React.useState("works");
@@ -317,6 +326,7 @@ export default function YourCommunityPage({ username }) {
       setBio(newBio);
       setLink(newLink);
       setVisibility(newVisibility);
+      clearProfileRecovery(); // Clear auto-saved draft on success
     } catch (err) {
       console.error("Failed to save community page:", err);
     } finally {
@@ -332,9 +342,10 @@ export default function YourCommunityPage({ username }) {
 
     const wantsEditFromQuery = editParam === "1" || editParam === "true";
     const wantsEditFromState = Boolean(location.state && location.state.edit);
+    const hasRecoveredDraft = !!savedProfileDraft;
 
-    if (wantsEditFromQuery || wantsEditFromState) {
-      openEdit();
+    if (wantsEditFromQuery || wantsEditFromState || hasRecoveredDraft) {
+      setIsEditing(true); // Open edit mode directly (don't call openEdit which resets draft values)
     }
     // Only run on navigation changes
     // eslint-disable-next-line react-hooks/exhaustive-deps

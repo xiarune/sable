@@ -7,6 +7,7 @@ import { authApi, usersApi, followsApi, uploadsApi, likesApi, bookmarksApi, comm
 import postsApi from "../api/posts";
 import { SableLoader } from "../components";
 import sableLogo from "../assets/images/Sable_Logo.png";
+import { useAutoSave, getRecoveryData } from "../hooks/useFormRecovery";
 
 // Mention input component with highlighting and suggestions
 function MentionInput({ value, onChange, placeholder, rows = 2, followingList = [] }) {
@@ -453,9 +454,10 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
     return date.toLocaleDateString();
   }
 
-  // Composer
-  const [postType, setPostType] = React.useState("post"); // post | upload
-  const [draft, setDraft] = React.useState("");
+  // Composer - restore from localStorage if available
+  const savedComposer = React.useMemo(() => getRecoveryData("community_post"), []);
+  const [postType, setPostType] = React.useState(savedComposer?.postType || "post"); // post | upload
+  const [draft, setDraft] = React.useState(savedComposer?.draft || "");
   const [postImage, setPostImage] = React.useState(null); // { file, preview }
   const [uploadingImage, setUploadingImage] = React.useState(false);
   const imageInputRef = React.useRef(null);
@@ -503,8 +505,15 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
   const [reportInProgress, setReportInProgress] = React.useState(false);
 
   // Spoiler/NSFW toggles for new posts
-  const [isSpoiler, setIsSpoiler] = React.useState(false);
-  const [isNSFW, setIsNSFW] = React.useState(false);
+  const [isSpoiler, setIsSpoiler] = React.useState(savedComposer?.isSpoiler || false);
+  const [isNSFW, setIsNSFW] = React.useState(savedComposer?.isNSFW || false);
+
+  // Auto-save post composer
+  const { clearRecovery: clearPostRecovery } = useAutoSave(
+    "community_post",
+    { draft, postType, isSpoiler, isNSFW },
+    { enabled: draft.length > 0 }
+  );
 
   // Report success state
   const [reportSubmitted, setReportSubmitted] = React.useState(false);
@@ -1162,6 +1171,7 @@ export default function Communities({ isAuthed = false, username = "john.doe" })
       setIsSpoiler(false);
       setIsNSFW(false);
       removeImage();
+      clearPostRecovery(); // Clear auto-saved draft
     } catch (err) {
       console.error("Failed to create post:", err);
       alert("Failed to create post. Please try again.");

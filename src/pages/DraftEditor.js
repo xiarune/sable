@@ -3,6 +3,7 @@ import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { draftsApi, uploadsApi, skinsApi } from "../api";
 import { SableLoader } from "../components";
+import { useAutoSave, getRecoveryData } from "../hooks/useFormRecovery";
 import "./NewDraft.css";
 
 import chapterIcon from "../assets/images/chapter_icon.png";
@@ -205,6 +206,30 @@ export default function DraftEditor() {
 
   const [audioUrl, setAudioUrl] = React.useState("");
   const [imageUrls, setImageUrls] = React.useState([]);
+
+  // Form recovery
+  const RECOVERY_KEY = `draft_edit_${draftId}`;
+
+  // Auto-save form data
+  const formDataToSave = React.useMemo(() => ({
+    title,
+    chapters,
+    tags,
+    skin,
+    customSkinId,
+    privacy,
+    language,
+    genre,
+    fandom,
+    progressStatus,
+    coverImageUrl,
+    audioUrl,
+    imageUrls,
+  }), [title, chapters, tags, skin, customSkinId, privacy, language, genre, fandom, progressStatus, coverImageUrl, audioUrl, imageUrls]);
+
+  const { clearRecovery } = useAutoSave(RECOVERY_KEY, formDataToSave, {
+    enabled: !loading, // Don't save while loading
+  });
 
   const [activeTool, setActiveTool] = React.useState("");
   const [tagInput, setTagInput] = React.useState("");
@@ -430,6 +455,7 @@ export default function DraftEditor() {
       };
 
       await draftsApi.update(draftId, payload);
+      clearRecovery(); // Clear auto-saved data on successful save
       setStatus("Saved!");
       setTimeout(() => setStatus(""), 1500);
     } catch (err) {
@@ -477,6 +503,7 @@ export default function DraftEditor() {
 
       // Then publish
       const data = await draftsApi.publish(draftId);
+      clearRecovery(); // Clear auto-saved data on successful publish
       const workId = data.work._id;
 
       navigate(`/works/edit/${encodeURIComponent(workId)}`);

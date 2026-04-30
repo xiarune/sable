@@ -6,6 +6,7 @@ import "../styles/skins.css";
 import { worksApi, bookmarksApi, commentsApi, skinsApi, likesApi, reportsApi, spotifyApi } from "../api";
 import { works as libraryWorks } from "../data/libraryWorks";
 import { SableLoader } from "../components";
+import { useAutoSave, getRecoveryData, clearRecoveryData } from "../hooks/useFormRecovery";
 
 import musicIcon from "../assets/images/music_icon.png";
 import settingsIcon from "../assets/images/settings_icon.png";
@@ -188,9 +189,20 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
 
   // Comments
   const [commentsOpen, setCommentsOpen] = React.useState(false);
-  const [commentDraft, setCommentDraft] = React.useState("");
+  const [commentDraft, setCommentDraft] = React.useState(() => {
+    // Restore comment draft from localStorage if available
+    const saved = getRecoveryData(`work_comment_${decodedId}`);
+    return saved?.commentDraft || "";
+  });
   const [comments, setComments] = React.useState([]);
   const [commentsLoading, setCommentsLoading] = React.useState(false);
+
+  // Auto-save comment draft
+  const { clearRecovery: clearCommentRecovery } = useAutoSave(
+    `work_comment_${decodedId}`,
+    { commentDraft },
+    { enabled: !!decodedId && commentDraft.length > 0 }
+  );
 
   // Load comments when work is loaded
   React.useEffect(() => {
@@ -770,6 +782,7 @@ export default function WorkView({ isAuthed = false, username = "john.doe" }) {
     if (!text) return;
 
     setCommentDraft("");
+    clearCommentRecovery(); // Clear auto-saved draft
 
     try {
       const data = await commentsApi.create(text, decodedId, null, null);
