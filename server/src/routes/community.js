@@ -77,13 +77,49 @@ router.get("/", requireAuth, async (req, res, next) => {
     let page = await CommunityPage.findOne({ userId: req.user._id });
 
     if (!page) {
-      // Create default page
-      page = new CommunityPage({
-        userId: req.user._id,
-        handle: req.user.username,
-        displayName: req.user.displayName || req.user.username,
-      });
-      await page.save();
+      const handle = req.user.username.toLowerCase();
+
+      // Use findOneAndUpdate with upsert to handle race conditions
+      // This atomically creates the page if it doesn't exist for this user
+      try {
+        page = await CommunityPage.findOneAndUpdate(
+          { userId: req.user._id },
+          {
+            $setOnInsert: {
+              handle,
+              displayName: req.user.displayName || req.user.username,
+            },
+          },
+          { upsert: true, new: true }
+        );
+      } catch (err) {
+        // Handle duplicate key error on handle (orphaned page or race condition)
+        if (err.code === 11000 && err.keyPattern?.handle) {
+          const existingWithHandle = await CommunityPage.findOne({ handle });
+
+          if (existingWithHandle) {
+            // Check if this page belongs to a different user
+            if (existingWithHandle.userId.toString() !== req.user._id.toString()) {
+              // Check if the owner user still exists
+              const User = require("../models/User");
+              const ownerExists = await User.findById(existingWithHandle.userId);
+
+              if (!ownerExists) {
+                // Orphaned page - reassign it to this user
+                existingWithHandle.userId = req.user._id;
+                existingWithHandle.displayName = req.user.displayName || req.user.username;
+                await existingWithHandle.save();
+                return res.json({ page: existingWithHandle });
+              }
+              // Handle belongs to another active user
+              return res.status(400).json({ error: "Username conflict. Please contact support." });
+            }
+            // Page was created by same user in a race condition - just return it
+            return res.json({ page: existingWithHandle });
+          }
+        }
+        throw err;
+      }
     }
 
     res.json({ page });
@@ -95,18 +131,64 @@ router.get("/", requireAuth, async (req, res, next) => {
 // PUT /community - Update my community page
 router.put("/", requireAuth, async (req, res, next) => {
   try {
-    let page = await CommunityPage.findOne({ userId: req.user._id });
-
-    if (!page) {
-      page = new CommunityPage({
-        userId: req.user._id,
-        handle: req.user.username,
-      });
-    }
-
     const result = updateCommunitySchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error.errors[0].message });
+    }
+
+    let page = await CommunityPage.findOne({ userId: req.user._id });
+
+    if (!page) {
+      const handle = req.user.username.toLowerCase();
+
+      // Use findOneAndUpdate with upsert to handle race conditions
+      try {
+        page = await CommunityPage.findOneAndUpdate(
+          { userId: req.user._id },
+          {
+            $setOnInsert: {
+              handle,
+            },
+          },
+          { upsert: true, new: true }
+        );
+      } catch (err) {
+        // Handle duplicate key error on handle (orphaned page or race condition)
+        if (err.code === 11000 && err.keyPattern?.handle) {
+          const existingWithHandle = await CommunityPage.findOne({ handle });
+
+          if (existingWithHandle) {
+            // Check if this page belongs to a different user
+            if (existingWithHandle.userId.toString() !== req.user._id.toString()) {
+              // Check if the owner user still exists
+              const User = require("../models/User");
+              const ownerExists = await User.findById(existingWithHandle.userId);
+
+              if (!ownerExists) {
+                // Orphaned page - reassign it to this user
+                existingWithHandle.userId = req.user._id;
+                page = existingWithHandle;
+              } else {
+                // Handle belongs to another active user
+                return res.status(400).json({ error: "Username conflict. Please contact support." });
+              }
+            } else {
+              // Page was created by same user in a race condition - use it
+              page = existingWithHandle;
+            }
+          } else {
+            // Page was deleted between error and findOne - throw to retry
+            throw err;
+          }
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    // Safety check - page should be defined at this point
+    if (!page) {
+      return res.status(500).json({ error: "Failed to create or find community page" });
     }
 
     // Merge widgets
