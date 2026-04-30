@@ -59,3 +59,16 @@ main {
   }
 }
 
+/* Shift content when sidebar is visible */
+body.sidebar-visible {
+  padding-right: 56px;
+  transition: padding-right 0.2s ease-out;
+}
+
+/* Don't add padding on mobile since sidebar is hidden */
+@media (max-width: 768px) {
+  body.sidebar-visible {
+    padding-right: 0;
+  }
+}
+
